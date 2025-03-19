@@ -1,0 +1,38 @@
+package com.javaweb.service;
+
+import com.javaweb.model.dto.PasswordDTO;
+import com.javaweb.model.dto.UserDTO;
+import com.javaweb.model.request.UserRequestDTO;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import java.util.Map;
+import java.util.Set;
+
+public interface UserService {
+
+    UserDTO findOneByUsername(String userName);
+
+    UserDTO findUserById(Long id);
+
+    void updatePassword(long id, PasswordDTO userDTO);
+
+
+    UserDTO updateProfileOfUser(String id, UserDTO userDTO);
+
+    void delete(Set<Long> ids);
+
+
+    boolean resetPassword(Long userId, String newPassword);
+
+
+    void updateUser(UserRequestDTO userDTO);
+
+    void saveSignUpUser(UserRequestDTO userRequestDTO);
+
+    Set<UserDTO> findAllUser(@RequestParam Map<String, Object> params, Set<String> roles);
+
+    void saveUser(UserRequestDTO userRequestDTO);
+
+    UserDTO findUserByUsername(String username);
+
+}

@@ -117,8 +117,9 @@ public class AppConstant {
     public static final String GIF_PATH = "src/main/java/com/javaweb/view/imgs/back_ground/LatteLiteratureBackGround.gif";
 
     //FONT
-    public static final String FONT_PATH = "src/main/java/com/javaweb/view/fonts/JetBrainsMono-Medium.ttf";
-    public static final String SPOTIFY_FONT_PATH = "src/main/java/com/javaweb/view/fonts/CircularStd-Book.otf";
+    public static final String FONT_PATH = "/usr/share/fonts/TTF/JetBrainsMonoNerdFontPropo-Regular.ttf";
+    public static final String SPOTIFY_FONT_PATH = "/usr/share/fonts/TTF/JetBrainsMonoNerdFontPropo-Regular.ttf";
+
 
     //SIZE
     public static final Dimension FILE_CHOOSER_SIZE = new Dimension(1100, 600);

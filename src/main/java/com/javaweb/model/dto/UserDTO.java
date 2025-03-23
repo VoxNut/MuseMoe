@@ -1,5 +1,6 @@
 package com.javaweb.model.dto;
 
+import com.javaweb.enums.AccountStatus;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,15 +12,16 @@ import java.util.Set;
 public class UserDTO extends AbstractDTO<UserDTO> implements Comparable<UserDTO> {
     private Long id;
     private String username;
-    private String fullName;
     private String password;
-    private Integer status;
-    private Set<RoleDTO> roles = new HashSet<>();
-    private String avatar;
+    private String fullName;
     private String email;
+    private AccountStatus accountStatus;
+    private MediaDTO avatar;
+    private Set<RoleDTO> roles = new HashSet<>();
     private String role;
     private String visibleRoles;
-    private String phone;
+    private String preferredLanguage;
+
 
     @Override
     public int compareTo(UserDTO o) {

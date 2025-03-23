@@ -3,6 +3,7 @@ package com.javaweb.view;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.javaweb.constant.AppConstant;
+import com.javaweb.enums.AccountStatus;
 import com.javaweb.model.dto.RoleDTO;
 import com.javaweb.model.dto.UserDTO;
 import com.javaweb.utils.*;
@@ -543,11 +544,11 @@ public class LoginPage extends JFrame {
                     String userResponseBody = EntityUtils.toString(userResponse.getEntity(), StandardCharsets.UTF_8);
                     ObjectMapper objectMapper = new ObjectMapper();
                     UserDTO user = objectMapper.readValue(userResponseBody, UserDTO.class);
-                    if (user.getStatus() == 0) {
+                    if (user.getAccountStatus().equals(AccountStatus.INACTIVE)) {
                         statusLabel.setText("Người dùng không tồn tại hoặc đã bị xóa.");
                         response.close();
                     }
-                    String avatarLink = user.getAvatar();
+                    String avatarLink = user.getAvatar().getFileUrl();
                     String userFullName = user.getFullName();
                     Set<String> roles = new HashSet<>();
                     for (RoleDTO role : user.getRoles()) {

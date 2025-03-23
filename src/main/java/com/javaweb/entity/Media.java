@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
-import java.util.Date;
 
 @Entity
 @Table(name = "media")
@@ -23,9 +22,7 @@ public class Media extends BaseEntity {
     @Column(name = "file_size")
     private Integer fileSize;
 
-    @Column(name = "uploaded_at")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date uploadedAt;
+
 
 
 }

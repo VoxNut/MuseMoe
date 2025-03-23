@@ -18,9 +18,6 @@ import java.util.stream.Collectors;
 
 public class CommonApiUtil {
 
-
-
-
     //USER
     public static Set<UserDTO> fetchAllUsersBaseOnRole(RoleType role) {
         try {

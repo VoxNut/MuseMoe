@@ -32,7 +32,8 @@ public class Song {
             frameRatePerMilliseconds = (double) mp3File.getFrameCount() / mp3File.getLengthInMilliseconds();
             songLength = convertToSongLengthFormat();
 
-            // use the jaudiotagger library to create an audiofile obj to read mp3 file's information
+            // use the jaudiotagger library to create an audiofile obj to read mp3 file's
+            // information
             AudioFile audioFile = AudioFileIO.read(new File(filePath));
 
             // read through the meta data of the audio file

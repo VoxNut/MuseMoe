@@ -68,7 +68,7 @@ public class MusicPlayerGUI extends JFrame {
     private HomePage homePage;
 
     private MusicPlayerGUI(HomePage homePage) throws IOException {
-        super("Spitify");
+        super("MuseMoe MiniPlayer");
         getRootPane().putClientProperty("TitlePane.font", FontUtil.getSpotifyFont(Font.BOLD, 18));
         getRootPane().putClientProperty("JRootPane.titleBarBackground", AppConstant.BACKGROUND_COLOR);
         getRootPane().putClientProperty("JRootPane.titleBarForeground", AppConstant.TEXT_COLOR);

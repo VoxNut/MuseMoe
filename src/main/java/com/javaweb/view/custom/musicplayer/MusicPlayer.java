@@ -18,7 +18,6 @@ import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.LinkedList;
 
-
 @Getter
 @Setter
 public class MusicPlayer extends PlaybackListener {
@@ -57,10 +56,8 @@ public class MusicPlayer extends PlaybackListener {
     @Getter
     private RepeatMode repeatMode = RepeatMode.NO_REPEAT;
 
-
     private FloatControl volumeControl;
     private AudioDevice device;
-
 
     // stores in the last frame when the playback is finished (used for pausing and
     // resuming)
@@ -89,7 +86,8 @@ public class MusicPlayer extends PlaybackListener {
         playlist = null;
 
         // stop the song if possible
-        if (!songFinished) stopSong();
+        if (!songFinished)
+            stopSong();
 
         // play the current song if not null
         if (currentSong != null) {
@@ -109,7 +107,8 @@ public class MusicPlayer extends PlaybackListener {
 
     public void loadPlaylist(File playlistFile) throws IOException {
         currentPlaylistIndex = 0;
-        if (!songFinished) stopSong();
+        if (!songFinished)
+            stopSong();
 
         playlist = new LinkedList<>();
 
@@ -148,7 +147,8 @@ public class MusicPlayer extends PlaybackListener {
             playCurrentSong();
         } else {
             musicPlayerGUI.toggleShuffleButton(false);
-            JOptionPane.showMessageDialog(musicPlayerGUI, "Playlist không tồn tại!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(musicPlayerGUI, "Playlist không tồn tại!", "Thông báo",
+                    JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
@@ -187,13 +187,14 @@ public class MusicPlayer extends PlaybackListener {
 
     public void nextSong() throws IOException {
 
-        //A single song
+        // A single song
         if (playlist == null) {
             if (repeatMode == RepeatMode.NO_REPEAT) {
                 return;
             } else if (repeatMode == RepeatMode.REPEAT_ALL || repeatMode == RepeatMode.REPEAT_ONE) {
                 pressedNext = true;
-                if (!songFinished) stopSong();
+                if (!songFinished)
+                    stopSong();
                 updateUI();
                 if (repeatMode == RepeatMode.REPEAT_ONE) {
                     repeatMode = RepeatMode.REPEAT_ALL;
@@ -202,9 +203,10 @@ public class MusicPlayer extends PlaybackListener {
                 playCurrentSong();
             }
         } else {
-            //Hava a playlist
+            // Hava a playlist
             pressedNext = true;
-            if (!songFinished) stopSong();
+            if (!songFinished)
+                stopSong();
 
             if (currentPlaylistIndex + 1 == playlist.size()) {
                 if (repeatMode == RepeatMode.NO_REPEAT) {
@@ -224,7 +226,7 @@ public class MusicPlayer extends PlaybackListener {
                     }
                     playCurrentSong();
                 }
-                //Random song
+                // Random song
             } else {
                 // increase current playlist index
                 currentPlaylistIndex++;
@@ -241,17 +243,17 @@ public class MusicPlayer extends PlaybackListener {
 
         }
 
-
     }
 
     public void prevSong() throws IOException {
-        //A single song
+        // A single song
         if (playlist == null) {
             if (repeatMode == RepeatMode.NO_REPEAT) {
                 return;
             } else if (repeatMode == RepeatMode.REPEAT_ALL || repeatMode == RepeatMode.REPEAT_ONE) {
                 pressedPrev = true;
-                if (!songFinished) stopSong();
+                if (!songFinished)
+                    stopSong();
                 updateUI();
                 if (repeatMode == RepeatMode.REPEAT_ONE) {
                     repeatMode = RepeatMode.REPEAT_ALL;
@@ -260,9 +262,10 @@ public class MusicPlayer extends PlaybackListener {
                 playCurrentSong();
             }
         } else {
-            //Have a playlist
+            // Have a playlist
             pressedPrev = true;
-            if (!songFinished) stopSong();
+            if (!songFinished)
+                stopSong();
 
             // check to see if we have reached the head of the playlist
             if (currentPlaylistIndex == 0) {
@@ -279,7 +282,7 @@ public class MusicPlayer extends PlaybackListener {
                     }
                     playCurrentSong();
                 }
-                //Random song
+                // Random song
             } else {
                 // increase current playlist index
                 currentPlaylistIndex--;
@@ -298,7 +301,8 @@ public class MusicPlayer extends PlaybackListener {
     }
 
     public void playCurrentSong() {
-        if (currentSong == null) return;
+        if (currentSong == null)
+            return;
         try {
 
             fileInputStream = new FileInputStream(currentSong.getFilePath());
@@ -420,7 +424,8 @@ public class MusicPlayer extends PlaybackListener {
         } else {
             // if the user pressed next or prev we don't need to execute the rest of the
             // code
-            if (pressedNext || pressedPrev || pressedShuffle || pressedReplay) return;
+            if (pressedNext || pressedPrev || pressedShuffle || pressedReplay)
+                return;
 
             // when the song ends
             if (playlist == null) {
@@ -434,7 +439,6 @@ public class MusicPlayer extends PlaybackListener {
                     musicPlayerGUI.setPlaybackSliderValue(0);
                     musicPlayerGUI.getHomePage().setPlaybackSliderValue(0);
                     musicPlayerGUI.setVolumeSliderValue(0);
-
 
                     playCurrentSong();
                 } else {
@@ -500,7 +504,8 @@ public class MusicPlayer extends PlaybackListener {
     }
 
     public void replayFiveSeconds() throws IOException {
-        if (currentSong == null) return;
+        if (currentSong == null)
+            return;
 
         pressedReplay = true;
 
@@ -625,6 +630,5 @@ public class MusicPlayer extends PlaybackListener {
         musicPlayerGUI.getHomePage().updateSpinningDisc(currentSong);
         musicPlayerGUI.getHomePage().updateScrollingText(currentSong);
     }
-
 
 }

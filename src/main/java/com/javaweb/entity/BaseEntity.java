@@ -3,11 +3,9 @@ package com.javaweb.entity;
 import lombok.Getter;
 import lombok.Setter;
 
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.MappedSuperclass;
+import javax.persistence.*;
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 @MappedSuperclass
 @Getter
@@ -21,20 +19,20 @@ public abstract class BaseEntity implements Serializable {
     private Long id;
 
 
-//    @Column(name = "created_at", updatable = false)
-//    private LocalDateTime created_at;
-//
-//    @Column(name = "updated_at")
-//    private LocalDateTime updated_at;
-//
-//    @PrePersist
-//    protected void onCreate() {
-//        created_at = LocalDateTime.now();
-//        updated_at = LocalDateTime.now();
-//    }
-//
-//    @PreUpdate
-//    protected void onUpdate() {
-//        updated_at = LocalDateTime.now();
-//    }
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime created_at;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updated_at;
+
+    @PrePersist
+    protected void onCreate() {
+        created_at = LocalDateTime.now();
+        updated_at = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updated_at = LocalDateTime.now();
+    }
 }

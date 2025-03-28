@@ -6,6 +6,8 @@ import com.javaweb.view.custom.spinner.DateLabelFormatter;
 import com.javaweb.view.custom.table.BorderedHeaderRenderer;
 import com.javaweb.view.custom.table.BorderedTableCellRenderer;
 import net.coobird.thumbnailator.Thumbnails;
+import net.coobird.thumbnailator.geometry.Positions;
+import net.coobird.thumbnailator.resizers.configurations.Antialiasing;
 import org.jdatepicker.impl.JDatePanelImpl;
 import org.jdatepicker.impl.JDatePickerImpl;
 import org.jdatepicker.impl.SqlDateModel;
@@ -37,6 +39,7 @@ import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
@@ -631,9 +634,7 @@ public class GuiUtil {
         Graphics2D g2dHighRes = highResDiscImage.createGraphics();
 
         // High-quality rendering hints
-        g2dHighRes.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2dHighRes.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-        g2dHighRes.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        configureGraphicsForHighQuality(g2dHighRes);
 
         // Draw the circular area
         g2dHighRes.setClip(new java.awt.geom.Ellipse2D.Double(0, 0, highResWidth, highResHeight));
@@ -784,8 +785,8 @@ public class GuiUtil {
 
 
     public static class GradientPanel extends JPanel {
-        private Color color1;
-        private Color color2;
+        private final Color color1;
+        private final Color color2;
 
         public GradientPanel(Color color1, Color color2) {
             this.color1 = color1;
@@ -981,6 +982,174 @@ public class GuiUtil {
 
     public static int showConfirmMessageDialog(Component parentComponent, Object message, String title, int optionType, int messageType) {
         return JOptionPane.showConfirmDialog(parentComponent, message, title, optionType);
+    }
+
+    public static BufferedImage createDefaultAvatar(int width, int height) {
+        BufferedImage avatar = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2 = avatar.createGraphics();
+        configureGraphicsForHighQuality(g2);
+
+        // Create a gradient background
+        GradientPaint gradient = new GradientPaint(0, 0, new Color(100, 100, 100),
+                width, height, new Color(50, 50, 50));
+        g2.setPaint(gradient);
+        g2.fillOval(0, 0, width, height);
+
+        // Add a user silhouette
+        g2.setColor(new Color(200, 200, 200, 180));
+        int headSize = width / 3;
+        g2.fillOval(width / 2 - headSize / 2, height / 3 - headSize / 2, headSize, headSize);
+
+        // Draw body
+        g2.fillOval(width / 2 - width / 4, height / 2, width / 2, height / 3);
+
+        g2.dispose();
+        return avatar;
+    }
+
+
+    private static void configureGraphicsForHighQuality(Graphics2D g2) {
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        g2.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
+        g2.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
+    }
+
+    public static BufferedImage createSmoothCircularAvatar(BufferedImage sourceImage, int diameter) {
+        if (sourceImage == null) {
+            return createDefaultAvatar(diameter, diameter);
+        }
+
+        int highResDiameter = diameter * 3;
+
+        try {
+            BufferedImage highResImage = Thumbnails.of(sourceImage)
+                    .size(highResDiameter, highResDiameter)
+                    .crop(Positions.CENTER)
+                    .antialiasing(Antialiasing.ON)
+                    .outputQuality(1.0f)
+                    .asBufferedImage();
+
+            // Create a high-resolution output image
+            BufferedImage highResOutput = new BufferedImage(
+                    highResDiameter, highResDiameter, BufferedImage.TYPE_INT_ARGB);
+
+            // Setup high-quality rendering
+            Graphics2D g2d = highResOutput.createGraphics();
+
+            // Apply professional rendering settings
+            configureGraphicsForHighQuality(g2d);
+
+            // Create circular clip shape
+            Ellipse2D.Double circle = new Ellipse2D.Double(0, 0, highResDiameter, highResDiameter);
+            g2d.setClip(circle);
+
+            // Draw the image
+            g2d.drawImage(highResImage, 0, 0, null);
+
+            // Add a subtle border for better definition
+            g2d.setClip(null);
+            g2d.setColor(new Color(0, 0, 0, 50));  // More visible but still subtle border
+            g2d.setStroke(new BasicStroke(3.0f));  // Thicker border at high res
+            g2d.draw(circle);
+
+            // Add a subtle highlight for 3D effect (optional)
+            g2d.setClip(circle);
+            g2d.setComposite(AlphaComposite.SrcAtop.derive(0.1f));
+            g2d.setPaint(new GradientPaint(
+                    0, 0, Color.WHITE,
+                    0, highResDiameter, new Color(255, 255, 255, 0)));
+            g2d.fillRect(0, 0, highResDiameter, highResDiameter);
+
+            g2d.dispose();
+
+            // Scale back down to the requested size with high quality
+            BufferedImage finalImage = Thumbnails.of(highResOutput)
+                    .size(diameter, diameter)
+                    .antialiasing(Antialiasing.ON)
+                    .outputQuality(1.0f)
+                    .asBufferedImage();
+
+            return finalImage;
+        } catch (IOException e) {
+            e.printStackTrace();
+
+            // Fallback to simpler method if there's an error
+            return createDefaultAvatar(diameter, diameter);
+        }
+    }
+
+    public static void styleDialog(JDialog dialog, Color backgroundColor, Color textColor) {
+        dialog.getRootPane().putClientProperty("TitlePane.font", FontUtil.getSpotifyFont(Font.BOLD, 16));
+        dialog.getRootPane().putClientProperty("JRootPane.titleBarBackground", darkenColor(backgroundColor, 0.2f));
+        dialog.getRootPane().putClientProperty("JRootPane.titleBarForeground", textColor);
+        dialog.getRootPane().putClientProperty("JRootPane.titleBarInactiveBackground", darkenColor(backgroundColor, 0.2f));
+        dialog.getRootPane().putClientProperty("JRootPane.titleBarInactiveForeground", textColor);
+
+        dialog.getRootPane().setBorder(BorderFactory.createEmptyBorder());
+
+        // Apply the changes
+        SwingUtilities.updateComponentTreeUI(dialog);
+    }
+
+    public static void setGradientBackground(JToolBar toolBar, Color centerColor, Color outerColor,
+                                             float centerX, float centerY, float radius) {
+        toolBar.setOpaque(false);
+
+        toolBar.setUI(new javax.swing.plaf.basic.BasicToolBarUI() {
+            @Override
+            public void paint(Graphics g, JComponent c) {
+                paintGradient(g, c, centerColor, outerColor, centerX, centerY, radius);
+                super.paint(g, c);
+            }
+        });
+
+        toolBar.setBorderPainted(false);
+        toolBar.setFloatable(false);
+    }
+
+    /**
+     * Helper method to paint gradient on a component
+     */
+    private static void paintGradient(Graphics g, JComponent c, Color centerColor, Color outerColor,
+                                      float centerX, float centerY, float radius) {
+        Graphics2D g2d = (Graphics2D) g.create();
+        int width = c.getWidth();
+        int height = c.getHeight();
+
+        // Enable antialiasing for smoother gradient
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        // Create center point for gradient
+        Point2D center = new Point2D.Float(width * centerX, height * centerY);
+
+        // Create the radial gradient
+        RadialGradientPaint gradient = new RadialGradientPaint(
+                center,                    // Center point
+                width * radius,            // Radius
+                new float[]{0.0f, 1.0f},  // Distribution
+                new Color[]{centerColor, outerColor}  // Colors
+        );
+
+        g2d.setPaint(gradient);
+        g2d.fillRect(0, 0, width, height);
+        g2d.dispose();
+    }
+
+    public static void applyWindowStyle(JFrame window) {
+        JRootPane rootPane = window.getRootPane();
+
+        rootPane.putClientProperty("JRootPane.titleBarBackground", AppConstant.BACKGROUND_COLOR);
+        rootPane.putClientProperty("JRootPane.titleBarForeground", AppConstant.TEXT_COLOR);
+        rootPane.putClientProperty("JRootPane.titleBarInactiveBackground", AppConstant.BACKGROUND_COLOR);
+        rootPane.putClientProperty("JRootPane.titleBarInactiveForeground",
+                GuiUtil.darkenColor(AppConstant.TEXT_COLOR, 0.2f));
+
+        // FlatLaf specific properties
+        rootPane.putClientProperty("flatlaf.menuBarEmbedded", true);
+        rootPane.putClientProperty("flatlaf.unifiedBackground", true);
+
     }
 
 }

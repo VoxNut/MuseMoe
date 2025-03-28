@@ -27,7 +27,7 @@ public interface UserService {
 
     void updateUser(UserRequestDTO userDTO);
 
-    void saveSignUpUser(UserRequestDTO userRequestDTO);
+    Boolean saveSignUpUser(UserRequestDTO userRequestDTO);
 
     Set<UserDTO> findAllUser(@RequestParam Map<String, Object> params, Set<String> roles);
 
@@ -35,4 +35,7 @@ public interface UserService {
 
     UserDTO findUserByUsername(String username);
 
+    UserDTO findUserByEmail(String email);
+
+    void updateLastLoginTime();
 }

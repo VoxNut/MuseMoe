@@ -1,12 +1,16 @@
 package com.javaweb.repository;
 
-import com.javaweb.entity.User;
+import com.javaweb.entity.UserEntity;
 import com.javaweb.enums.AccountStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface UserRepository extends JpaRepository<User, Long> {
+import java.util.Optional;
 
-    User findOneByUsername(String userName);
+public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
-    User findOneByUsernameAndAccountStatus(String username, AccountStatus accountStatus);
+    UserEntity findOneByUsername(String userName);
+
+    UserEntity findOneByUsernameAndAccountStatus(String username, AccountStatus accountStatus);
+
+    Optional<UserEntity> findByEmail(String email);
 }

@@ -1,11 +1,12 @@
 package com.javaweb.repository;
 
-import com.javaweb.entity.Role;
+import com.javaweb.entity.RoleEntity;
 import com.javaweb.enums.RoleType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface RoleRepository extends JpaRepository<Role,Long> {
+public interface RoleRepository extends JpaRepository<RoleEntity, Long> {
 
-    Role findOneByName(String name);
-    Role findOneByCode(RoleType type);
+    RoleEntity findOneByName(String name);
+
+    RoleEntity findOneByCode(RoleType type);
 }

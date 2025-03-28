@@ -1,7 +1,7 @@
 package com.javaweb.service.impl;
 
 import com.javaweb.converter.UserConverter;
-import com.javaweb.entity.User;
+import com.javaweb.entity.UserEntity;
 import com.javaweb.enums.AccountStatus;
 import com.javaweb.exception.EntityNotFoundException;
 import com.javaweb.model.dto.PasswordDTO;
@@ -11,11 +11,14 @@ import com.javaweb.repository.RoleRepository;
 import com.javaweb.repository.UserRepository;
 import com.javaweb.service.PasswordService;
 import com.javaweb.service.UserService;
+import com.javaweb.utils.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 @Service
@@ -36,25 +39,22 @@ public class UserServiceImpl implements UserService {
     }
 
 
-
-
     @Override
     public UserDTO findOneByUsername(String userName) {
-        User User = userRepository.findOneByUsername(userName);
-        return User != null ? userConverter.toDTO(User) : null;
+        UserEntity UserEntity = userRepository.findOneByUsername(userName);
+        return UserEntity != null ? userConverter.toDTO(UserEntity) : null;
     }
 
     @Override
     public UserDTO findUserById(Long id) {
-        User entity = userRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("User not found!"));
+        UserEntity entity = userRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("UserEntity not found!"));
         return userConverter.toDTO(entity);
     }
 
 
-
     @Override
-    public void updatePassword(long id, PasswordDTO passwordDTO)  {
-        User user = userRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("User not found!"));
+    public void updatePassword(long id, PasswordDTO passwordDTO) {
+        UserEntity user = userRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("UserEntity not found!"));
         if (passwordService.matches(passwordDTO.getOldPassword(), passwordDTO.getNewPassword()) && passwordDTO.getNewPassword().equals(passwordDTO.getConfirmPassword())) {
             user.setPassword(passwordService.encodePassword(passwordDTO.getNewPassword()));
             userRepository.save(user);
@@ -65,7 +65,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDTO updateProfileOfUser(String username, UserDTO updateUser) {
-        User oldUser = userRepository.findOneByUsername(username);
+        UserEntity oldUser = userRepository.findOneByUsername(username);
         oldUser.setFullName(updateUser.getFullName());
         return userConverter.toDTO(userRepository.save(oldUser));
     }
@@ -73,9 +73,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public void delete(Set<Long> ids) {
         for (Long item : ids) {
-            User User = userRepository.findById(item).orElseThrow(() -> new EntityNotFoundException("User not found!"));
-            User.setAccountStatus(AccountStatus.INACTIVE);
-            userRepository.save(User);
+            UserEntity UserEntity = userRepository.findById(item).orElseThrow(() -> new EntityNotFoundException("UserEntity not found!"));
+            UserEntity.setAccountStatus(AccountStatus.INACTIVE);
+            userRepository.save(UserEntity);
         }
     }
 
@@ -88,52 +88,65 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void saveSignUpUser(UserRequestDTO userRequestDTO) {
-//        Role roleEntity = roleRepository.findOneByCode(Role.PREMIUM);// Customer role if register
-//        if (roleEntity == null) {
-//            throw new RuntimeException("Role CUSTOMER not found");
-//        }
-//        userRequestDTO.setPassword(passwordService.encodePassword(userRequestDTO.getPassword()));
-//        User User = userConverter.convertToEntity(userRequestDTO);
-//        User.setRoles(Stream.of(roleEntity).collect(Collectors.toCollection(HashSet::new)));
-//        CustomerEntity customerEntity = new CustomerEntity();
-//        customerEntity.setType(CustomerType.CASUAL);
-//        customerEntity.setPoint(0);
-//        User.setCustomer(customerEntity);
-//        customerRepository.save(customerEntity);
-//        userRepository.save(User);
+    public UserDTO findUserByEmail(String email) {
+        return userConverter.toDTO(userRepository.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("User with email: " + email + " not found!"))
+        );
+    }
+
+    @Override
+    public void updateLastLoginTime() {
+        UserEntity user = userRepository.findById(Objects.requireNonNull(SecurityUtils.getPrincipal()).getId())
+                .orElseThrow(() -> new EntityNotFoundException("User with not found!"));
+
+        user.setLastLogin(LocalDateTime.now());
+        userRepository.save(user);
+    }
+
+    @Override
+    public Boolean saveSignUpUser(UserRequestDTO userRequestDTO) {
+        try {
+            userRequestDTO.setPassword(passwordService.encodePassword(userRequestDTO.getPassword()));
+            UserEntity UserEntity = userConverter.toEntity(userRequestDTO);
+            userRepository.save(UserEntity);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+
     }
 
     @Override
     public void updateUser(UserRequestDTO userRequestDTO) {
-//        User existingUser = userRepository.findById(userRequestDTO.getId()).orElseThrow(() -> new EntityNotFoundException("User not found!"));
+//        UserEntity existingUser = userRepository.findById(userRequestDTO.getId()).orElseThrow(() -> new EntityNotFoundException("UserEntity not found!"));
 //        if (userRequestDTO.getPassword().isEmpty()) {
 //            userRequestDTO.setPassword(existingUser.getPassword());
 //        } else {
 //            userRequestDTO.setPassword(passwordService.encodePassword(userRequestDTO.getPassword()));
 //        }
-//        User User = userConverter.convertToEntity(userRequestDTO);
-//        User.setCustomer(existingUser.getCustomer());
-//        if (User.getCustomer() != null) {
-//            CustomerEntity customerEntity = User.getCustomer();
+//        UserEntity UserEntity = userConverter.convertToEntity(userRequestDTO);
+//        UserEntity.setCustomer(existingUser.getCustomer());
+//        if (UserEntity.getCustomer() != null) {
+//            CustomerEntity customerEntity = UserEntity.getCustomer();
 //            customerEntity.setFullName(userRequestDTO.getFullName());
 //            customerEntity.setEmail(userRequestDTO.getEmail());
 //            customerEntity.setPhone(userRequestDTO.getPhone());
 //            customerRepository.save(customerEntity);
 //        }
-//        User.setOrders(existingUser.getOrders());
+//        UserEntity.setOrders(existingUser.getOrders());
 //
-//        User.setProducts(existingUser.getProducts());
+//        UserEntity.setProducts(existingUser.getProducts());
 //
-//        userRepository.save(User);
+//        userRepository.save(UserEntity);
     }
 
 
     @Override
     public void saveUser(UserRequestDTO userRequestDTO) {
-        User User = userConverter.toEntity(userRequestDTO);
-        User.setPassword(passwordService.encodePassword(userRequestDTO.getPassword()));
-        userRepository.save(User);
+        UserEntity UserEntity = userConverter.toEntity(userRequestDTO);
+        UserEntity.setPassword(passwordService.encodePassword(userRequestDTO.getPassword()));
+        userRepository.save(UserEntity);
     }
 
     @Override

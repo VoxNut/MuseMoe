@@ -1,6 +1,6 @@
 package com.javaweb.service.impl;
 
-import com.javaweb.entity.User;
+import com.javaweb.entity.UserEntity;
 import com.javaweb.enums.AccountStatus;
 import com.javaweb.model.dto.MyUserDetail;
 import com.javaweb.repository.UserRepository;
@@ -24,7 +24,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     @Transactional
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User userEntity = userRepository.findOneByUsernameAndAccountStatus(username, AccountStatus.ACTIVE);
+        UserEntity userEntity = userRepository.findOneByUsernameAndAccountStatus(username, AccountStatus.ACTIVE);
         if (userEntity == null) {
             throw new UsernameNotFoundException("Username not found");
         }
@@ -32,8 +32,8 @@ public class CustomUserDetailsService implements UserDetailsService {
         List<GrantedAuthority> authorities = new ArrayList<>();
         userEntity.getRoles()
                 .forEach(role ->
-                authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getCode()))
-        );
+                        authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getCode()))
+                );
 
         MyUserDetail myUserDetail = new MyUserDetail(
                 username,

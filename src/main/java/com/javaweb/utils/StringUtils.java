@@ -22,31 +22,6 @@ public class StringUtils {
         return !isBlank(str);
     }
 
-    public static String getRelativeFilePath(File selectedFile) {
-        try {
-            Path absolutePath = selectedFile.toPath();
-            Path basePath = Paths.get("").toAbsolutePath();
-            Path relativePath = basePath.relativize(absolutePath);
-            return relativePath.toString();
-        } catch (IllegalArgumentException e) {
-            System.err.println("Cannot relativize the paths: " + e.getMessage());
-            return selectedFile.getPath();
-        }
-    }
 
-    public static String getRelativeFilePath(String absolutePath) {
-        Path path = Paths.get(absolutePath);
-        if (!path.isAbsolute()) {
-            return absolutePath;
-        }
-        Path base = Paths.get("").toAbsolutePath();
-        try {
-            Path relativePath = base.relativize(path);
-            return relativePath.toString();
-        } catch (IllegalArgumentException e) {
-            System.err.println("Cannot relativize the paths: " + e.getMessage());
-            return absolutePath;
-        }
-    }
 
 }

@@ -1,41 +1,35 @@
 package com.javaweb.view.custom.musicplayer;
 
 import com.javaweb.constant.AppConstant;
+import com.javaweb.model.dto.PlaylistDTO;
+import com.javaweb.model.dto.SongDTO;
+import com.javaweb.utils.CommonApiUtil;
 import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
-import com.javaweb.utils.StringUtils;
 import com.javaweb.view.HomePage;
 import de.androidpit.colorthief.ColorThief;
 import lombok.Getter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.Setter;
 
 import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class MusicPlayerGUI extends JFrame {
-    private static final Logger log = LoggerFactory.getLogger(MusicPlayerGUI.class);
-    private static MusicPlayerGUI instance;
+    @Setter
+    public static MusicPlayerGUI instance;
     @Getter
-    private MusicPlayer musicPlayer;
-    private JFileChooser jFileChooser;
+    private final MusicPlayer musicPlayer;
     private JLabel songTitle, songArtist, songImageLabel;
     private JPanel playbackBtns;
     private JSlider playbackSlider;
     private JSlider volumeSlider;
-    private JLabel initialMessageLabel;
+    private final JLabel initialMessageLabel;
     private JPanel mainPanel;
+    @Getter
     private JLabel labelBeginning;
     private JLabel labelEnd;
     private JToolBar toolBar; // Reference to the toolbar
@@ -46,28 +40,31 @@ public class MusicPlayerGUI extends JFrame {
     private JMenuBar menuBar;
     private JMenuItem loadSong;
     private JMenuItem loadPlaylist;
-    private JMenuItem createPlaylist;
     private JMenu songMenu;
     private JMenu playlistMenu;
     @Getter
-    private Color dialogTextColor;
+    private Color textColor = AppConstant.TEXT_COLOR;
     @Getter
-    private Color dialogThemeColor;
+    private Color backgroundColor = AppConstant.BACKGROUND_COLOR;
     @Getter
-    private Color tertiaryColor;
+    private Color accentColor = backgroundColor.darker();
     private JButton replayButton;
     private JButton shuffleButton;
     private JLabel speakerLabel;
-    private ImageIcon spotifyIcon;
+    private final ImageIcon spotifyIcon;
     private JButton heartButton;
     private JButton repeatButton;
+    @Getter
+    @Setter
     private JLabel playlistNameLabel;
 
-
+    private SongSelectionPanel songSelectionPanel;
+    private PlaylistSelectionPanel playlistPanel;
+    private PlaylistPanel songPanel;
     @Getter
-    private HomePage homePage;
+    private final HomePage homePage;
 
-    private MusicPlayerGUI(HomePage homePage) throws IOException {
+    private MusicPlayerGUI(HomePage homePage) {
         super("MuseMoe MiniPlayer");
         getRootPane().putClientProperty("TitlePane.font", FontUtil.getSpotifyFont(Font.BOLD, 18));
         getRootPane().putClientProperty("JRootPane.titleBarBackground", AppConstant.BACKGROUND_COLOR);
@@ -83,7 +80,7 @@ public class MusicPlayerGUI extends JFrame {
         this.homePage = homePage;
         // setOp
         // Set the size and default close operation
-        setSize(410, 650);
+        setSize(420, 680);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 
         // Center the frame on the screen and prevent resizing
@@ -98,12 +95,7 @@ public class MusicPlayerGUI extends JFrame {
 
         // Initialize the music player and file chooser
         musicPlayer = new MusicPlayer(this);
-        jFileChooser = new JFileChooser();
-        jFileChooser.setPreferredSize(AppConstant.FILE_CHOOSER_SIZE);
 
-        // Set the default directory and file filter
-        jFileChooser.setCurrentDirectory(new File("src/main/java/com/javaweb/view/custom/musicplayer/audio"));
-        jFileChooser.setFileFilter(new FileNameExtensionFilter("MP3 Files", "mp3"));
 
         // Add the toolbar to the NORTH position
         addToolbar();
@@ -115,10 +107,8 @@ public class MusicPlayerGUI extends JFrame {
         initialMessageLabel.setHorizontalAlignment(SwingConstants.CENTER);
         add(initialMessageLabel, BorderLayout.CENTER);
         spotifyIcon = GuiUtil.createImageIcon(AppConstant.SPOTIFY_LOGO_PATH, 30, 30);
-        GuiUtil.changeIconColor(spotifyIcon, AppConstant.TEXT_COLOR);
+        GuiUtil.changeIconColor(spotifyIcon, textColor);
         setIconImage(spotifyIcon.getImage());
-        dialogTextColor = AppConstant.TEXT_COLOR;
-        dialogThemeColor = AppConstant.BACKGROUND_COLOR;
 
     }
 
@@ -143,29 +133,29 @@ public class MusicPlayerGUI extends JFrame {
         // Center align components
         mainPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Add the song image label
-        songImageLabel = new JLabel();
-        songImageLabel.setIcon(GuiUtil.createImageIcon(AppConstant.DEFAULT_COVER_PATH, 300, 300));
-        songImageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        songImageLabel.setBounds(50, 25, 300, 300);
 
         playlistNameLabel = new JLabel();
-        playlistNameLabel.setFont(FontUtil.getSpotifyFont(Font.BOLD, 12));
-        playlistNameLabel.setForeground(dialogTextColor);
+        playlistNameLabel.setFont(FontUtil.getSpotifyFont(Font.BOLD, 14));
+        playlistNameLabel.setForeground(textColor);
         playlistNameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        playlistNameLabel.setHorizontalAlignment(SwingConstants.CENTER);
         playlistNameLabel.setVisible(false);
 
         // Create a fixed height panel to contain the label
         JPanel playlistLabelPanel = new JPanel();
         playlistLabelPanel.setLayout(new BoxLayout(playlistLabelPanel, BoxLayout.Y_AXIS));
-        playlistLabelPanel.setPreferredSize(new Dimension(400, 20));
-        playlistLabelPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
+        playlistLabelPanel.setPreferredSize(new Dimension(400, 30));
         playlistLabelPanel.setOpaque(false);
-        playlistLabelPanel.add(Box.createVerticalGlue());
 
+
+        playlistLabelPanel.add(Box.createVerticalStrut(5));
         playlistLabelPanel.add(playlistNameLabel);
 
-        mainPanel.add(playlistLabelPanel);
+        // Add the song image label
+        songImageLabel = new JLabel();
+        songImageLabel.setIcon(GuiUtil.createImageIcon(AppConstant.DEFAULT_COVER_PATH, 300, 300));
+        songImageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        songImageLabel.setBounds(50, 25, 300, 300);
 
 
         //Add the imagePanel
@@ -176,11 +166,16 @@ public class MusicPlayerGUI extends JFrame {
         //Volume Slider
         configureVolumeSlider();
         volumeSlider.setBounds(360, 90, 20, 150);
+
+
         //Volume Icon
         speakerLabel = new JLabel();
         speakerLabel.setIcon(GuiUtil.createImageIcon(AppConstant.SPEAKER_75_ICON, 20, 20));
         GuiUtil.changeLabelIconColor(speakerLabel, AppConstant.TEXT_COLOR);
         speakerLabel.setBounds(363, 240, 20, 20);
+
+
+        mainPanel.add(playlistLabelPanel);
 
         imagePanel.add(songImageLabel);
         imagePanel.add(volumeSlider);
@@ -192,7 +187,7 @@ public class MusicPlayerGUI extends JFrame {
         // Add the song title label
         songTitle = new JLabel("Song Title");
         songTitle.setFont(FontUtil.getSpotifyFont(Font.BOLD, 24));
-        songTitle.setForeground(dialogTextColor);
+        songTitle.setForeground(textColor);
         songTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
         mainPanel.add(Box.createVerticalStrut(10));
         mainPanel.add(songTitle);
@@ -200,7 +195,7 @@ public class MusicPlayerGUI extends JFrame {
         // Add the song artist label
         songArtist = new JLabel("Artist");
         songArtist.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 24));
-        songArtist.setForeground(dialogTextColor);
+        songArtist.setForeground(textColor);
         songArtist.setAlignmentX(Component.CENTER_ALIGNMENT);
         mainPanel.add(Box.createVerticalStrut(10));
         mainPanel.add(songArtist);
@@ -220,17 +215,9 @@ public class MusicPlayerGUI extends JFrame {
 
         heartButton = GuiUtil.changeButtonIconColor(AppConstant.HEART_OUTLINE_ICON, AppConstant.TEXT_COLOR, 30, 30);
         heartButton.addActionListener(e -> {
-            try {
-                toggleLikeSong(musicPlayer.getCurrentSong());
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
-            try {
-                updateHeartButtonIcon(musicPlayer.getCurrentSong());
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
+            toggleHeartButton(musicPlayer.getCurrentSong());
         });
+
         heartButton.setBounds(370, 0, 30, 30);
 
         repeatButton = GuiUtil.changeButtonIconColor(AppConstant.REPEAT_ICON_PATH, AppConstant.TEXT_COLOR, 20, 20);
@@ -249,10 +236,6 @@ public class MusicPlayerGUI extends JFrame {
         playbackSliderPanel.add(Box.createVerticalStrut(1));
         playbackSliderPanel.add(labelPanel);
 
-
-//        mainPanel.add(playbackSlider);
-//        mainPanel.add(Box.createVerticalStrut(1));
-//        mainPanel.add(createLabelsPanel());
 
         mainPanel.add(playbackSliderPanel);
 
@@ -275,15 +258,14 @@ public class MusicPlayerGUI extends JFrame {
         labelsPanel.setOpaque(false);
 
         labelBeginning = GuiUtil.createSpotifyFontLabel("00:00", Font.PLAIN, 18);
-        labelBeginning.setForeground(dialogTextColor);
+        labelBeginning.setForeground(textColor);
 
         labelEnd = GuiUtil.createSpotifyFontLabel("00:00", Font.PLAIN, 18);
-        labelEnd.setForeground(dialogTextColor);
+        labelEnd.setForeground(textColor);
 
         // Add labels to labelsPanel
         labelsPanel.add(labelBeginning, BorderLayout.WEST);
         labelsPanel.add(labelEnd, BorderLayout.EAST);
-//        labelsPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, labelsPanel.getPreferredSize().height));
 
         return labelsPanel;
     }
@@ -312,23 +294,47 @@ public class MusicPlayerGUI extends JFrame {
         // Add "Load Song" menu item
         loadSong = GuiUtil.createMenuItem("Load Song");
         loadSong.addActionListener(e -> {
-            int result = jFileChooser.showOpenDialog(MusicPlayerGUI.this);
-            File selectedFile = jFileChooser.getSelectedFile();
-
-            if (result == JFileChooser.APPROVE_OPTION && selectedFile != null) {
-                Song song = new Song(selectedFile.getPath());
+            try {
+                musicPlayer.setCurrentPlaylist(null);
+                //Init essential UI
                 remove(initialMessageLabel);
-                try {
-                    addGuiComponents();
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                }
-                try {
-                    musicPlayer.loadSong(song);
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
+                addGuiComponents();
+
+                // Fetch all downloaded songs;
+                List<SongDTO> songs = CommonApiUtil.fetchUserDownloadedSongs();
+
+                if (songs.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "No songs downloaded!", "Info", JOptionPane.INFORMATION_MESSAGE);
+                    return;
                 }
 
+                // Create and display the SongSelectionPanel
+                songSelectionPanel = new SongSelectionPanel(songs);
+                songSelectionPanel.applyTheme(backgroundColor, textColor, accentColor);
+                JDialog songDialog = songSelectionPanel.createStyledDialog(this, "Select Song");
+                songDialog.setContentPane(songSelectionPanel);
+                songDialog.pack();
+                songDialog.setLocationRelativeTo(this);
+
+                // Add listeners for song selection and cancellation
+                songSelectionPanel.addPropertyChangeListener("songSelected", evt -> {
+                    SongDTO selectedSong = (SongDTO) evt.getNewValue();
+                    songDialog.dispose();
+
+                    // Load the selected song into the music player
+                    try {
+                        musicPlayer.loadSong(selectedSong);
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                        JOptionPane.showMessageDialog(this, "Failed to load the song!", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                });
+
+                songSelectionPanel.addPropertyChangeListener("cancel", evt -> songDialog.dispose());
+                songDialog.setVisible(true);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Failed to load songs!", "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
         songMenu.add(loadSong);
@@ -337,43 +343,45 @@ public class MusicPlayerGUI extends JFrame {
         playlistMenu = GuiUtil.createMenu("Playlist");
         menuBar.add(playlistMenu);
 
-        // Add "Create Playlist" menu item
-        createPlaylist = GuiUtil.createMenuItem("Create Playlist");
-
-        createPlaylist.addActionListener(e -> {
-            try {
-                openPlaylistDialog();
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
-        });
-        playlistMenu.add(createPlaylist);
-
         // Add "Load Playlist" menu item
         loadPlaylist = GuiUtil.createMenuItem("Load Playlist");
 
         loadPlaylist.addActionListener(e -> {
-            JFileChooser jFileChooser = new JFileChooser();
-            jFileChooser.setPreferredSize(AppConstant.FILE_CHOOSER_SIZE);
-            jFileChooser.setFileFilter(new FileNameExtensionFilter("Playlist Files", "txt"));
-            jFileChooser.setCurrentDirectory(new File("src/main/java/com/javaweb/view/custom/musicplayer/playlist"));
+            try {
 
-            int result = jFileChooser.showOpenDialog(MusicPlayerGUI.this);
-            File selectedFile = jFileChooser.getSelectedFile();
-
-            if (result == JFileChooser.APPROVE_OPTION && selectedFile != null) {
                 remove(initialMessageLabel);
-                try {
-                    addGuiComponents();
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
+                addGuiComponents();
+                // Fetch the user's playlists
+                List<PlaylistDTO> playlists = CommonApiUtil.fetchPlaylistByUserId();
+
+                if (playlists.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "No playlists found!", "Info", JOptionPane.INFORMATION_MESSAGE);
+                    return;
                 }
 
-                try {
-                    musicPlayer.loadPlaylist(selectedFile);
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                }
+                // Create and display the PlaylistSelectionPanel
+                playlistPanel = new PlaylistSelectionPanel(playlists);
+                playlistPanel.applyTheme(backgroundColor, textColor, accentColor);
+
+                JDialog playlistDialog = playlistPanel.createStyledDialog(this, "Select Playlist");
+
+
+                // Add listeners for playlist selection and cancellation
+                playlistPanel.addPropertyChangeListener("playlistSelected", evt -> {
+                    PlaylistDTO selectedPlaylist = (PlaylistDTO) evt.getNewValue();
+                    musicPlayer.setCurrentPlaylist(selectedPlaylist);
+                    playlistDialog.dispose();
+
+                    // Show the songs in the selected playlist
+                    showSongSelectionDialog(selectedPlaylist);
+                });
+
+                playlistPanel.addPropertyChangeListener("cancel", evt -> playlistDialog.dispose());
+
+                playlistDialog.setVisible(true);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Failed to load playlists!", "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
         playlistMenu.add(loadPlaylist);
@@ -473,15 +481,36 @@ public class MusicPlayerGUI extends JFrame {
     public void toggleShuffleButton(boolean enabled) throws IOException {
         if (!enabled) {
             shuffleButton.setIcon(GuiUtil.changeButtonIconColor(AppConstant.SHUFFLE_ICON_PATH,
-                    GuiUtil.darkenColor(dialogTextColor, 0.2f), 25, 25).getIcon());
+                    GuiUtil.darkenColor(textColor, 0.2f), 25, 25).getIcon());
         } else {
             shuffleButton.setIcon(GuiUtil.changeButtonIconColor(AppConstant.SHUFFLE_ICON_PATH,
-                    dialogTextColor, 25, 25).getIcon());
+                    textColor, 25, 25).getIcon());
         }
     }
 
+    private void styleMenuItem(JMenuItem menuItem, Color bgColor, Color textColor, Color hoverColor) {
+        menuItem.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
+        menuItem.setMargin(new Insets(6, 12, 6, 12));
+        menuItem.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
+        menuItem.setBackground(bgColor);
+        menuItem.setForeground(textColor);
+
+        // Add hover effect that matches our theme
+        menuItem.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                menuItem.setBackground(hoverColor);
+                menuItem.setForeground(bgColor);
+            }
+
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                menuItem.setBackground(bgColor);
+                menuItem.setForeground(textColor);
+            }
+        });
+    }
+
     // Method to update the song title and artist
-    public void updateSongTitleAndArtist(Song song) {
+    public void updateSongTitleAndArtist(SongDTO song) {
         songTitle.setText(song.getSongTitle());
         songArtist.setText(song.getSongArtist());
     }
@@ -491,7 +520,7 @@ public class MusicPlayerGUI extends JFrame {
         playbackSlider.setValue(frame);
     }
 
-    public void updatePlaybackSlider(Song song) {
+    public void updatePlaybackSlider(SongDTO song) {
         // Set slider range based on total frames instead of milliseconds
         int totalFrames = song.getMp3File().getFrameCount();
         playbackSlider.setMaximum(totalFrames);
@@ -511,176 +540,221 @@ public class MusicPlayerGUI extends JFrame {
         labelBeginning.setText(formattedTime);
     }
 
-    private void toggleLikeSong(Song song) throws IOException {
-        Path path = Paths.get(AppConstant.LIKED_SONG_PATH);
-        if (!Files.exists(path)) {
-            Files.createFile(path);
-        }
-
-        List<String> likedSongs = Files.readAllLines(path);
-        String songPath = StringUtils.getRelativeFilePath(song.getFilePath());
-
-        if (likedSongs.contains(songPath)) {
-            likedSongs.remove(songPath);
-        } else {
-            likedSongs.add(songPath);
-        }
-
-        Files.write(path, likedSongs);
-    }
-
-    private void updateHeartButtonIcon(Song song) throws IOException {
-        Path path = Paths.get(AppConstant.LIKED_SONG_PATH);
-        if (Files.exists(path)) {
-            List<String> likedSongs = Files.readAllLines(path);
-            if (likedSongs.contains(StringUtils.getRelativeFilePath(song.getFilePath()))) {
-                heartButton.setIcon(GuiUtil.createImageIcon(AppConstant.HEART_ICON, 25, 25));
-                GuiUtil.changeButtonIconColor(heartButton, dialogTextColor);
-            } else {
-                heartButton.setIcon(GuiUtil.createImageIcon(AppConstant.HEART_OUTLINE_ICON, 25, 25));
-                GuiUtil.changeButtonIconColor(heartButton, dialogTextColor);
-
-            }
+    private void toggleHeartButton(SongDTO song) {
+        boolean liked = CommonApiUtil.createSongLikes(song.getId());
+        if (!liked) {
+            heartButton.setIcon(GuiUtil.createImageIcon(AppConstant.HEART_ICON, 25, 25));
+            GuiUtil.changeButtonIconColor(heartButton, textColor);
         } else {
             heartButton.setIcon(GuiUtil.createImageIcon(AppConstant.HEART_OUTLINE_ICON, 25, 25));
-            GuiUtil.changeButtonIconColor(heartButton, dialogTextColor);
+            GuiUtil.changeButtonIconColor(heartButton, textColor);
         }
     }
 
-    public void updateSongDetails(Song song) throws IOException {
+
+    private void updateHeartButtonIcon(SongDTO song) {
+        boolean liked = CommonApiUtil.checkSongLiked(song.getId());
+        if (liked) {
+            heartButton.setIcon(GuiUtil.createImageIcon(AppConstant.HEART_ICON, 25, 25));
+            GuiUtil.changeButtonIconColor(heartButton, textColor);
+        } else {
+            heartButton.setIcon(GuiUtil.createImageIcon(AppConstant.HEART_OUTLINE_ICON, 25, 25));
+            GuiUtil.changeButtonIconColor(heartButton, textColor);
+        }
+    }
+
+    public void updateSongDetails(SongDTO song) {
         updateSongTitleAndArtist(song);
         updateSongImage(song);
-        try {
-            updateHeartButtonIcon(song);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        updateHeartButtonIcon(song);
     }
 
     // Method to update the song image
-    public void updateSongImage(Song song) throws IOException {
+    public void updateSongImage(SongDTO song) {
         if (song.getSongImage() != null) {
-            // ImageIcon imageIcon = new ImageIcon(song.getSongImage());
-
+            // Apply rounded corners for a modern look
             songImageLabel.setIcon(GuiUtil.createRoundedCornerImageIcon(song.getSongImage(), 30));
 
-            // Extract the top two dominant colors
-            int[][] dominantColors = ColorThief.getPalette(song.getSongImage(), 3, 1, false);
-            if (dominantColors != null && dominantColors.length >= 2) {
+            // Extract colors from the image for a cohesive color theme
+            int[][] dominantColors = ColorThief.getPalette(song.getSongImage(), 5, 1, false);
+            if (dominantColors != null && dominantColors.length >= 3) {
+                // Get primary, secondary, and tertiary colors from the image
                 Color primaryColor = new Color(dominantColors[0][0], dominantColors[0][1], dominantColors[0][2]);
                 Color secondaryColor = new Color(dominantColors[1][0], dominantColors[1][1], dominantColors[1][2]);
-                tertiaryColor = new Color(dominantColors[2][0], dominantColors[2][1], dominantColors[2][2]);
-                // change the primary and secondary color if the contrast ration is too low
+                accentColor = new Color(dominantColors[2][0], dominantColors[2][1], dominantColors[2][2]);
+
+                // Enhance colors for better UI appearance
+                primaryColor = enhanceColor(primaryColor);
+
+                // Calculate contrast for text readability
                 double contrastRatio = GuiUtil.calculateContrast(primaryColor, secondaryColor);
+                backgroundColor = primaryColor;
+
+                // Ensure text is readable against the background
                 if (contrastRatio < 4.5) {
-                    dialogThemeColor = primaryColor;
-                    dialogTextColor = GuiUtil.lightenColor(primaryColor, 0.2f);
+                    textColor = createHighContrastTextColor(primaryColor);
                 } else {
-                    dialogThemeColor = primaryColor;
-                    dialogTextColor = secondaryColor;
+                    textColor = secondaryColor;
                 }
+
+                // Apply the new color theme
                 adjustColor();
             }
         } else {
+            // Default styling when no image is available
             ImageIcon defaultIcon = GuiUtil.createImageIcon(AppConstant.DEFAULT_COVER_PATH, 300, 300);
             songImageLabel.setIcon(defaultIcon);
 
-            // Set default colors
-            dialogThemeColor = AppConstant.BACKGROUND_COLOR;
-            dialogTextColor = AppConstant.TEXT_COLOR;
+            // Use default colors
+            backgroundColor = AppConstant.BACKGROUND_COLOR;
+            textColor = AppConstant.TEXT_COLOR;
 
             adjustColor();
+        }
+    }
 
+    // New helper method to enhance colors for better visual appeal
+    private Color enhanceColor(Color color) {
+        float[] hsb = Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), null);
+
+        // Slightly increase saturation for more vibrant colors
+        hsb[1] = Math.min(1.0f, hsb[1] * 1.1f);
+
+        // Adjust brightness to ensure it's not too dark or too light
+        if (hsb[2] < 0.2f) {
+            hsb[2] = 0.2f; // Ensure dark colors are visible
+        } else if (hsb[2] > 0.9f) {
+            hsb[2] = 0.9f; // Prevent colors that are too bright
+        }
+
+        return Color.getHSBColor(hsb[0], hsb[1], hsb[2]);
+    }
+
+    // New helper method to create high-contrast text color
+    private Color createHighContrastTextColor(Color backgroundColor) {
+        float[] hsb = Color.RGBtoHSB(backgroundColor.getRed(), backgroundColor.getGreen(), backgroundColor.getBlue(), null);
+
+        if (hsb[2] < 0.5) {
+            return GuiUtil.lightenColor(backgroundColor, 0.6f);
+        } else {
+            return GuiUtil.darkenColor(backgroundColor, 0.6f);
         }
     }
 
     public void adjustColor() {
+        Color gradientCenter = GuiUtil.lightenColor(backgroundColor, 0.05f);
+        Color gradientOuter = GuiUtil.darkenColor(backgroundColor, 0.2f);
+
+        Color titleBarBackground = GuiUtil.darkenColor(backgroundColor, 0.1f);
         getRootPane().putClientProperty("TitlePane.font", FontUtil.getSpotifyFont(Font.BOLD, 18));
-        getRootPane().putClientProperty("JRootPane.titleBarBackground", GuiUtil.darkenColor(dialogThemeColor, 0.2f));
-        getRootPane().putClientProperty("JRootPane.titleBarForeground", dialogTextColor);
+        getRootPane().putClientProperty("JRootPane.titleBarBackground", titleBarBackground);
+        getRootPane().putClientProperty("JRootPane.titleBarForeground", textColor);
+        getRootPane().putClientProperty("JRootPane.titleBarInactiveBackground", titleBarBackground);
+        getRootPane().putClientProperty("JRootPane.titleBarInactiveForeground",
+                GuiUtil.darkenColor(textColor, 0.2f));
 
-        // Optional: To ensure consistent inactive state colors
-        getRootPane().putClientProperty("JRootPane.titleBarInactiveBackground",
-                GuiUtil.darkenColor(dialogThemeColor, 0.2f));
-        getRootPane().putClientProperty("JRootPane.titleBarInactiveForeground", dialogTextColor);
-
-        // Apply the changes to this frame's root pane
         SwingUtilities.updateComponentTreeUI(this.getContentPane());
 
-        loadSong.setMargin(new Insets(0, 0, 0, 0));
-        loadSong.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
-        loadSong.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
+        Color menuBackground = GuiUtil.darkenColor(backgroundColor, 0.1f);
+        Color menuForeground = textColor;
+        Color hoverColor = accentColor;
 
-        createPlaylist.setMargin(new Insets(0, 0, 0, 0));
-        createPlaylist.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
-        createPlaylist.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
+        styleMenuItem(loadSong, menuBackground, menuForeground, hoverColor);
+        styleMenuItem(loadPlaylist, menuBackground, menuForeground, hoverColor);
 
-        loadPlaylist.setMargin(new Insets(0, 0, 0, 0));
-        loadPlaylist.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
-        loadPlaylist.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
+
+        float centerX = 0.5f;
+        float centerY = 0.3f;
+        float radius = 1.0f;
+
+        GuiUtil.setGradientBackground(mainPanel, gradientCenter, gradientOuter, centerX, centerY, radius);
+
+
+        applyConsistentButtonColors(textColor);
+
+        // Set slider colors with better contrast
+        playbackSlider.setBackground(GuiUtil.lightenColor(backgroundColor, 0.1f));
+        playbackSlider.setForeground(accentColor);
+        volumeSlider.setBackground(GuiUtil.lightenColor(backgroundColor, 0.05f));
+        volumeSlider.setForeground(accentColor);
+
+        // Style menu components
+        toolBar.setForeground(menuForeground);
+        toolBar.setBackground(menuBackground);
+        menuBar.setBackground(titleBarBackground);
+        menuBar.setForeground(menuForeground);
+        songMenu.setBackground(menuBackground);
+        songMenu.setForeground(menuForeground);
+        playlistMenu.setBackground(menuBackground);
+        playlistMenu.setForeground(menuForeground);
+
 
         songMenu.getPopupMenu().setBorder(null);
 
         playlistMenu.getPopupMenu().setBorder(null);
 
-        GuiUtil.setGradientBackground(mainPanel, dialogThemeColor, GuiUtil.darkenColor(dialogThemeColor, 0.2f), 0.5f,
-                0.7f, 0.5f);
+        loadSong.setMargin(new Insets(0, 0, 0, 0));
+        loadSong.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
 
-        GuiUtil.changeButtonIconColor(nextButton, dialogTextColor);
-        GuiUtil.changeButtonIconColor(prevButton, dialogTextColor);
-        GuiUtil.changeButtonIconColor(playButton, dialogTextColor);
-        GuiUtil.changeButtonIconColor(pauseButton, dialogTextColor);
-        GuiUtil.changeButtonIconColor(replayButton, dialogTextColor);
-        GuiUtil.changeButtonIconColor(shuffleButton, dialogTextColor);
-        GuiUtil.changeLabelIconColor(speakerLabel, dialogTextColor);
-        GuiUtil.changeButtonIconColor(repeatButton, dialogTextColor);
-        GuiUtil.changeButtonIconColor(heartButton, dialogTextColor);
+        loadPlaylist.setMargin(new Insets(0, 0, 0, 0));
+        loadPlaylist.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
 
-        playbackSlider.setBackground(GuiUtil.lightenColor(dialogThemeColor, 0.3f));
-        playbackSlider.setForeground(tertiaryColor);
-        volumeSlider.setBackground(GuiUtil.lightenColor(dialogThemeColor, 0.2f));
-        volumeSlider.setForeground(dialogTextColor);
+        loadSong.setBackground(menuBackground);
+        loadSong.setForeground(menuForeground);
 
-        toolBar.setBackground(GuiUtil.darkenColor(dialogThemeColor, 0.2f));
-        toolBar.setForeground(dialogTextColor);
-        menuBar.setBackground(GuiUtil.darkenColor(dialogThemeColor, 0.2f));
-        menuBar.setForeground(dialogTextColor);
+        loadPlaylist.setBackground(menuBackground);
+        loadPlaylist.setForeground(menuForeground);
 
-        songMenu.setBackground(GuiUtil.darkenColor(dialogThemeColor, 0.2f));
-        songMenu.setForeground(dialogTextColor);
 
-        playlistMenu.setBackground(GuiUtil.darkenColor(dialogThemeColor, 0.2f));
-        playlistMenu.setForeground(dialogTextColor);
+        // Make text elements more visible with consistent colors
+        applyConsistentTextColors(textColor);
 
-        loadSong.setBackground(GuiUtil.darkenColor(dialogThemeColor, 0.2f));
-        loadSong.setForeground(dialogTextColor);
+        // Update the HomePage colors
+        homePage.extractColor(backgroundColor, textColor, accentColor);
 
-        createPlaylist.setBackground(GuiUtil.darkenColor(dialogThemeColor, 0.2f));
-        createPlaylist.setForeground(dialogTextColor);
-
-        loadPlaylist.setBackground(GuiUtil.darkenColor(dialogThemeColor, 0.2f));
-        loadPlaylist.setForeground(dialogTextColor);
-
-        songTitle.setForeground(dialogTextColor);
-        songArtist.setForeground(dialogTextColor);
-
-        labelBeginning.setForeground(dialogTextColor);
-        labelEnd.setForeground(dialogTextColor);
-        if (playlistNameLabel != null) {
-            playlistNameLabel.setForeground(dialogTextColor);
-        }
-
-        homePage.extractColor(dialogThemeColor, dialogTextColor, tertiaryColor);
-
-        GuiUtil.changeIconColor(spotifyIcon, dialogTextColor);
+        // Update icon colors
+        GuiUtil.changeIconColor(spotifyIcon, textColor);
         setIconImage(spotifyIcon.getImage());
 
-
+        // Update panel themes
+        updatePanelThemes();
     }
 
-    private void openPlaylistDialog() throws IOException {
-        MusicPlaylistDialog dialog = new MusicPlaylistDialog(this, this.dialogThemeColor, this.dialogTextColor);
-        dialog.setVisible(true);
+    // New helper method to apply consistent coloring to all buttons
+    private void applyConsistentButtonColors(Color baseColor) {
+        GuiUtil.changeButtonIconColor(nextButton, baseColor);
+        GuiUtil.changeButtonIconColor(prevButton, baseColor);
+        GuiUtil.changeButtonIconColor(playButton, baseColor);
+        GuiUtil.changeButtonIconColor(pauseButton, baseColor);
+        GuiUtil.changeButtonIconColor(replayButton, baseColor);
+        GuiUtil.changeButtonIconColor(shuffleButton, baseColor);
+        GuiUtil.changeLabelIconColor(speakerLabel, baseColor);
+        GuiUtil.changeButtonIconColor(repeatButton, baseColor);
+        GuiUtil.changeButtonIconColor(heartButton, baseColor);
+    }
+
+    // New helper method to apply consistent text styling
+    private void applyConsistentTextColors(Color baseColor) {
+        songTitle.setForeground(baseColor);
+        songArtist.setForeground(GuiUtil.darkenColor(baseColor, 0.1f));
+        labelBeginning.setForeground(baseColor);
+        labelEnd.setForeground(baseColor);
+        if (playlistNameLabel != null) {
+            playlistNameLabel.setForeground(baseColor);
+        }
+    }
+
+    // New helper method to update panel themes
+    private void updatePanelThemes() {
+        if (songSelectionPanel != null) {
+            songSelectionPanel.applyTheme(backgroundColor, textColor, accentColor);
+        }
+        if (songPanel != null) {
+            songPanel.applyTheme(backgroundColor, textColor, accentColor);
+        }
+        if (playlistPanel != null) {
+            playlistPanel.applyTheme(backgroundColor, textColor, accentColor);
+        }
     }
 
     // Methods to toggle play and pause buttons
@@ -714,7 +788,7 @@ public class MusicPlayerGUI extends JFrame {
         playbackSlider = new JSlider(JSlider.HORIZONTAL, 0, 100, 0);
         playbackSlider.setPreferredSize(new Dimension(500, 40));
         playbackSlider.setMaximumSize(new Dimension(Integer.MAX_VALUE, playbackSlider.getPreferredSize().height));
-        playbackSlider.setForeground(dialogTextColor);
+        playbackSlider.setForeground(textColor);
         playbackSlider.setFocusable(false);
         playbackSlider.setAlignmentX(Component.CENTER_ALIGNMENT);
 
@@ -791,7 +865,7 @@ public class MusicPlayerGUI extends JFrame {
                 }
 
                 speakerLabel.setIcon(GuiUtil.createImageIcon(iconPath, 20, 20));
-                GuiUtil.changeLabelIconColor(speakerLabel, dialogTextColor);
+                GuiUtil.changeLabelIconColor(speakerLabel, textColor);
             }
         });
     }
@@ -803,32 +877,46 @@ public class MusicPlayerGUI extends JFrame {
     public void updateRepeatButtonIcon() throws IOException {
         switch (musicPlayer.getRepeatMode()) {
             case NO_REPEAT:
-                repeatButton.setIcon(GuiUtil.changeButtonIconColor(AppConstant.REPEAT_ICON_PATH, dialogTextColor, 20, 20).getIcon());
+                repeatButton.setIcon(GuiUtil.changeButtonIconColor(AppConstant.REPEAT_ICON_PATH, textColor, 20, 20).getIcon());
                 break;
             case REPEAT_ALL:
-                repeatButton.setIcon(GuiUtil.changeButtonIconColor(AppConstant.ON_REPEAT_ICON_PATH, dialogTextColor, 20, 20).getIcon());
+                repeatButton.setIcon(GuiUtil.changeButtonIconColor(AppConstant.ON_REPEAT_ICON_PATH, textColor, 20, 20).getIcon());
                 break;
             case REPEAT_ONE:
-                repeatButton.setIcon(GuiUtil.changeButtonIconColor(AppConstant.REPEAT_1_ICON_PATH, dialogTextColor, 20, 20).getIcon());
+                repeatButton.setIcon(GuiUtil.changeButtonIconColor(AppConstant.REPEAT_1_ICON_PATH, textColor, 20, 20).getIcon());
                 break;
         }
     }
 
-    public void updatePlaylistName(File playlistFile) {
-        if (playlistFile != null) {
-            String fileName = playlistFile.getName();
-            // Remove .txt extension
-            String playlistName = fileName.substring(0, fileName.lastIndexOf('.'));
-            // Convert to title case and replace underscores with spaces
-            playlistName = playlistName.replace('_', ' ');
-            playlistName = Stream.of(playlistName.split(" "))
-                    .map(word -> word.substring(0, 1).toUpperCase() + word.substring(1).toLowerCase())
-                    .collect(Collectors.joining(" "));
 
-            playlistNameLabel.setText(playlistName);
-            playlistNameLabel.setVisible(true);
-        } else {
-            playlistNameLabel.setVisible(false);
+    private void showSongSelectionDialog(PlaylistDTO playlist) {
+        try {
+            // Create a panel to display the songs
+            songPanel = new PlaylistPanel(playlist.getSongs());
+            songPanel.applyTheme(backgroundColor, textColor, accentColor);
+            JDialog songDialog = songPanel.createStyledDialog(this, "Select Song");
+
+            // Add listeners for song selection and cancellation
+            songPanel.addPropertyChangeListener("songSelected", evt -> {
+                SongDTO selectedSong = (SongDTO) evt.getNewValue();
+                musicPlayer.setCurrentSong(selectedSong);
+                songDialog.dispose();
+
+                // Load the selected song into the music player
+                try {
+                    musicPlayer.loadSong(selectedSong);
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Failed to load the song!", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            });
+
+            songPanel.addPropertyChangeListener("cancel", evt -> songDialog.dispose());
+
+            songDialog.setVisible(true);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Failed to load songs!", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 

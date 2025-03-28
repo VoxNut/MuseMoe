@@ -1,9 +1,9 @@
 package com.javaweb.view.custom.musicplayer;
 
 import com.javaweb.constant.AppConstant;
+import com.javaweb.utils.FileUtil;
 import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
-import com.javaweb.utils.StringUtils;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -16,13 +16,13 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class MusicPlaylistDialog extends JDialog {
-    private MusicPlayerGUI musicPlayerGUI;
+    private final MusicPlayerGUI musicPlayerGUI;
 
     // store all the paths to be written to a txt file (when we load a playlist)
-    private List<JLabel> songPaths;
+    private final List<JLabel> songPaths;
 
-    private Color dialogThemeColor;
-    private Color dialogTextColor;
+    private final Color dialogThemeColor;
+    private final Color dialogTextColor;
     private JPanel songContainer;
     private JPanel mainPanel;
 
@@ -95,7 +95,7 @@ public class MusicPlaylistDialog extends JDialog {
 
 
                 // Convert to relative path
-                String relativePath = StringUtils.getRelativeFilePath(selectedFile);
+                String relativePath = FileUtil.getRelativeFilePath(selectedFile);
                 String songName = relativePath.substring(relativePath.lastIndexOf('\\') + 1, relativePath.lastIndexOf('.'));
                 if (isSongAlreadyAdded(songName)) {
                     if (isSongAlreadyAdded(songName)) {

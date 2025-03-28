@@ -1,7 +1,5 @@
 package com.javaweb.view;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.javaweb.constant.AppConstant;
 import com.javaweb.enums.AccountStatus;
 import com.javaweb.model.dto.RoleDTO;
@@ -11,21 +9,16 @@ import lombok.Getter;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.AuthenticationManager;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
-import java.io.IOException;
-import java.net.URLEncoder;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -34,9 +27,9 @@ import java.util.UUID;
 
 public class LoginPage extends JFrame {
     private static final Dimension FRAME_SIZE = new Dimension(1100, 934);
-    private static final String IMAGE_PATH = "src/main/java/com/javaweb/view/imgs/back_ground/Latte_Literature.png";
-    private CardLayout cardLayout;
-    private JPanel mainPanel;
+    private static final String IMAGE_PATH = "src/main/java/com/javaweb/view/imgs/back_ground/dark-blossom.jpg";
+    private final CardLayout cardLayout;
+    private final JPanel mainPanel;
     @Getter
     private JTextField usernameField;
     private JPasswordField passwordField;
@@ -44,7 +37,6 @@ public class LoginPage extends JFrame {
     private JButton exitButton;
     private JLabel statusLabel;
     private JLabel forgotPasswordLabel;
-    private AuthenticationManager authenticationManager;
 
     public LoginPage() {
         initializeFrame();
@@ -54,13 +46,14 @@ public class LoginPage extends JFrame {
         mainPanel.add(createSignUpPanel(), "signup");
         add(mainPanel);
         addEventListeners();
+        GuiUtil.applyWindowStyle(this);
     }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             LoginPage loginPage = new LoginPage();
             UIManager.put("TitlePane.iconSize", new Dimension(20, 20));
-            loginPage.setIconImage(GuiUtil.createImageIcon(AppConstant.COFFEE_SHOP_ICON_PATH, 100, 100).getImage());
+            loginPage.setIconImage(GuiUtil.createImageIcon(AppConstant.MUSE_MOE_ICON_PATH, 100, 100).getImage());
             loginPage.setVisible(true);
         });
     }
@@ -82,59 +75,6 @@ public class LoginPage extends JFrame {
         return mainPanel;
     }
 
-    private JPanel createImagePanel() {
-        ImageIcon imageIcon = new ImageIcon(IMAGE_PATH);
-        JLabel imageLabel = new JLabel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                double scale = Math.min(
-                        (double) getWidth() / imageIcon.getIconWidth(),
-                        (double) getHeight() / imageIcon.getIconHeight());
-                int width = (int) (imageIcon.getIconWidth() * scale);
-                int height = (int) (imageIcon.getIconHeight() * scale);
-                int x = (getWidth() - width) / 2;
-                int y = (getHeight() - height) / 2;
-                g.drawImage(imageIcon.getImage(), x, y, width, height, this);
-            }
-        };
-
-        // Create overlay panel
-        JPanel overlayPanel = new JPanel();
-        overlayPanel.setOpaque(false);
-        overlayPanel.setLayout(new BoxLayout(overlayPanel, BoxLayout.Y_AXIS));
-        overlayPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-        // 'Sign up' button
-        JButton signUpButton = createButton("<html><div style=\"text-align: center;\">Bạn là khách hàng?<br>ĐĂNG KÝ NGAY!</div></html>");
-        signUpButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        signUpButton.setMaximumSize(new Dimension(250, signUpButton.getPreferredSize().height));
-        signUpButton.addActionListener(e -> cardLayout.show(mainPanel, "signup"));
-
-        // Add components to overlay panel
-        overlayPanel.add(Box.createVerticalGlue());
-        overlayPanel.add(Box.createRigidArea(new Dimension(0, 20)));
-        overlayPanel.add(signUpButton);
-        overlayPanel.add(Box.createVerticalGlue());
-
-        // Layered pane to stack image and overlay
-        JLayeredPane layeredPane = new JLayeredPane();
-        imageLabel.setBounds(0, 0, getWidth() / 2, getHeight());
-        overlayPanel.setBounds(0, 0, getWidth() / 2, getHeight());
-
-        layeredPane.add(imageLabel, Integer.valueOf(0));
-        layeredPane.add(overlayPanel, Integer.valueOf(1));
-        JPanel imagePanel = new JPanel(new BorderLayout()) {
-            @Override
-            public void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                imageLabel.setSize(getSize());
-            }
-        };
-        imagePanel.add(layeredPane, BorderLayout.CENTER);
-
-        return imagePanel;
-    }
 
     private JPanel createSignUpPanel() {
         JPanel signUpPanel = new JPanel(new GridLayout(1, 2));
@@ -152,7 +92,7 @@ public class LoginPage extends JFrame {
         gbc.insets = new Insets(10, 10, 10, 10);
 
         // Title
-        JLabel signUpTitle = new JLabel("ĐĂNG KÝ", SwingConstants.CENTER);
+        JLabel signUpTitle = new JLabel("REGISTER", SwingConstants.CENTER);
 //        signUpTitle.putClientProperty( "FlatLaf.styleClass", "h1" );
         signUpTitle.setFont(FontUtil.getJetBrainsMonoFont(Font.BOLD, 55));
 
@@ -206,7 +146,7 @@ public class LoginPage extends JFrame {
         gbc.gridy++;
         gbc.gridwidth = 2;
         gbc.anchor = GridBagConstraints.CENTER;
-        JButton signUpButton = createButton("Đăng ký");
+        JButton signUpButton = createButton("Register");
         signUpButton.addActionListener(e -> handleSignUp(usernameField.getText(), emailField.getText(),
                 new String(passwordField.getPassword())));
         formPanel.add(signUpButton, gbc);
@@ -214,30 +154,145 @@ public class LoginPage extends JFrame {
         return formPanel;
     }
 
-    private JPanel createImagePanelWithSignInButton() {
-        ImageIcon imageIcon = new ImageIcon(IMAGE_PATH);
-        JLabel imageLabel = new JLabel() {
+    private JPanel createImagePanel() {
+        // Use a properly loaded high-quality image
+        ImageIcon originalIcon = new ImageIcon(IMAGE_PATH);
+        Image originalImage = originalIcon.getImage();
+
+        // Create a panel with custom painting for smooth scaling
+        JPanel imagePanel = new JPanel(new BorderLayout()) {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                // Scale image to fill the panel while maintaining aspect ratio
+
+                // Use Graphics2D for better quality rendering
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+
+                // Fill with black in case of letterboxing
+                g2d.setColor(Color.BLACK);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+
+                // Calculate scale to fill the panel while maintaining aspect ratio
+                double imageWidth = originalImage.getWidth(this);
+                double imageHeight = originalImage.getHeight(this);
+                double panelWidth = getWidth();
+                double panelHeight = getHeight();
+
                 double scale = Math.max(
-                        (double) getWidth() / imageIcon.getIconWidth(),
-                        (double) getHeight() / imageIcon.getIconHeight());
-                int width = (int) (imageIcon.getIconWidth() * scale);
-                int height = (int) (imageIcon.getIconHeight() * scale);
-                g.drawImage(imageIcon.getImage(), 0, 0, width, height, this);
+                        panelWidth / imageWidth,
+                        panelHeight / imageHeight
+                );
+
+                // Calculate dimensions and position to center the image
+                int scaledWidth = (int) (imageWidth * scale);
+                int scaledHeight = (int) (imageHeight * scale);
+                int x = (int) ((panelWidth - scaledWidth) / 2);
+                int y = (int) ((panelHeight - scaledHeight) / 2);
+
+                // Draw the scaled image
+                g2d.drawImage(originalImage, x, y, scaledWidth, scaledHeight, this);
+
+                // Add a subtle darkening overlay for better text readability
+                g2d.setColor(new Color(0, 0, 0, 60)); // Black with 60/255 alpha
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+
+                g2d.dispose();
             }
         };
 
-        // Create overlay panel for sign in button
+        // Create overlay panel for the register button
         JPanel overlayPanel = new JPanel();
         overlayPanel.setOpaque(false);
         overlayPanel.setLayout(new BoxLayout(overlayPanel, BoxLayout.Y_AXIS));
-        overlayPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // 'Sign up' button
+        JButton signUpButton = createButton("<html><div style=\"text-align: center;\">Haven't got an account yet?<br>REGISTER NOW!</div></html>");
+        signUpButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        signUpButton.setMaximumSize(new Dimension(250, signUpButton.getPreferredSize().height));
+        signUpButton.addActionListener(e -> cardLayout.show(mainPanel, "signup"));
+
+        // Add components to overlay panel
+        overlayPanel.add(Box.createVerticalGlue());
+        overlayPanel.add(signUpButton);
+        overlayPanel.add(Box.createVerticalGlue());
+
+        // Add the overlay using a layered pane
+        JLayeredPane layeredPane = new JLayeredPane() {
+            @Override
+            public void doLayout() {
+                // Ensure components are properly sized when the panel is resized
+                for (Component c : getComponents()) {
+                    c.setBounds(0, 0, getWidth(), getHeight());
+                }
+            }
+        };
+
+        layeredPane.add(imagePanel, Integer.valueOf(0));
+        layeredPane.add(overlayPanel, Integer.valueOf(1));
+
+        JPanel containerPanel = new JPanel(new BorderLayout());
+        containerPanel.add(layeredPane, BorderLayout.CENTER);
+
+        return containerPanel;
+    }
+
+    private JPanel createImagePanelWithSignInButton() {
+        // Use a properly loaded high-quality image (same as login panel)
+        ImageIcon originalIcon = new ImageIcon(IMAGE_PATH);
+        Image originalImage = originalIcon.getImage();
+
+        // Create a panel with custom painting (identical to the login panel for consistency)
+        JPanel imagePanel = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+
+                // Use Graphics2D for better quality rendering
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+
+                // Fill with black in case of letterboxing
+                g2d.setColor(Color.BLACK);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+
+                // Calculate scale to fill the panel while maintaining aspect ratio
+                double imageWidth = originalImage.getWidth(this);
+                double imageHeight = originalImage.getHeight(this);
+                double panelWidth = getWidth();
+                double panelHeight = getHeight();
+
+                double scale = Math.max(
+                        panelWidth / imageWidth,
+                        panelHeight / imageHeight
+                );
+
+                // Calculate dimensions and position to center the image
+                int scaledWidth = (int) (imageWidth * scale);
+                int scaledHeight = (int) (imageHeight * scale);
+                int x = (int) ((panelWidth - scaledWidth) / 2);
+                int y = (int) ((panelHeight - scaledHeight) / 2);
+
+                // Draw the scaled image
+                g2d.drawImage(originalImage, x, y, scaledWidth, scaledHeight, this);
+
+                // Add a subtle darkening overlay for better text readability
+                g2d.setColor(new Color(0, 0, 0, 60)); // Black with 60/255 alpha
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+
+                g2d.dispose();
+            }
+        };
+
+        // Create overlay panel for login button
+        JPanel overlayPanel = new JPanel();
+        overlayPanel.setOpaque(false);
+        overlayPanel.setLayout(new BoxLayout(overlayPanel, BoxLayout.Y_AXIS));
 
         // Create and configure sign in button
-        JButton signInButton = createButton("Đăng nhập");
+        JButton signInButton = createButton("Login");
         signInButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         signInButton.addActionListener(e -> cardLayout.show(mainPanel, "login"));
 
@@ -246,66 +301,48 @@ public class LoginPage extends JFrame {
         overlayPanel.add(signInButton);
         overlayPanel.add(Box.createVerticalGlue());
 
-        // Use JLayeredPane to stack image and button
-        JLayeredPane layeredPane = new JLayeredPane();
-        layeredPane.addComponentListener(new ComponentAdapter() {
+        // Use JLayeredPane with the same layout logic as the login panel
+        JLayeredPane layeredPane = new JLayeredPane() {
             @Override
-            public void componentResized(ComponentEvent e) {
-                // Update bounds when resized
-                imageLabel.setBounds(0, 0, layeredPane.getWidth(), layeredPane.getHeight());
-                overlayPanel.setBounds(0, 0, layeredPane.getWidth(), layeredPane.getHeight());
+            public void doLayout() {
+                // Ensure components are properly sized when the panel is resized
+                for (Component c : getComponents()) {
+                    c.setBounds(0, 0, getWidth(), getHeight());
+                }
             }
-        });
+        };
 
-        layeredPane.add(imageLabel, Integer.valueOf(0));
+        layeredPane.add(imagePanel, Integer.valueOf(0));
         layeredPane.add(overlayPanel, Integer.valueOf(1));
 
-        JPanel imagePanel = new JPanel(new BorderLayout());
-        imagePanel.add(layeredPane, BorderLayout.CENTER);
+        JPanel containerPanel = new JPanel(new BorderLayout());
+        containerPanel.add(layeredPane, BorderLayout.CENTER);
 
-        return imagePanel;
+        return containerPanel;
     }
 
     private void handleSignUp(String username, String email, String password) {
         if (!validateInputFields(username, email, password)) {
             return;
         }
-        if (CommonApiUtil.fetchUserbyUsername(username) != null) {
-            GuiUtil.showWarningMessageDialog(LoginPage.this, "Username đã tồn tại vui lòng chọn một username khác!");
+        if (CommonApiUtil.fetchUserByUsername(username) != null) {
+            GuiUtil.showWarningMessageDialog(LoginPage.this, "username existed, please choose another username!");
+            return;
+        }
+        if (CommonApiUtil.fetchUserByEmail(email) != null) {
+            GuiUtil.showWarningMessageDialog(LoginPage.this, "email registered, please choose another email!");
             return;
         }
 
-        try {
-            CloseableHttpClient httpClient = HttpClientProvider.getHttpClient();
-            HttpPost httpPost = new HttpPost("http://localhost:8081/api/user/register");
-            httpPost.setHeader("Content-Type", "application/json");
 
-            // Create JSON object with user data
-            ObjectMapper mapper = new ObjectMapper();
-            ObjectNode json = mapper.createObjectNode();
-            json.put("username", username);
-            json.put("email", email);
-            json.put("password", password);
-
-            StringEntity entity = new StringEntity(json.toString(), StandardCharsets.UTF_8);
-            httpPost.setEntity(entity);
-
-            CloseableHttpResponse response = httpClient.execute(httpPost);
-            int statusCode = response.getStatusLine().getStatusCode();
-
-            if (statusCode == HttpStatus.CREATED.value()) {
-                GuiUtil.showSuccessMessageDialog(this, "Tạo tài khoản thành công. Bạn giờ có thể đăng nhập");
-                cardLayout.show(mainPanel, "login");
-            } else {
-                String responseBody = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-                GuiUtil.showErrorMessageDialog(this, "Lỗi khi tạo tài khoản " + responseBody);
-            }
-
-            response.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-            GuiUtil.showErrorMessageDialog(this, "Một lỗi đã xảy ra khi đăng ký.");
+        if (CommonApiUtil.createNewUser(username, password, email)) {
+            GuiUtil.showSuccessMessageDialog(this, "Create account successfully. You can log in now! :)");
+            cardLayout.show(mainPanel, "login");
+        } else {
+            GuiUtil.showErrorMessageDialog(this, "An error has occurred when creating account! ");
         }
+
+
     }
 
     private JPanel createRightPanel() {
@@ -333,7 +370,7 @@ public class LoginPage extends JFrame {
     }
 
     private void addLoginTitle(JPanel formPanel, GridBagConstraints gbc) {
-        JLabel loginTitle = new JLabel("ĐĂNG NHẬP", SwingConstants.CENTER);
+        JLabel loginTitle = new JLabel("LOGIN", SwingConstants.CENTER);
         loginTitle.setFont(FontUtil.getJetBrainsMonoFont(Font.BOLD, 55));
         loginTitle.setForeground(AppConstant.TEXT_COLOR);
         loginTitle.setBorder(BorderFactory.createEmptyBorder(0, 0, 60, 0));
@@ -371,8 +408,8 @@ public class LoginPage extends JFrame {
         gbc.anchor = GridBagConstraints.CENTER;
         JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         buttonsPanel.setBackground(AppConstant.BACKGROUND_COLOR);
-        loginButton = createButton("Đăng nhập");
-        exitButton = createButton("Thoát");
+        loginButton = createButton("Login");
+        exitButton = createButton("Exit");
         buttonsPanel.add(loginButton);
         buttonsPanel.add(exitButton);
         formPanel.add(buttonsPanel, gbc);
@@ -390,7 +427,7 @@ public class LoginPage extends JFrame {
         gbc.gridy++;
         gbc.gridwidth = 2;
         gbc.anchor = GridBagConstraints.CENTER;
-        forgotPasswordLabel = new JLabel("Quên mật khẩu?");
+        forgotPasswordLabel = new JLabel("Forgot your password?");
         forgotPasswordLabel.setFont(FontUtil.getJetBrainsMonoFont(Font.ITALIC, 13));
         forgotPasswordLabel.setForeground(AppConstant.TEXT_COLOR);
         forgotPasswordLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -434,84 +471,52 @@ public class LoginPage extends JFrame {
         String username = usernameField.getText().trim();
 
         if (username.isEmpty()) {
-            GuiUtil.showWarningMessageDialog(this, "Vui lòng nhập Username!.");
+            GuiUtil.showWarningMessageDialog(this, "Pleas enter Username!.");
             return;
         }
 
-        try {
-            CloseableHttpClient httpClient = HttpClientProvider.getHttpClient();
-            // Fetch user details by username
-            HttpGet httpGet = new HttpGet(
-                    "http://localhost:8081/api/user/username/" + URLEncoder.encode(username, "UTF-8"));
-            CloseableHttpResponse response = httpClient.execute(httpGet);
 
-            int statusCode = response.getStatusLine().getStatusCode();
-            if (statusCode == 200) {
-                String responseBody = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-                ObjectMapper objectMapper = new ObjectMapper();
-                UserDTO user = objectMapper.readValue(responseBody, UserDTO.class);
+        UserDTO user = CommonApiUtil.fetchUserByUsername(username);
 
-                String userEmail = user.getEmail();
+        String userEmail = user.getEmail();
 
-                // Generate a temporary password
-                String tempPassword = generateTemporaryPassword();
+        // Generate a temporary password
+        String tempPassword = generateTemporaryPassword();
 
-                // Update the user's password in the database
-                updatePasswordInDatabase(user.getId(), tempPassword);
-
-                // Send email with the temporary password
-                SendEmailUtil.sendEmailAsync(userEmail, tempPassword);
-
-                GuiUtil.showInfomationMessageDialog(this, "Một email kèm hướng dẫn đã được gửi cho bạn.");
-            } else if (statusCode == 500) {
-                GuiUtil.showErrorMessageDialog(this, "Không tìm thấy người dùng.");
-            } else {
-                GuiUtil.showErrorMessageDialog(this, "Một lỗi không mong muốn đã xảy ra, vui lòng thử lại sau.");
-            }
-            response.close();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            GuiUtil.showErrorMessageDialog(this, "Một lỗi đã xảy ra trong khi thực hiện yêu cầu của bạn.");
+        // Update the user's password in the database
+        if (updatePasswordInDatabase(user.getId(), tempPassword)) {
+            // Send email with the temporary password
+            SendEmailUtil.sendEmail(userEmail, tempPassword);
+            GuiUtil.showInfomationMessageDialog(this, "An email with instruction have been sending to you.");
+        } else {
+            GuiUtil.showErrorMessageDialog(this, "An error has occurred!");
         }
+
+
     }
 
     // Method to generate a temporary password
     private String generateTemporaryPassword() {
-        // Implement a secure way to generate a temporary password
         return UUID.randomUUID().toString().substring(0, 8);
     }
 
-    // Method to update the password in the database
-    private void updatePasswordInDatabase(Long userId, String tempPassword) throws IOException {
-        CloseableHttpClient httpClient = HttpClientProvider.getHttpClient();
-        HttpPut httpPut = new HttpPut("http://localhost:8081/api/user/" + userId + "/reset-password");
-        httpPut.setHeader("Content-Type", "application/json");
-
-        // Create a JSON object with the new password
-        ObjectMapper mapper = new ObjectMapper();
-        ObjectNode json = mapper.createObjectNode();
-        json.put("newPassword", tempPassword);
-
-        StringEntity entity = new StringEntity(json.toString(), StandardCharsets.UTF_8);
-        httpPut.setEntity(entity);
-
-        CloseableHttpResponse response = httpClient.execute(httpPut);
-        response.close();
+    private boolean updatePasswordInDatabase(Long userId, String tempPassword) {
+        return CommonApiUtil.updateUserPassword(userId, tempPassword);
     }
 
     private boolean validateInputFields(String username, String email, String password) {
         if (!ValidateUtil.isValidUsername(username)) {
-            GuiUtil.showWarningMessageDialog(this, "Username không hợp lệ.");
+            GuiUtil.showWarningMessageDialog(this, "Username not valid.");
             return false;
         }
         if (email != null) {
             if (!ValidateUtil.isValidEmail(email)) {
-                GuiUtil.showWarningMessageDialog(this, "Hãy nhập một email phù hợp.");
+                GuiUtil.showWarningMessageDialog(this, "Please try a proper email.");
                 return false;
             }
         }
         if (!ValidateUtil.isValidPassword(password)) {
-            GuiUtil.showWarningMessageDialog(this, "Password không hợp lệ.");
+            GuiUtil.showWarningMessageDialog(this, "Password not valid.");
             return false;
         }
         return true;
@@ -537,39 +542,36 @@ public class LoginPage extends JFrame {
                 // Authentication successful
                 statusLabel.setText("Login successful!");
                 // Fetch current user details
-                HttpGet userGet = new HttpGet("http://localhost:8081/api/user/me");
-                CloseableHttpResponse userResponse = httpClient.execute(userGet);
-                int userStatusCode = userResponse.getStatusLine().getStatusCode();
-                if (userStatusCode == 200) {
-                    String userResponseBody = EntityUtils.toString(userResponse.getEntity(), StandardCharsets.UTF_8);
-                    ObjectMapper objectMapper = new ObjectMapper();
-                    UserDTO user = objectMapper.readValue(userResponseBody, UserDTO.class);
-                    if (user.getAccountStatus().equals(AccountStatus.INACTIVE)) {
-                        statusLabel.setText("Người dùng không tồn tại hoặc đã bị xóa.");
-                        response.close();
-                    }
-                    String avatarLink = user.getAvatar().getFileUrl();
-                    String userFullName = user.getFullName();
-                    Set<String> roles = new HashSet<>();
-                    for (RoleDTO role : user.getRoles()) {
-                        roles.add("ROLE_" + role.getCode());
-                    }
-                    userResponse.close();
-                    response.close();
-                    this.dispose();
-                    HomePage homePage = new HomePage(avatarLink, userFullName, roles, user);
-                    UIManager.put("TitlePane.iconSize", new Dimension(20, 20));
-                    homePage.setIconImage(GuiUtil.createImageIcon(AppConstant.COFFEE_SHOP_ICON_PATH, 100, 100).getImage());
-                    homePage.setVisible(true);
-                } else {
-                    // Authentication failed
-                    statusLabel.setText("username hoặc password không đúng.");
+                CommonApiUtil.updateLastLoginTime();
+                UserDTO user = CommonApiUtil.fetchUserByUsername(username);
+                if (user.getAccountStatus().equals(AccountStatus.INACTIVE)) {
+                    statusLabel.setText("User not existed or deleted");
                     response.close();
                 }
+                String avatarLink;
+                if (user.getAvatar() != null) {
+                    avatarLink = user.getAvatar().getFileUrl();
+                } else {
+                    avatarLink = "";
+                }
+                String userFullName = user.getFullName();
+                Set<String> roles = new HashSet<>();
+                for (RoleDTO role : user.getRoles()) {
+                    roles.add("ROLE_" + role.getCode());
+                }
+                this.dispose();
+                HomePage homePage = new HomePage(avatarLink, userFullName, roles, user);
+                UIManager.put("TitlePane.iconSize", new Dimension(24, 24));
+                homePage.setIconImage(GuiUtil.createImageIcon(AppConstant.MUSE_MOE_ICON_PATH, 512, 512).getImage());
+                homePage.setVisible(true);
+            } else {
+                // Authentication failed
+                statusLabel.setText("Username or Password incorrect!");
+                response.close();
             }
         } catch (Exception e) {
             e.printStackTrace();
-            statusLabel.setText("Một lỗi đã xảy ra khi đăng nhập.");
+            statusLabel.setText("An error has occurred!");
         }
     }
 

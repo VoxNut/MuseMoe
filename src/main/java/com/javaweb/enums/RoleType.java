@@ -1,6 +1,6 @@
 package com.javaweb.enums;
 
-import com.javaweb.utils.BaseEnum;
+import com.javaweb.utils.client.impl.BaseEnum;
 import lombok.Getter;
 
 @Getter

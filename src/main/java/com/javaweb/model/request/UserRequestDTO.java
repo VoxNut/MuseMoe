@@ -13,9 +13,10 @@ import java.util.Set;
 public class UserRequestDTO extends AbstractDTO<UserRequestDTO> {
     private Long id;
     private String username;
+    private String password;
+    private String email;
     private String fullName;
     private String phone;
-    private String email;
     private Integer status;
     private String avatar;
     private Date createdDate;
@@ -25,6 +26,6 @@ public class UserRequestDTO extends AbstractDTO<UserRequestDTO> {
     private String role;
     private Set<RoleDTO> roles;
     private Set<String> requestRoles;
-    private String password;
+
 
 }

@@ -1,6 +1,6 @@
 package com.javaweb;
 
-import com.javaweb.utils.NumberFormatUtil;
+import com.javaweb.utils.FileUtil;
 import javazoom.jl.decoder.Bitstream;
 import javazoom.jl.decoder.Decoder;
 import javazoom.jl.decoder.Header;
@@ -13,6 +13,9 @@ import org.jaudiotagger.tag.datatype.Artwork;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 
 public class Test {
@@ -28,9 +31,7 @@ public class Test {
                 // Extract artwork
                 Artwork artwork = tag.getFirstArtwork();
                 System.out.println(tag.getFirst(FieldKey.TITLE));
-                ;
                 System.out.println(tag.getFirst(FieldKey.ARTIST));
-                ;
                 return artwork != null;
             }
         } catch (Exception e) {
@@ -63,6 +64,15 @@ public class Test {
     }
 
     public static void main(String[] args) {
-        System.out.println(NumberFormatUtil.parsePrice("1000%"));
+        // Specify the package/directory path
+        String packagePath = "src/main/java/com/javaweb/view/imgs/avatars";
+
+        try {
+            Files.walk(Paths.get(packagePath))
+                    .filter(Files::isRegularFile)
+                    .forEach(path -> System.out.println(FileUtil.getRelativeFilePath(path.toAbsolutePath().toFile())));
+        } catch (IOException e) {
+            System.err.println("Error traversing directory: " + e.getMessage());
+        }
     }
 }

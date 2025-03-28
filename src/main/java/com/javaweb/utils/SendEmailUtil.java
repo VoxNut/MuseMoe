@@ -1,5 +1,7 @@
 package com.javaweb.utils;
 
+import com.javaweb.constant.AppConstant;
+
 import javax.activation.DataSource;
 import javax.activation.FileDataSource;
 import javax.mail.*;
@@ -7,16 +9,10 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
-import java.awt.*;
 import java.util.Date;
 import java.util.Properties;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class SendEmailUtil {
-
-    private static final ExecutorService emailExecutor = Executors.newSingleThreadExecutor();
-
     public static void sendEmail(String to, String tempPassword) {
         final String username = "jonathanvex2@gmail.com";
         final String emailPassword = "zykykavxtvjyejht";
@@ -38,61 +34,149 @@ public class SendEmailUtil {
             Message message = new MimeMessage(session);
             message.setFrom(new InternetAddress(username));
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
-            message.setSubject("Password Reset Request");
+            message.setSubject("MuseMoe - Password Reset Request");
             message.setSentDate(new Date());
+
             MimeMultipart multipart = new MimeMultipart("related");
             MimeBodyPart htmlPart = new MimeBodyPart();
-            String htmlContent =
-                    "<!DOCTYPE html>\n" +
-                            "<html lang=\"en\">\n" +
-                            "<head>\n" +
-                            "  <meta charset=\"UTF-8\">\n" +
-                            "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
-                            "  <link href='https://fonts.googleapis.com/css?family=JetBrains Mono' rel='stylesheet'>\n" +
-                            "  <script src=\"https://cdn.tailwindcss.com\"></script>\n" +
-                            "</head>\n" +
-                            "<body style=\"font-family: 'Jetbrains Mono'; background-color: #f5f5f5; margin: 0; padding: 0; font-size: 18px;\">\n" +
-                            "  <div style=\"background-color: #ffffff; max-width: 600px; margin: 40px auto; padding: 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);\">\n" +
-                            "    <div style=\"display: flex; align-items: center; margin-bottom: 25px;\">\n" +
-                            "      <img style=\"width: 50px; height: 50px; margin-right: 10px;\" src=\"cid:logo\" alt=\"Latte Literature Logo\" />\n" +
-                            "      <h1 style=\"font-size: 24px; color: #333; margin: 0;\">Latte Literature</h1>\n" +
-                            "    </div>\n" +
-                            "    <hr style=\"margin-bottom: 25px;\">\n" +
-                            "    <p style=\"font-size: 16px; color: #333; margin-bottom: 10px;\">Chúng tôi nhận thấy một yêu cầu đổi mật khẩu từ bạn.</p>\n" +
-                            "    <p style=\"font-size: 16px; color: #333; margin-bottom: 20px;\">Mật khẩu tạm thời của bạn là:</p>\n" +
-                            "    <div style=\"text-align: center; margin-bottom: 30px;\">\n" +
-                            "      <span style=\"background: #2E2D2B; color: #D7B899; padding: 12px 20px; border-radius: 3px; font-size: 16px; font-weight: bold;\">"
-                            + tempPassword + "</span>\n" +
-                            "    </div>\n" +
-                            "    <p style=\"font-size: 14px; color: #555;\">Vui lòng sử dụng mật khẩu này để đăng nhập và đổi mật khẩu ngay lập tức.</p>\n" +
-                            "    <div style=\"margin-top: 40px; border-top: 1px solid #ddd; padding-top: 10px; font-size: 12px; color: #bbb;\">\n" +
-                            "      © 2024 Latte Literature. Niềm vui của bạn là niềm vui của chúng tôi.\n" +
-                            "    </div>\n" +
-                            "  </div>\n" +
-                            "</body>\n" +
-                            "</html>";
+
+            // Main background color: #1A1A1A (BACKGROUND_COLOR)
+            // Text color: #F8E1E9 (TEXT_COLOR)
+            // Button background: #2E2D3B (BUTTON_BACKGROUND_COLOR)
+            // Active button: #F8E1E9 (ACTIVE_BUTTON_BACKGROUND_COLOR)
+
+            String htmlContent = "<!DOCTYPE html>\n" +
+                    "<html lang=\"en\">\n" +
+                    "<head>\n" +
+                    "  <meta charset=\"UTF-8\">\n" +
+                    "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
+                    "  <style>\n" +
+                    "    @font-face {\n" +
+                    "      font-family: 'IBM Plex Sans JP';\n" +
+                    "      src: url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP&display=swap');\n" +
+                    "    }\n" +
+                    "    body {\n" +
+                    "      font-family: 'IBM Plex Sans JP', 'Arial', sans-serif;\n" +
+                    "      background-color: #F5F5F5;\n" +
+                    "      margin: 0;\n" +
+                    "      padding: 0;\n" +
+                    "      font-size: 16px;\n" +
+                    "      color: #333333;\n" +
+                    "    }\n" +
+                    "    .email-container {\n" +
+                    "      max-width: 600px;\n" +
+                    "      margin: 40px auto;\n" +
+                    "      background-color: #FFFFFF;\n" +
+                    "      border-radius: 8px;\n" +
+                    "      overflow: hidden;\n" +
+                    "      box-shadow: 0 4px 10px rgba(0,0,0,0.1);\n" +
+                    "    }\n" +
+                    "    .email-header {\n" +
+                    "      background-color: #1A1A1A;\n" +
+                    "      padding: 20px 30px;\n" +
+                    "      text-align: center;\n" +
+                    "    }\n" +
+                    "    .email-body {\n" +
+                    "      padding: 30px;\n" +
+                    "      color: #333333;\n" +
+                    "    }\n" +
+                    "    .logo {\n" +
+                    "      width: 80px;\n" +
+                    "      height: auto;\n" +
+                    "    }\n" +
+                    "    .title {\n" +
+                    "      color: #F8E1E9;\n" +
+                    "      font-size: 24px;\n" +
+                    "      margin: 15px 0 0;\n" +
+                    "      font-weight: bold;\n" +
+                    "    }\n" +
+                    "    .password-container {\n" +
+                    "      background-color: #F8F8F8;\n" +
+                    "      border-radius: 6px;\n" +
+                    "      padding: 20px;\n" +
+                    "      margin: 25px 0;\n" +
+                    "      text-align: center;\n" +
+                    "    }\n" +
+                    "    .password {\n" +
+                    "      background-color: #2E2D3B;\n" +
+                    "      color: #F8E1E9;\n" +
+                    "      padding: 12px 25px;\n" +
+                    "      border-radius: 4px;\n" +
+                    "      font-size: 18px;\n" +
+                    "      font-weight: bold;\n" +
+                    "      display: inline-block;\n" +
+                    "      letter-spacing: 1px;\n" +
+                    "    }\n" +
+                    "    .footer {\n" +
+                    "      background-color: #F8F8F8;\n" +
+                    "      padding: 20px 30px;\n" +
+                    "      text-align: center;\n" +
+                    "      font-size: 12px;\n" +
+                    "      color: #777777;\n" +
+                    "      border-top: 1px solid #EEEEEE;\n" +
+                    "    }\n" +
+                    "    .button {\n" +
+                    "      background-color: #3A2E2A;\n" +
+                    "      color: #FFFFFF;\n" +
+                    "      padding: 12px 25px;\n" +
+                    "      text-decoration: none;\n" +
+                    "      border-radius: 4px;\n" +
+                    "      display: inline-block;\n" +
+                    "      margin-top: 20px;\n" +
+                    "      font-weight: bold;\n" +
+                    "    }\n" +
+                    "  </style>\n" +
+                    "</head>\n" +
+                    "<body>\n" +
+                    "  <div class=\"email-container\">\n" +
+                    "    <div class=\"email-header\">\n" +
+                    "      <img src=\"cid:logo\" alt=\"MuseMoe Logo\" class=\"logo\">\n" +
+                    "      <h1 class=\"title\">MuseMoe</h1>\n" +
+                    "    </div>\n" +
+                    "    \n" +
+                    "    <div class=\"email-body\">\n" +
+                    "      <h2>Password Reset</h2>\n" +
+                    "      <p>We received a request to reset your password for your MuseMoe account.</p>\n" +
+                    "      <p>Your temporary password is:</p>\n" +
+                    "      \n" +
+                    "      <div class=\"password-container\">\n" +
+                    "        <span class=\"password\">" + tempPassword + "</span>\n" +
+                    "      </div>\n" +
+                    "      \n" +
+                    "      <p>Please use this temporary password to log in and change your password immediately for security reasons.</p>\n" +
+                    "      <p>If you didn't request this password reset, please contact our support team immediately.</p>\n" +
+                    "      \n" +
+                    "      <div style=\"text-align: center;\">\n" +
+                    "        <a href=\"http://localhost:8081\" class=\"button\">Go to MuseMoe</a>\n" +
+                    "      </div>\n" +
+                    "    </div>\n" +
+                    "    \n" +
+                    "    <div class=\"footer\">\n" +
+                    "      <p>&copy; " + java.time.Year.now().getValue() + " MuseMoe. All rights reserved.</p>\n" +
+                    "      <p>Your musical companion - Where every note finds its harmony.</p>\n" +
+                    "    </div>\n" +
+                    "  </div>\n" +
+                    "</body>\n" +
+                    "</html>";
+
             htmlPart.setContent(htmlContent, "text/html; charset=UTF-8");
             multipart.addBodyPart(htmlPart);
-            // Image part
+
+            // Image part - using the MuseMoe logo
             MimeBodyPart imagePart = new MimeBodyPart();
-            DataSource fds = new FileDataSource("src/main/java/com/javaweb/view/imgs/logo/Logo.png");
+            DataSource fds = new FileDataSource(AppConstant.MUSE_MOE_ICON_PATH);
             imagePart.setDataHandler(new javax.activation.DataHandler(fds));
             imagePart.setHeader("Content-ID", "<logo>");
-            imagePart.setFileName("logo.png");
+            imagePart.setFileName("muse_moe_logo.png");
             multipart.addBodyPart(imagePart);
 
             message.setContent(multipart);
             Transport.send(message);
+            System.out.println("Password reset email sent successfully to: " + to);
         } catch (MessagingException e) {
+            System.err.println("Error sending email: " + e.getMessage());
             throw new RuntimeException(e);
         }
     }
-
-    public static void sendEmailAsync(String to, String tempPassword) {
-        emailExecutor.submit(() -> sendEmail(to, tempPassword));
-    }
-
-    private static String toHex(Color color) {
-        return String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
-    }
 }
+

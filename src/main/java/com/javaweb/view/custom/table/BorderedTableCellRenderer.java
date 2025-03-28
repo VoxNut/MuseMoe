@@ -55,27 +55,27 @@ public class BorderedTableCellRenderer extends DefaultTableCellRenderer {
             Object statusValue = table.getValueAt(row, statusColumnIndex);
 
             if (statusValue instanceof String) {
-                String status = (String) statusValue;
-                switch (status) {
-                    case "CHỜ ORDER":
-                        c.setBackground(AppConstant.PENDING_ORDER);
-                        break;
-                    case "CHỜ XÁC NHẬN":
-                        c.setBackground(AppConstant.PENDING_CONFIRMATION_ORDER);
-                        break;
-                    case "HOÀN THÀNH":
-                        c.setBackground(AppConstant.COMPLETED_ORDER);
-                        break;
-                    case "CHỜ NGƯỜI GIAO":
-                        c.setBackground(AppConstant.WAITING_FOR_DELIVERY_ORDER);
-                        break;
-                    case "ĐANG GIAO":
-                        c.setBackground(AppConstant.IN_DELIVERY_ORDER);
-                        break;
-                    default:
-                        c.setBackground(AppConstant.ACTIVE_BACKGROUND_COLOR);
-                        break;
-                }
+//                String status = (String) statusValue;
+//                switch (status) {
+//                    case "CHỜ ORDER":
+//                        c.setBackground(AppConstant.PENDING_ORDER);
+//                        break;
+//                    case "CHỜ XÁC NHẬN":
+//                        c.setBackground(AppConstant.PENDING_CONFIRMATION_ORDER);
+//                        break;
+//                    case "HOÀN THÀNH":
+//                        c.setBackground(AppConstant.COMPLETED_ORDER);
+//                        break;
+//                    case "CHỜ NGƯỜI GIAO":
+//                        c.setBackground(AppConstant.WAITING_FOR_DELIVERY_ORDER);
+//                        break;
+//                    case "ĐANG GIAO":
+//                        c.setBackground(AppConstant.IN_DELIVERY_ORDER);
+//                        break;
+//                    default:
+//                        c.setBackground(AppConstant.ACTIVE_BACKGROUND_COLOR);
+//                        break;
+//                }
             } else {
                 c.setBackground(AppConstant.ACTIVE_BACKGROUND_COLOR);
             }

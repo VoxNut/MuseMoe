@@ -1,21 +1,19 @@
 package com.javaweb.view;
 
 import com.javaweb.constant.AppConstant;
+import com.javaweb.model.dto.SongDTO;
 import com.javaweb.model.dto.UserDTO;
 import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
 import com.javaweb.utils.SecurityUtils;
 import com.javaweb.view.custom.musicplayer.MusicPlayerGUI;
-import com.javaweb.view.custom.musicplayer.Song;
 import lombok.Getter;
-import net.coobird.thumbnailator.Thumbnails;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -30,15 +28,15 @@ public class HomePage extends JFrame {
 
     private CardLayout cardLayout;
     private JPanel centerPanel;
-    private String userImageLink;
-    private String username;
+    private final String userImageLink;
+    private final String username;
     private JLabel avatarLabel;
     private JLabel usernameLabel;
     @Getter
-    private Set<String> roles;
+    private final Set<String> roles;
     private JLabel clockLabel;
     @Getter
-    private UserDTO currentUser;
+    private final UserDTO currentUser;
     private MusicPlayerGUI musicPlayerGUI;
     private JLabel spinningDisc;
     private JPanel controlButtonsPanel;
@@ -85,6 +83,7 @@ public class HomePage extends JFrame {
                 GuiUtil.createDiscImageIcon(GuiUtil.createBufferImage(AppConstant.DEFAULT_COVER_PATH), 50, 50, 7));
 
         setVisible(true);
+        GuiUtil.applyWindowStyle(this);
 
     }
 
@@ -396,7 +395,7 @@ public class HomePage extends JFrame {
             if (musicPlayerGUI != null) {
                 if (musicPlayerGUI.getMusicPlayer().getCurrentSong() != null) {
                     showMusicPlayerHeader();
-                    extractColor(musicPlayerGUI.getDialogThemeColor(), musicPlayerGUI.getDialogTextColor(), musicPlayerGUI.getTertiaryColor());
+                    extractColor(musicPlayerGUI.getBackgroundColor(), musicPlayerGUI.getTextColor(), musicPlayerGUI.getAccentColor());
                     enablePlayButtonDisablePauseButton();
                     updatePlaybackSlider(musicPlayerGUI.getMusicPlayer().getCurrentSong());
                     updateSpinningDisc(musicPlayerGUI.getMusicPlayer().getCurrentSong());
@@ -414,7 +413,7 @@ public class HomePage extends JFrame {
 
 
         } catch (IOException ex) {
-            GuiUtil.showErrorMessageDialog(this, "Không thể mở Music Player.");
+            GuiUtil.showErrorMessageDialog(this, "Cannot open MiniMusic Player.");
         }
     }
 
@@ -438,7 +437,7 @@ public class HomePage extends JFrame {
         return labelsPanel;
     }
 
-    public void updatePlaybackSlider(Song song) {
+    public void updatePlaybackSlider(SongDTO song) {
         // Set slider range based on total frames instead of milliseconds
         int totalFrames = song.getMp3File().getFrameCount();
         playbackSlider.setMaximum(totalFrames);
@@ -484,7 +483,7 @@ public class HomePage extends JFrame {
         labelBeginning.setText(formattedTime);
     }
 
-    public void updateScrollingText(Song song) {
+    public void updateScrollingText(SongDTO song) {
         String text = song.getSongTitle() + " - " + song.getSongArtist() + " ";
         scrollingLabel.setText(text);
         scrollingLabel.setVisible(true);
@@ -494,7 +493,7 @@ public class HomePage extends JFrame {
         playbackSlider.setValue(frame);
     }
 
-    public void updateSpinningDisc(Song song) {
+    public void updateSpinningDisc(SongDTO song) {
         if (song.getSongImage() != null) {
             spinningDisc.setIcon(GuiUtil.createDiscImageIcon(song.getSongImage(), 50, 50, 7));
         } else {
@@ -563,14 +562,14 @@ public class HomePage extends JFrame {
     }
 
     public String determineUserRole(Set<String> roles) {
-        if (roles.contains(AppConstant.MANAGER_ROLE)) {
-            return "Quản lý";
-        } else if (roles.contains(AppConstant.STAFF_ROLE)) {
-            return "Nhân viên";
-        } else if (roles.contains(AppConstant.CUSTOMER_ROLE)) {
-            return "Khách hàng";
+        if (roles.contains(AppConstant.ARTIST_ROLE)) {
+            return "Artist";
+        } else if (roles.contains(AppConstant.PREMIUM_ROLE)) {
+            return "Premium user";
+        } else if (roles.contains(AppConstant.FREE_ROLE)) {
+            return "Free user";
         } else {
-            return "Pha chế";
+            return "Admin";
         }
     }
 
@@ -607,7 +606,7 @@ public class HomePage extends JFrame {
         JButton statisticsButton = createNavButton("Thống kê", "statistics");
         navButtons.put("statistics", statisticsButton);
 
-        if (SecurityUtils.getAuthorities().contains(AppConstant.MANAGER_ROLE)) {
+        if (SecurityUtils.getAuthorities().contains(AppConstant.ADMIN_ROLE)) {
             navBar.add(homeButton);
             navBar.add(productsButton);
             navBar.add(usersButton);
@@ -615,16 +614,16 @@ public class HomePage extends JFrame {
             navBar.add(salesButton);
             navBar.add(ordersButton);
             navBar.add(statisticsButton);
-        } else if (SecurityUtils.getAuthorities().contains(AppConstant.STAFF_ROLE)) {
+        } else if (SecurityUtils.getAuthorities().contains(AppConstant.ARTIST_ROLE)) {
             navBar.add(homeButton);
             navBar.add(productsButton);
             navBar.add(discountsButton);
             navBar.add(salesButton);
             navBar.add(ordersButton);
             navBar.add(statisticsButton);
-        } else if (SecurityUtils.getAuthorities().contains(AppConstant.CUSTOMER_ROLE)) {
+        } else if (SecurityUtils.getAuthorities().contains(AppConstant.FREE_ROLE)) {
             navBar.add(homeButton);
-        } else if (SecurityUtils.getAuthorities().contains(AppConstant.BARISTA_ROLE)) {
+        } else if (SecurityUtils.getAuthorities().contains(AppConstant.PREMIUM_ROLE)) {
             navBar.add(homeButton);
             navBar.add(productsButton);
             navBar.add(discountsButton);
@@ -648,28 +647,13 @@ public class HomePage extends JFrame {
             originalImage = ImageIO.read(new File(imagePath));
         } catch (IOException e) {
             e.printStackTrace();
-            originalImage = new BufferedImage(50, 50, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2 = originalImage.createGraphics();
-            g2.setColor(Color.LIGHT_GRAY);
-            g2.fillOval(0, 0, 50, 50);
-            g2.dispose();
+            originalImage = GuiUtil.createDefaultAvatar(50, 50);
         }
 
-        BufferedImage resizedImage;
-        try {
-            resizedImage = Thumbnails.of(originalImage).size(50, 50).asBufferedImage();
-        } catch (IOException e) {
-            e.printStackTrace();
-            resizedImage = originalImage;
-        }
+        // Create a high-quality circular avatar
+        BufferedImage circularImage = GuiUtil.createSmoothCircularAvatar(originalImage, 50);
 
-        BufferedImage circularImage = new BufferedImage(50, 50, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2 = circularImage.createGraphics();
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2.setClip(new Ellipse2D.Float(0, 0, 50, 50));
-        g2.drawImage(resizedImage, 0, 0, null);
-        g2.dispose();
-
+        // Update the avatar label with the new circular image
         avatarLabel.setIcon(new ImageIcon(circularImage));
     }
 
@@ -678,35 +662,17 @@ public class HomePage extends JFrame {
         try {
             originalImage = ImageIO.read(new File(userImageLink));
         } catch (IOException e) {
-            e.printStackTrace();
-            originalImage = new BufferedImage(50, 50, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2 = originalImage.createGraphics();
-            g2.setColor(Color.LIGHT_GRAY);
-            g2.fillOval(0, 0, 50, 50);
-            g2.dispose();
+            originalImage = GuiUtil.createDefaultAvatar(50, 50);
         }
 
-        BufferedImage resizedImage;
-        try {
-            resizedImage = Thumbnails.of(originalImage).size(50, 50).asBufferedImage();
-        } catch (IOException e) {
-            e.printStackTrace();
-            resizedImage = originalImage;
-        }
-
-        BufferedImage circularImage = new BufferedImage(50, 50, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2 = circularImage.createGraphics();
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2.setClip(new Ellipse2D.Float(0, 0, 50, 50));
-        g2.drawImage(resizedImage, 0, 0, null);
-        g2.dispose();
+        BufferedImage circularImage = GuiUtil.createSmoothCircularAvatar(originalImage, 50);
 
         avatarLabel = new JLabel(new ImageIcon(circularImage));
         avatarLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         JPopupMenu popupMenu = new JPopupMenu();
-        JMenuItem profileItem = new JMenuItem("Tài khoản");
-        JMenuItem logoutItem = new JMenuItem("Đăng xuất");
+        JMenuItem profileItem = new JMenuItem("Account");
+        JMenuItem logoutItem = new JMenuItem("Log out");
 
         popupMenu.add(profileItem);
         popupMenu.add(logoutItem);
@@ -733,24 +699,28 @@ public class HomePage extends JFrame {
         return avatarLabel;
     }
 
-
-
     private void logout() throws IOException {
-        int option = GuiUtil.showConfirmMessageDialog(this, "Bạn có thực sự muốn thoát?", "Xác nhận thoát",
+        int option = GuiUtil.showConfirmMessageDialog(this, "Do you really want to log out?", "Exit confirm",
                 JOptionPane.YES_NO_OPTION);
         if (option == JOptionPane.YES_OPTION) {
             this.dispose();
             SwingUtilities.invokeLater(() -> {
                 LoginPage loginPage = new LoginPage();
-                UIManager.put("TitlePane.iconSize", new Dimension(20, 20));
+                UIManager.put("TitlePane.iconSize", new Dimension(24, 24));
                 loginPage.getUsernameField().setText(currentUser.getUsername());
-                loginPage.setIconImage(GuiUtil.createImageIcon(AppConstant.COFFEE_SHOP_ICON_PATH, 100, 100).getImage());
+                /*
+                 * Remember username after logging out
+                 * */
+                loginPage.setIconImage(GuiUtil.createImageIcon(AppConstant.MUSE_MOE_ICON_PATH, 512, 512).getImage());
                 loginPage.setVisible(true);
             });
+
+            if (musicPlayerGUI != null) {
+                musicPlayerGUI.getMusicPlayer().stopSong();
+            }
+            MusicPlayerGUI.instance = null;
         }
-        if (musicPlayerGUI != null) {
-            musicPlayerGUI.getMusicPlayer().stopSong();
-        }
+
     }
 
     private JPanel createCenterPanel() {
@@ -758,12 +728,11 @@ public class HomePage extends JFrame {
         centerPanel = new JPanel(cardLayout);
 
 
-
         return centerPanel;
     }
 
     private JLabel createTitleLabel() {
-        JLabel titleLabel = new JLabel("Coffee Shop", SwingConstants.CENTER);
+        JLabel titleLabel = new JLabel("Muse Moe", SwingConstants.CENTER);
         titleLabel.setFont(FontUtil.getJetBrainsMonoFont(Font.BOLD, 30));
         titleLabel.setForeground(AppConstant.BUTTON_TEXT_COLOR);
         titleLabel.setBorder(BorderFactory.createEmptyBorder(20, 0, 10, 0));
@@ -803,7 +772,6 @@ public class HomePage extends JFrame {
         });
         return button;
     }
-
 
 
     private void navigateTo(String cardName) {
@@ -850,7 +818,6 @@ public class HomePage extends JFrame {
     }
 
 
-
     private class ScrollingLabel extends JLabel {
         @Override
         protected void paintComponent(Graphics g) {
@@ -877,5 +844,6 @@ public class HomePage extends JFrame {
             button.setBackground(AppConstant.BUTTON_BACKGROUND_COLOR);
         }
     }
+
 
 }

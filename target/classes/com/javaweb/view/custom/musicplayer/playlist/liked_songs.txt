@@ -1,0 +1,23 @@
+src\main\java\com\javaweb\view\custom\musicplayer\audio\mesmerizer.mp3
+src\main\java\com\javaweb\view\custom\musicplayer\audio\sorasakana.mp3
+src\main\java\com\javaweb\view\custom\musicplayer\audio\Neon Tokyo.mp3
+src\main\java\com\javaweb\view\custom\musicplayer\audio\Lost Umbrella.mp3
+src\main\java\com\javaweb\view\custom\musicplayer\audio\Yumemitetano Atashi.mp3
+src\main\java\com\javaweb\view\custom\musicplayer\audio\just-the-two-of-us.mp3
+src\main\java\com\javaweb\view\custom\musicplayer\audio\dream of her.mp3
+src\main\java\com\javaweb\view\custom\musicplayer\audio\Suisei - DAOKO.mp3
+src\main\java\com\javaweb\view\custom\musicplayer\audio\a light of mine.mp3
+src\main\java\com\javaweb\view\custom\musicplayer\audio\i miss you.mp3
+src\main\java\com\javaweb\view\custom\musicplayer\audio\lease.mp3
+src\main\java\com\javaweb\view\custom\musicplayer\audio\sorry i like you.mp3
+src\main\java\com\javaweb\view\custom\musicplayer\audio\the eye of truth.mp3
+src\main\java\com\javaweb\view\custom\musicplayer\audio\apple-house.mp3
+src\main\java\com\javaweb\view\custom\musicplayer\audio\im in space.mp3
+src\main\java\com\javaweb\view\custom\musicplayer\audio\strobe light.mp3
+src\main\java\com\javaweb\view\custom\musicplayer\audio\breakfast.mp3
+src\main\java\com\javaweb\view\custom\musicplayer\audio\hatachi-no-koi.mp3
+src\main\java\com\javaweb\view\custom\musicplayer\audio\fortune.mp3
+src\main\java\com\javaweb\view\custom\musicplayer\audio\532PM.mp3
+src\main\java\com\javaweb\view\custom\musicplayer\audio\got-to-be-real.mp3
+src\main\java\com\javaweb\view\custom\musicplayer\audio\Call me.mp3
+src/main/java/com/javaweb/view/custom/musicplayer/audio/going home.mp3

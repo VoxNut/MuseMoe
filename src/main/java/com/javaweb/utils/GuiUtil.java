@@ -38,6 +38,8 @@ import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
@@ -254,6 +256,11 @@ public class GuiUtil {
     }
 
     public static JMenuItem createMenuItem(String text) {
+        return createMenuItem(text, AppConstant.BACKGROUND_COLOR, AppConstant.TEXT_COLOR);
+
+    }
+
+    public static JMenuItem createMenuItem(String text, Color backgroundColor, Color textColor) {
         JMenuItem menuItem = new JMenuItem(text);
         menuItem.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
         menuItem.setOpaque(true);
@@ -528,28 +535,35 @@ public class GuiUtil {
     }
 
     public static void changeIconColor(ImageIcon icon, Color color) {
-        // Get the image from the ImageIcon
-        Image image = icon.getImage();
+        // Create a new buffered image with the same dimensions
+        BufferedImage img = new BufferedImage(
+                icon.getIconWidth(),
+                icon.getIconHeight(),
+                BufferedImage.TYPE_INT_ARGB);
 
-        // Create a buffered image with transparency
-        BufferedImage bufferedImage = new BufferedImage(
-                image.getWidth(null),
-                image.getHeight(null),
-                BufferedImage.TYPE_INT_ARGB
-        );
-        Graphics2D g2d = bufferedImage.createGraphics();
+        // Draw the original icon onto the buffered image
+        Graphics2D g = img.createGraphics();
+        icon.paintIcon(null, g, 0, 0);
+        g.dispose();
 
-        // Draw the original image
-        g2d.drawImage(image, 0, 0, null);
+        // Change the color of the icon
+        for (int y = 0; y < img.getHeight(); y++) {
+            for (int x = 0; x < img.getWidth(); x++) {
+                int rgba = img.getRGB(x, y);
+                Color originalColor = new Color(rgba, true);
 
-        // Apply color overlay
-        g2d.setComposite(AlphaComposite.SrcAtop);
-        g2d.setColor(color);
-        g2d.fillRect(0, 0, bufferedImage.getWidth(), bufferedImage.getHeight());
-        g2d.dispose();
-
-        // Update the original ImageIcon
-        icon.setImage(bufferedImage);
+                // Preserve transparency
+                if (originalColor.getAlpha() > 0) {
+                    Color newColor = new Color(
+                            color.getRed(),
+                            color.getGreen(),
+                            color.getBlue(),
+                            originalColor.getAlpha());
+                    img.setRGB(x, y, newColor.getRGB());
+                }
+            }
+        }
+        icon.setImage(img);
     }
 
 
@@ -750,6 +764,24 @@ public class GuiUtil {
         int green = (int) Math.max(0, color.getGreen() - 255 * fraction);
         int blue = (int) Math.max(0, color.getBlue() - 255 * fraction);
         return new Color(red, green, blue);
+    }
+
+
+    public static JPopupMenu createPopupMenu(Color backgroundColor, Color textColor) {
+        JPopupMenu popupMenu = new JPopupMenu();
+        popupMenu.setBackground(backgroundColor);
+        popupMenu.setForeground(textColor);
+        popupMenu.setBorder(BorderFactory.createLineBorder(GuiUtil.darkenColor(backgroundColor, 0.2f)));
+        return popupMenu;
+    }
+
+    public static void styleMenuItem(JMenuItem menuItem, Color bgColor, Color textColor) {
+        menuItem.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
+        menuItem.setMargin(new Insets(6, 12, 6, 12));
+        menuItem.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
+        menuItem.setBackground(bgColor);
+        menuItem.setForeground(textColor);
+
     }
 
     public static void setGradientBackground(JPanel panel, Color centerColor, Color outerColor, float centerX, float centerY, float radius) {
@@ -957,32 +989,109 @@ public class GuiUtil {
     }
 
     public static void showErrorMessageDialog(Component parentComponent, String message) {
-        JOptionPane.showMessageDialog(parentComponent, message, "Error", JOptionPane.ERROR_MESSAGE);
+        Color errorColor = new Color(231, 76, 60); // A more refined red
+        showCustomMessageDialog(parentComponent, message, "Error", JOptionPane.ERROR_MESSAGE,
+                AppConstant.BACKGROUND_COLOR, AppConstant.TEXT_COLOR, errorColor);
     }
 
     public static void showSuccessMessageDialog(Component parentComponent, String message) {
-        JOptionPane.showMessageDialog(parentComponent, message, "Success", JOptionPane.PLAIN_MESSAGE, AppConstant.SUCCESS_ICON);
+        Color successColor = new Color(46, 204, 113); // Emerald green
+        showCustomMessageDialog(parentComponent, message, "Success", JOptionPane.PLAIN_MESSAGE,
+                AppConstant.BACKGROUND_COLOR, AppConstant.TEXT_COLOR, successColor);
     }
 
     public static void showWarningMessageDialog(Component parentComponent, String message) {
-        JOptionPane.showMessageDialog(parentComponent, message, "Warning", JOptionPane.WARNING_MESSAGE);
+        Color warningColor = new Color(241, 196, 15); // Vibrant yellow
+        showCustomMessageDialog(parentComponent, message, "Warning", JOptionPane.WARNING_MESSAGE,
+                AppConstant.BACKGROUND_COLOR, AppConstant.TEXT_COLOR, warningColor);
     }
 
-    public static void showInfomationMessageDialog(Component parentComponent, String message) {
-        JOptionPane.showMessageDialog(parentComponent, message, "Infomation", JOptionPane.INFORMATION_MESSAGE);
+    public static void showInfoMessageDialog(Component parentComponent, String message) {
+        Color infoColor = new Color(52, 152, 219); // Light blue
+        showCustomMessageDialog(parentComponent, message, "Information", JOptionPane.INFORMATION_MESSAGE,
+                AppConstant.BACKGROUND_COLOR, AppConstant.TEXT_COLOR, infoColor);
     }
 
-    public static int showConfirmMessageDialog(Component parentComponent, String message) {
-        return JOptionPane.showConfirmDialog(parentComponent, message, "Confirm", JOptionPane.YES_NO_OPTION);
+    public static int showCustomConfirmDialog(Component parent, String message, String title,
+                                              Color bgColor, Color textColor, Color accentColor) {
+        final int[] result = new int[1];
+        result[0] = JOptionPane.CLOSED_OPTION;
+
+        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(parent), title, true);
+
+        JPanel mainPanel = new JPanel(new BorderLayout(20, 20));
+        setGradientBackground(mainPanel, bgColor, darkenColor(bgColor, 0.2f), 0.5f, 0.5f, 0.5f);
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        styleDialog(dialog, bgColor, textColor);
+
+        JLabel messageLabel = new JLabel("<html><div style='text-align: center;'>" + message + "</div></html>");
+        messageLabel.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
+        messageLabel.setForeground(textColor);
+        messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        // Create custom icon
+        Icon icon = createCustomDialogIcon(JOptionPane.QUESTION_MESSAGE, 40, accentColor, bgColor);
+        JLabel iconLabel = new JLabel(icon);
+        iconLabel.setVerticalAlignment(SwingConstants.TOP);
+
+        mainPanel.add(iconLabel, BorderLayout.WEST);
+        mainPanel.add(messageLabel, BorderLayout.CENTER);
+
+        JButton yesButton = new JButton("Yes");
+        JButton noButton = new JButton("No");
+
+        // Style buttons
+        for (JButton button : new JButton[]{yesButton, noButton}) {
+            button.setBackground(accentColor);
+            button.setForeground(textColor);
+            button.setBorderPainted(false);
+            button.setContentAreaFilled(true);
+            button.setFont(FontUtil.getSpotifyFont(Font.BOLD, 14));
+
+            // Add hover effect
+            button.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseEntered(MouseEvent e) {
+                    button.setBackground(darkenColor(accentColor, 0.2f));
+                }
+
+                @Override
+                public void mouseExited(MouseEvent e) {
+                    button.setBackground(accentColor);
+                }
+            });
+        }
+
+        yesButton.addActionListener(e -> {
+            result[0] = JOptionPane.YES_OPTION;
+            dialog.dispose();
+        });
+
+        noButton.addActionListener(e -> {
+            result[0] = JOptionPane.NO_OPTION;
+            dialog.dispose();
+        });
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
+        buttonPanel.setOpaque(false);
+        buttonPanel.add(yesButton);
+        buttonPanel.add(noButton);
+        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        dialog.setContentPane(mainPanel);
+        dialog.pack();
+        dialog.setLocationRelativeTo(parent);
+        dialog.setVisible(true);
+
+        return result[0];
     }
 
-    public static int showConfirmMessageDialog(Component parentComponent, Object message, String title, int optionType) {
-        return JOptionPane.showConfirmDialog(parentComponent, message, title, optionType);
+    public static int showConfirmMessageDialog(Component parentComponent, String message, String title) {
+        return showCustomConfirmDialog(parentComponent, message, title,
+                AppConstant.BACKGROUND_COLOR, AppConstant.TEXT_COLOR, new Color(52, 152, 219));
     }
 
-    public static int showConfirmMessageDialog(Component parentComponent, Object message, String title, int optionType, int messageType) {
-        return JOptionPane.showConfirmDialog(parentComponent, message, title, optionType);
-    }
 
     public static BufferedImage createDefaultAvatar(int width, int height) {
         BufferedImage avatar = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
@@ -1008,7 +1117,7 @@ public class GuiUtil {
     }
 
 
-    private static void configureGraphicsForHighQuality(Graphics2D g2) {
+    public static void configureGraphicsForHighQuality(Graphics2D g2) {
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
         g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
@@ -1119,7 +1228,7 @@ public class GuiUtil {
         int height = c.getHeight();
 
         // Enable antialiasing for smoother gradient
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        configureGraphicsForHighQuality(g2d);
 
         // Create center point for gradient
         Point2D center = new Point2D.Float(width * centerX, height * centerY);
@@ -1149,7 +1258,196 @@ public class GuiUtil {
         // FlatLaf specific properties
         rootPane.putClientProperty("flatlaf.menuBarEmbedded", true);
         rootPane.putClientProperty("flatlaf.unifiedBackground", true);
+    }
 
+    public static JDialog createCustomMessageDialog(Component parent, String message, String title, int messageType,
+                                                    Color bgColor, Color textColor, Color accentColor) {
+        // Create a custom JDialog
+        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(parent), title, true);
+
+        // Create main panel with gradient background
+        JPanel mainPanel = new JPanel(new BorderLayout(20, 20));
+        setGradientBackground(mainPanel, bgColor, darkenColor(bgColor, 0.2f), 0.5f, 0.5f, 0.5f);
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        // Add title bar styling
+        styleDialog(dialog, bgColor, textColor);
+
+        // Create message label with proper styling
+        JLabel messageLabel = new JLabel("<html><div style='text-align: center;'>" + message + "</div></html>");
+        messageLabel.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
+        messageLabel.setForeground(textColor);
+        messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        // Create icon based on message type
+        String iconPath;
+        switch (messageType) {
+            case JOptionPane.ERROR_MESSAGE:
+                iconPath = AppConstant.ERROR_ICON_PATH;
+                break;
+            case JOptionPane.WARNING_MESSAGE:
+                iconPath = AppConstant.WARNING_ICON_PATH;
+                break;
+            case JOptionPane.INFORMATION_MESSAGE:
+                iconPath = AppConstant.INFORMATION_ICON_PATH;
+                break;
+            default:
+                iconPath = AppConstant.SUCCESS_ICON_PATH;
+                break;
+        }
+
+        Icon icon = createColoredDialogIcon(iconPath, 40, accentColor);
+        JLabel iconLabel = new JLabel(icon);
+        iconLabel.setVerticalAlignment(SwingConstants.TOP);
+
+        // Add icon and message to panel
+        mainPanel.add(iconLabel, BorderLayout.WEST);
+        mainPanel.add(messageLabel, BorderLayout.CENTER);
+
+        // Create and style OK button
+        JButton okButton = new JButton("OK");
+        okButton.setBackground(accentColor);
+        okButton.setForeground(textColor);
+        okButton.setBorderPainted(false);
+        okButton.setContentAreaFilled(true);
+        okButton.setFont(FontUtil.getSpotifyFont(Font.BOLD, 14));
+        okButton.addActionListener(e -> dialog.dispose());
+
+        // Add hover effect
+        okButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                okButton.setBackground(darkenColor(accentColor, 0.2f));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                okButton.setBackground(accentColor);
+            }
+        });
+
+        // Create button panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        buttonPanel.setOpaque(false);
+        buttonPanel.add(okButton);
+        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        // Set dialog content
+        dialog.setContentPane(mainPanel);
+        dialog.pack();
+        dialog.setLocationRelativeTo(parent);
+
+        return dialog;
+    }
+
+    public static void showCustomMessageDialog(Component parent, String message, String title, int messageType,
+                                               Color bgColor, Color textColor, Color accentColor) {
+        JDialog dialog = createCustomMessageDialog(parent, message, title, messageType, bgColor, textColor, accentColor);
+        dialog.setVisible(true);
+    }
+
+    public static Icon createCustomDialogIcon(int type, int size, Color primaryColor, Color backgroundColor) {
+        BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = image.createGraphics();
+
+        configureGraphicsForHighQuality(g2d);
+
+        int padding = size / 6;
+
+        // Draw circular background
+        g2d.setColor(backgroundColor);
+        g2d.fillOval(0, 0, size, size);
+
+        // Choose icon style based on type
+        switch (type) {
+            case JOptionPane.ERROR_MESSAGE:
+                // Draw X mark
+                g2d.setColor(primaryColor);
+                g2d.setStroke(new BasicStroke(size / 8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                g2d.drawLine(padding, padding, size - padding, size - padding);
+                g2d.drawLine(size - padding, padding, padding, size - padding);
+                break;
+
+            case JOptionPane.WARNING_MESSAGE:
+                // Draw exclamation mark
+                g2d.setColor(primaryColor);
+
+                // Triangle
+                int[] xPoints = {size / 2, size - padding, padding};
+                int[] yPoints = {padding, size - padding, size - padding};
+                g2d.fillPolygon(xPoints, yPoints, 3);
+
+                // Exclamation dot
+                g2d.setColor(backgroundColor);
+                g2d.fillOval(size / 2 - size / 10, size - padding - size / 6, size / 5, size / 5);
+
+                // Exclamation line
+                g2d.fillRoundRect(size / 2 - size / 12, padding + size / 5,
+                        size / 6, size / 2, size / 10, size / 10);
+                break;
+
+            case JOptionPane.INFORMATION_MESSAGE:
+                // Draw info icon (i)
+                g2d.setColor(primaryColor);
+
+                // Draw dot
+                g2d.fillOval(size / 2 - size / 10, padding + size / 5, size / 5, size / 5);
+
+                // Draw stem
+                g2d.fillRoundRect(size / 2 - size / 12, padding + size / 2,
+                        size / 6, size / 3, size / 10, size / 10);
+                break;
+
+            case JOptionPane.QUESTION_MESSAGE:
+                // Draw question mark
+                g2d.setColor(primaryColor);
+                Font font = FontUtil.getSpotifyFont(Font.BOLD, (float) (size * 3) / 4);
+                g2d.setFont(font);
+                FontMetrics fm = g2d.getFontMetrics();
+                String text = "?";
+                int textWidth = fm.stringWidth(text);
+                int textHeight = fm.getAscent();
+                g2d.drawString(text, (size - textWidth) / 2, (size + textHeight) / 2 - fm.getDescent() / 2);
+                break;
+
+            default: // Plain message or custom
+                // Draw checkmark for success
+                g2d.setColor(primaryColor);
+                g2d.setStroke(new BasicStroke(size / 8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                int[] checkX = {padding, size / 5 * 2, size - padding};
+                int[] checkY = {size / 2, size - padding / 2, padding};
+                g2d.drawPolyline(checkX, checkY, 3);
+                break;
+        }
+
+        g2d.dispose();
+        return new ImageIcon(image);
+    }
+
+    public static Icon createColoredDialogIcon(String iconPath, int size, Color color) {
+        try {
+            // Load the original icon
+            ImageIcon originalIcon = createImageIcon(iconPath, size, size);
+            changeIconColor(originalIcon, color);
+            return originalIcon;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return createCustomDialogIcon(getMessageTypeForPath(iconPath), size, color,
+                    AppConstant.BACKGROUND_COLOR);
+        }
+    }
+
+    private static int getMessageTypeForPath(String iconPath) {
+        switch (iconPath) {
+            case AppConstant.ERROR_ICON_PATH:
+                return JOptionPane.ERROR_MESSAGE;
+            case AppConstant.WARNING_ICON_PATH:
+                return JOptionPane.WARNING_MESSAGE;
+            case AppConstant.INFORMATION_ICON_PATH:
+                return JOptionPane.INFORMATION_MESSAGE;
+            default:
+                return JOptionPane.PLAIN_MESSAGE;
+        }
     }
 
 }

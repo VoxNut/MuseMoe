@@ -164,7 +164,7 @@ public class SendEmailUtil {
 
             // Image part - using the MuseMoe logo
             MimeBodyPart imagePart = new MimeBodyPart();
-            DataSource fds = new FileDataSource(AppConstant.MUSE_MOE_ICON_PATH);
+            DataSource fds = new FileDataSource(AppConstant.MUSE_MOE_LOGO_PATH);
             imagePart.setDataHandler(new javax.activation.DataHandler(fds));
             imagePart.setHeader("Content-ID", "<logo>");
             imagePart.setFileName("muse_moe_logo.png");

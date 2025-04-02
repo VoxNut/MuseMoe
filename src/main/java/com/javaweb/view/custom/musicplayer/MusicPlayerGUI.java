@@ -7,6 +7,8 @@ import com.javaweb.utils.CommonApiUtil;
 import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
 import com.javaweb.view.HomePage;
+import com.javaweb.view.custom.musicplayer.command.MusicCommandFactory;
+import com.javaweb.view.custom.musicplayer.command.MusicPlayerInvoker;
 import de.androidpit.colorthief.ColorThief;
 import lombok.Getter;
 import lombok.Setter;
@@ -22,37 +24,48 @@ public class MusicPlayerGUI extends JFrame {
     @Setter
     public static MusicPlayerGUI instance;
     @Getter
-    private final MusicPlayer musicPlayer;
+    @Setter
+    private MusicPlayer musicPlayer;
     private JLabel songTitle, songArtist, songImageLabel;
     private JPanel playbackBtns;
+    @Getter
     private JSlider playbackSlider;
     private JSlider volumeSlider;
     private final JLabel initialMessageLabel;
     private JPanel mainPanel;
     @Getter
     private JLabel labelBeginning;
+    @Getter
     private JLabel labelEnd;
-    private JToolBar toolBar; // Reference to the toolbar
+
+    private JToolBar toolBar;
     private JButton nextButton;
+    @Getter
     private JButton pauseButton;
+    @Getter
     private JButton playButton;
     private JButton prevButton;
     private JMenuBar menuBar;
-    private JMenuItem loadSong;
-    private JMenuItem loadPlaylist;
     private JMenu songMenu;
     private JMenu playlistMenu;
+    private JMenuItem loadSong;
+    private JMenuItem loadPlaylist;
+
     @Getter
     private Color textColor = AppConstant.TEXT_COLOR;
     @Getter
     private Color backgroundColor = AppConstant.BACKGROUND_COLOR;
     @Getter
     private Color accentColor = backgroundColor.darker();
+    @Getter
     private JButton replayButton;
+    @Getter
     private JButton shuffleButton;
     private JLabel speakerLabel;
-    private final ImageIcon spotifyIcon;
+    private final ImageIcon miniMuseMoeIcon;
+    @Getter
     private JButton heartButton;
+    @Getter
     private JButton repeatButton;
     @Getter
     @Setter
@@ -63,6 +76,9 @@ public class MusicPlayerGUI extends JFrame {
     private PlaylistPanel songPanel;
     @Getter
     private final HomePage homePage;
+
+    private final MusicPlayerInvoker musicPlayerInvoker;
+    private final MusicCommandFactory musicCommandFactory;
 
     private MusicPlayerGUI(HomePage homePage) {
         super("MuseMoe MiniPlayer");
@@ -95,7 +111,7 @@ public class MusicPlayerGUI extends JFrame {
 
         // Initialize the music player and file chooser
         musicPlayer = new MusicPlayer(this);
-
+        musicPlayer.setCurrentUser(homePage.getCurrentUser());
 
         // Add the toolbar to the NORTH position
         addToolbar();
@@ -106,9 +122,12 @@ public class MusicPlayerGUI extends JFrame {
 
         initialMessageLabel.setHorizontalAlignment(SwingConstants.CENTER);
         add(initialMessageLabel, BorderLayout.CENTER);
-        spotifyIcon = GuiUtil.createImageIcon(AppConstant.SPOTIFY_LOGO_PATH, 30, 30);
-        GuiUtil.changeIconColor(spotifyIcon, textColor);
-        setIconImage(spotifyIcon.getImage());
+        miniMuseMoeIcon = GuiUtil.createImageIcon(AppConstant.MUSE_MOE_LOGO_PATH, 30, 30);
+        GuiUtil.changeIconColor(miniMuseMoeIcon, textColor);
+        setIconImage(miniMuseMoeIcon.getImage());
+        //Command and factory design pattern.
+        musicPlayerInvoker = new MusicPlayerInvoker();
+        musicCommandFactory = new MusicCommandFactory(musicPlayer);
 
     }
 
@@ -214,9 +233,7 @@ public class MusicPlayerGUI extends JFrame {
         playbackSliderPanel.setPreferredSize(new Dimension(400, 50));
 
         heartButton = GuiUtil.changeButtonIconColor(AppConstant.HEART_OUTLINE_ICON, AppConstant.TEXT_COLOR, 30, 30);
-        heartButton.addActionListener(e -> {
-            toggleHeartButton(musicPlayer.getCurrentSong());
-        });
+        heartButton.addActionListener(e -> toggleHeartButton(musicPlayer.getCurrentSong()));
 
         heartButton.setBounds(370, 0, 30, 30);
 
@@ -281,7 +298,7 @@ public class MusicPlayerGUI extends JFrame {
         // Add the menu bar
         menuBar = new JMenuBar();
         menuBar.setBorderPainted(false);
-        menuBar.setOpaque(true);
+        menuBar.setOpaque(false);
         menuBar.setBackground(AppConstant.BACKGROUND_COLOR);
         menuBar.setForeground(AppConstant.TEXT_COLOR);
 
@@ -295,7 +312,11 @@ public class MusicPlayerGUI extends JFrame {
         loadSong = GuiUtil.createMenuItem("Load Song");
         loadSong.addActionListener(e -> {
             try {
-                musicPlayer.setCurrentPlaylist(null);
+                if (musicPlayer.isHasAd()) {
+                    GuiUtil.showInfoMessageDialog(this, "Please patience finishing ads. That helps us a lot :)");
+                    return;
+                }
+                musicPlayerInvoker.executeCommand(musicCommandFactory.createSetPlaylistCommand(null));
                 //Init essential UI
                 remove(initialMessageLabel);
                 addGuiComponents();
@@ -320,14 +341,8 @@ public class MusicPlayerGUI extends JFrame {
                 songSelectionPanel.addPropertyChangeListener("songSelected", evt -> {
                     SongDTO selectedSong = (SongDTO) evt.getNewValue();
                     songDialog.dispose();
-
                     // Load the selected song into the music player
-                    try {
-                        musicPlayer.loadSong(selectedSong);
-                    } catch (IOException ex) {
-                        ex.printStackTrace();
-                        JOptionPane.showMessageDialog(this, "Failed to load the song!", "Error", JOptionPane.ERROR_MESSAGE);
-                    }
+                    musicPlayerInvoker.executeCommand(musicCommandFactory.createLoadSongCommand(selectedSong));
                 });
 
                 songSelectionPanel.addPropertyChangeListener("cancel", evt -> songDialog.dispose());
@@ -348,7 +363,10 @@ public class MusicPlayerGUI extends JFrame {
 
         loadPlaylist.addActionListener(e -> {
             try {
-
+                if (musicPlayer.isHasAd()) {
+                    GuiUtil.showInfoMessageDialog(this, "Please patience finishing ads. That helps us a lot :)");
+                    return;
+                }
                 remove(initialMessageLabel);
                 addGuiComponents();
                 // Fetch the user's playlists
@@ -369,9 +387,8 @@ public class MusicPlayerGUI extends JFrame {
                 // Add listeners for playlist selection and cancellation
                 playlistPanel.addPropertyChangeListener("playlistSelected", evt -> {
                     PlaylistDTO selectedPlaylist = (PlaylistDTO) evt.getNewValue();
-                    musicPlayer.setCurrentPlaylist(selectedPlaylist);
+                    musicPlayerInvoker.executeCommand(musicCommandFactory.createSetPlaylistCommand(selectedPlaylist));
                     playlistDialog.dispose();
-
                     // Show the songs in the selected playlist
                     showSongSelectionDialog(selectedPlaylist);
                 });
@@ -401,11 +418,8 @@ public class MusicPlayerGUI extends JFrame {
         replayButton.setBorderPainted(false);
         replayButton.setBounds(40, 0, 40, 40);
         replayButton.addActionListener(e -> {
-            try {
-                musicPlayer.replayFiveSeconds();
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
+            //Replay 5s
+            musicPlayerInvoker.executeCommand(musicCommandFactory.createReplayCommand());
             enablePauseButtonDisablePlayButton();
         });
         playbackBtns.add(replayButton);
@@ -415,13 +429,9 @@ public class MusicPlayerGUI extends JFrame {
                 30);
         prevButton.setBorderPainted(false);
         prevButton.setBounds(120, 0, 40, 40); // Set position and size
-        prevButton.addActionListener(e -> {
-            try {
-                musicPlayer.prevSong();
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
-        });
+        prevButton.addActionListener(e ->
+                //Prev song
+                musicPlayerInvoker.executeCommand(musicCommandFactory.createPrevCommand()));
         playbackBtns.add(prevButton);
 
         // Play button
@@ -429,7 +439,7 @@ public class MusicPlayerGUI extends JFrame {
         playButton.setBorderPainted(false);
         playButton.setBounds(190, 0, 40, 40); // Set position and size
         playButton.addActionListener(e -> {
-            musicPlayer.playCurrentSong();
+            musicPlayerInvoker.executeCommand(musicCommandFactory.createPlayCommand());
         });
         playbackBtns.add(playButton);
 
@@ -439,11 +449,8 @@ public class MusicPlayerGUI extends JFrame {
         pauseButton.setVisible(false);
         pauseButton.setBounds(190, 0, 40, 40); // Set position and size
         pauseButton.addActionListener(e -> {
-            try {
-                musicPlayer.pauseSong();
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
+            //Pause Song
+            musicPlayerInvoker.executeCommand(musicCommandFactory.createPauseCommand());
         });
         playbackBtns.add(pauseButton);
 
@@ -452,11 +459,7 @@ public class MusicPlayerGUI extends JFrame {
         nextButton.setBorderPainted(false);
         nextButton.setBounds(260, 0, 40, 40); // Set position and size
         nextButton.addActionListener(e -> {
-            try {
-                musicPlayer.nextSong();
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
+            musicPlayerInvoker.executeCommand(musicCommandFactory.createNextCommand());
         });
         playbackBtns.add(nextButton);
 
@@ -466,11 +469,7 @@ public class MusicPlayerGUI extends JFrame {
         shuffleButton.setBorderPainted(false);
         shuffleButton.setBounds(340, 0, 40, 40); // Set position and size
         shuffleButton.addActionListener(e -> {
-            try {
-                musicPlayer.shufflePlaylist();
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
+            musicPlayerInvoker.executeCommand(musicCommandFactory.createShuffleCommand());
         });
         playbackBtns.add(shuffleButton);
 
@@ -488,26 +487,6 @@ public class MusicPlayerGUI extends JFrame {
         }
     }
 
-    private void styleMenuItem(JMenuItem menuItem, Color bgColor, Color textColor, Color hoverColor) {
-        menuItem.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
-        menuItem.setMargin(new Insets(6, 12, 6, 12));
-        menuItem.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
-        menuItem.setBackground(bgColor);
-        menuItem.setForeground(textColor);
-
-        // Add hover effect that matches our theme
-        menuItem.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                menuItem.setBackground(hoverColor);
-                menuItem.setForeground(bgColor);
-            }
-
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                menuItem.setBackground(bgColor);
-                menuItem.setForeground(textColor);
-            }
-        });
-    }
 
     // Method to update the song title and artist
     public void updateSongTitleAndArtist(SongDTO song) {
@@ -642,10 +621,9 @@ public class MusicPlayerGUI extends JFrame {
     }
 
     public void adjustColor() {
-        Color gradientCenter = GuiUtil.lightenColor(backgroundColor, 0.05f);
-        Color gradientOuter = GuiUtil.darkenColor(backgroundColor, 0.2f);
 
-        Color titleBarBackground = GuiUtil.darkenColor(backgroundColor, 0.1f);
+
+        Color titleBarBackground = GuiUtil.darkenColor(backgroundColor, 0.2f);
         getRootPane().putClientProperty("TitlePane.font", FontUtil.getSpotifyFont(Font.BOLD, 18));
         getRootPane().putClientProperty("JRootPane.titleBarBackground", titleBarBackground);
         getRootPane().putClientProperty("JRootPane.titleBarForeground", textColor);
@@ -655,17 +633,18 @@ public class MusicPlayerGUI extends JFrame {
 
         SwingUtilities.updateComponentTreeUI(this.getContentPane());
 
-        Color menuBackground = GuiUtil.darkenColor(backgroundColor, 0.1f);
+        Color menuBackground = GuiUtil.darkenColor(backgroundColor, 0.2f);
         Color menuForeground = textColor;
-        Color hoverColor = accentColor;
 
-        styleMenuItem(loadSong, menuBackground, menuForeground, hoverColor);
-        styleMenuItem(loadPlaylist, menuBackground, menuForeground, hoverColor);
+        GuiUtil.styleMenuItem(loadSong, menuBackground, menuForeground);
+        GuiUtil.styleMenuItem(loadPlaylist, menuBackground, menuForeground);
 
 
         float centerX = 0.5f;
-        float centerY = 0.3f;
-        float radius = 1.0f;
+        float centerY = 0.5f;
+        float radius = 0.8f;
+        Color gradientCenter = GuiUtil.lightenColor(backgroundColor, 0.05f);
+        Color gradientOuter = GuiUtil.darkenColor(backgroundColor, 0.2f);
 
         GuiUtil.setGradientBackground(mainPanel, gradientCenter, gradientOuter, centerX, centerY, radius);
 
@@ -713,8 +692,8 @@ public class MusicPlayerGUI extends JFrame {
         homePage.extractColor(backgroundColor, textColor, accentColor);
 
         // Update icon colors
-        GuiUtil.changeIconColor(spotifyIcon, textColor);
-        setIconImage(spotifyIcon.getImage());
+        GuiUtil.changeIconColor(miniMuseMoeIcon, textColor);
+        setIconImage(miniMuseMoeIcon.getImage());
 
         // Update panel themes
         updatePanelThemes();
@@ -759,8 +738,8 @@ public class MusicPlayerGUI extends JFrame {
 
     // Methods to toggle play and pause buttons
     public void enablePauseButtonDisablePlayButton() {
-        JButton playButton = (JButton) playbackBtns.getComponent(2);
-        JButton pauseButton = (JButton) playbackBtns.getComponent(3);
+        playButton = (JButton) playbackBtns.getComponent(2);
+        pauseButton = (JButton) playbackBtns.getComponent(3);
 
         playButton.setVisible(false);
         playButton.setEnabled(false);
@@ -808,21 +787,27 @@ public class MusicPlayerGUI extends JFrame {
         playbackSlider.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                try {
-                    musicPlayer.pauseSong();
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
+                if (musicPlayer.isHasAd()) {
+                    return;
                 }
+
+                musicPlayerInvoker.executeCommand(musicCommandFactory.createPauseCommand());
+
             }
+
 
             @Override
             public void mouseReleased(MouseEvent e) {
+
+                if (musicPlayer.isHasAd()) {
+                    return;
+                }
                 int sliderValue = playbackSlider.getValue();
                 int newTimeInMilli = (int) (sliderValue / musicPlayer.getCurrentSong().getFrameRatePerMilliseconds());
 
                 musicPlayer.setCurrentTimeInMilli(newTimeInMilli);
                 musicPlayer.setCurrentFrame(sliderValue);
-                musicPlayer.playCurrentSong();
+                musicPlayerInvoker.executeCommand(musicCommandFactory.createPlayCommand());
 
                 enablePauseButtonDisablePlayButton();
             }
@@ -846,7 +831,8 @@ public class MusicPlayerGUI extends JFrame {
             if (musicPlayer != null) {
                 int value = volumeSlider.getValue();
                 System.out.println("slider volume in GUI: " + value);
-                musicPlayer.setVolume(value);
+                //Set the volume
+                musicPlayerInvoker.executeCommand(musicCommandFactory.createSetVolumeCommand(value));
 
                 // Calculate percentage (0-100)
                 int percentage = (int) (((double) (value - volumeSlider.getMinimum()) /
@@ -899,16 +885,10 @@ public class MusicPlayerGUI extends JFrame {
             // Add listeners for song selection and cancellation
             songPanel.addPropertyChangeListener("songSelected", evt -> {
                 SongDTO selectedSong = (SongDTO) evt.getNewValue();
-                musicPlayer.setCurrentSong(selectedSong);
                 songDialog.dispose();
-
                 // Load the selected song into the music player
-                try {
-                    musicPlayer.loadSong(selectedSong);
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                    JOptionPane.showMessageDialog(this, "Failed to load the song!", "Error", JOptionPane.ERROR_MESSAGE);
-                }
+                musicPlayerInvoker.executeCommand(musicCommandFactory.createLoadSongCommand(selectedSong));
+
             });
 
             songPanel.addPropertyChangeListener("cancel", evt -> songDialog.dispose());

@@ -18,37 +18,28 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 public class HomePage extends JFrame {
-
+    private static final Dimension FRAME_SIZE = new Dimension(1024, 768);
     private CardLayout cardLayout;
     private JPanel centerPanel;
-    private final String userImageLink;
-    private final String username;
     private JLabel avatarLabel;
-    private JLabel usernameLabel;
-    @Getter
-    private final Set<String> roles;
-    private JLabel clockLabel;
+    private JLabel fullNameLabel;
     @Getter
     private final UserDTO currentUser;
     private MusicPlayerGUI musicPlayerGUI;
     private JLabel spinningDisc;
     private JPanel controlButtonsPanel;
-    private Color primaryColor;
-    private Color secondaryColor;
-    private JPanel miniMusicPlayerPanel;
+    private Color backgroundColor = AppConstant.BACKGROUND_COLOR;
+    private Color textColor = AppConstant.TEXT_COLOR;
+    private final Color accentColor = AppConstant.TEXTFIELD_BACKGROUND_COLOR;
     private JSlider playbackSlider;
     private JButton prevButton;
     private JButton playButton;
     private JButton pauseButton;
     private JButton nextButton;
-    private JPanel headerPanel;
     private JPanel userInfoPanel;
     private JButton playMusicButton;
     private Timer spinTimer;
@@ -63,75 +54,103 @@ public class HomePage extends JFrame {
     private static final int SCROLL_DELAY = 16; // ~60 FPS (1000ms/60)
     private static final float SCROLL_SPEED = 0.5f; // Smaller increment
     private float scrollPosition = 0.0f; // Change to float for smoother movement
-    private final Map<String, JButton> navButtons = new HashMap<>();
-    private JButton homeButton;
     private JLabel dateLabel;
+    private JPanel topPanel;
+    private JPanel footerPanel;
+    private JPanel combinedCenterPanel;
+    private JPanel navBar;
+    private final JPanel mainPanel;
+    private JLabel welcomeLabel;
 
-    public HomePage(String userImageLink, String username, Set<String> roles, UserDTO currentUser) throws IOException {
+    public HomePage(UserDTO currentUser) throws IOException {
         this.currentUser = currentUser;
-        this.userImageLink = userImageLink;
-        this.username = username;
-        this.roles = roles;
-
-        SecurityUtils.setAuthorities(roles);
         initializeFrame();
-        JPanel mainPanel = createMainPanel();
-        homeButton.setBackground(AppConstant.ACTIVE_BUTTON_BACKGROUND_COLOR);
-        homeButton.setForeground(AppConstant.ACTIVE_BUTTON_TEXT_COLOR);
+
+        mainPanel = createMainPanel();
         add(mainPanel);
         spinningDisc.setIcon(
                 GuiUtil.createDiscImageIcon(GuiUtil.createBufferImage(AppConstant.DEFAULT_COVER_PATH), 50, 50, 7));
+        SecurityUtils.setAuthorities(currentUser.getRoles());
 
         setVisible(true);
-        GuiUtil.applyWindowStyle(this);
-
     }
 
 
     private void initializeFrame() {
+        //Set up for frame size
         setExtendedState(JFrame.MAXIMIZED_BOTH);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setMinimumSize(FRAME_SIZE);
+        setResizable(true);
+        //Doing nothing because I want user to confirm when logging out
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setLocationRelativeTo(null);
+        //Styling windows
+        GuiUtil.applyWindowStyle(this);
+
+        //Show option pane when user log out
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent windowEvent) {
+                int option = GuiUtil.showConfirmMessageDialog(
+                        HomePage.this,
+                        "Do you really want to logout MuseMoe? We'll miss you :(",
+                        "Exit"
+                );
+                if (option == JOptionPane.YES_OPTION) {
+                    System.exit(0);
+                }
+            }
+        });
+
     }
+
 
     private JPanel createMainPanel() throws IOException {
         JPanel mainPanel = new JPanel(new BorderLayout());
-        mainPanel.add(createNavBar(), BorderLayout.WEST);
-        mainPanel.add(createContentPanel(), BorderLayout.CENTER);
+
+        // Apply a radial gradient using the GuiUtil method instead of the linear gradient
+        GuiUtil.setGradientBackground(mainPanel,
+                GuiUtil.lightenColor(AppConstant.BACKGROUND_COLOR, 0.1f),
+                GuiUtil.darkenColor(AppConstant.BACKGROUND_COLOR, 0.1f),
+                0.5f, 0.5f, 0.8f);
+
+        topPanel = createHeaderPanel();
+        topPanel.setOpaque(false);
+        mainPanel.add(topPanel, BorderLayout.NORTH);
+
+        combinedCenterPanel = new JPanel(new BorderLayout());
+        combinedCenterPanel.setOpaque(false);
+
+        navBar = createNavBar();
+        navBar.setOpaque(false);
+        combinedCenterPanel.add(navBar, BorderLayout.WEST);
+
+        centerPanel = createCenterPanel();
+        centerPanel.setOpaque(false);
+        combinedCenterPanel.add(centerPanel, BorderLayout.CENTER);
+
+        mainPanel.add(combinedCenterPanel, BorderLayout.CENTER);
+
+        footerPanel = createMiniMusicPlayerPanel();
+        footerPanel.setOpaque(false);
+        mainPanel.add(footerPanel, BorderLayout.SOUTH);
+
         return mainPanel;
     }
 
-    private JPanel createContentPanel() throws IOException {
-        JPanel contentPanel = new JPanel(new BorderLayout());
-        contentPanel.add(createHeaderPanel(), BorderLayout.NORTH);
-        contentPanel.add(createCenterPanel(), BorderLayout.CENTER);
-        return contentPanel;
-    }
 
-    private JPanel createHeaderPanel() throws IOException {
-        headerPanel = GuiUtil.createPanel(new BorderLayout(), AppConstant.HEADER_BACKGROUND_COLOR);
-        GuiUtil.setGradientBackground(headerPanel, AppConstant.BACKGROUND_COLOR,
-                GuiUtil.darkenColor(AppConstant.BACKGROUND_COLOR, 0.1f), 0.5f, 0.5f, 0.5f);
+    private JPanel createHeaderPanel() {
+        JPanel headerPanel = GuiUtil.createPanel(new BorderLayout(), AppConstant.HEADER_BACKGROUND_COLOR);
 
         //Date label
         dateLabel = new JLabel();
-        dateLabel.setForeground(GuiUtil.darkenColor(AppConstant.TEXT_COLOR, 0.2f));
+        dateLabel.setForeground(AppConstant.TEXT_COLOR);
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         Timer dateTimer = new Timer(1000, e -> {
             String currentDate = LocalDate.now().format(dateFormatter);
             dateLabel.setText(currentDate);
         });
         dateTimer.start();
-
-        // Clock Label
-        clockLabel = new JLabel();
-        clockLabel.setForeground(GuiUtil.darkenColor(AppConstant.TEXT_COLOR, 0.2f));
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
-        Timer timer = new Timer(1000, e -> {
-            String currentTime = LocalTime.now().format(formatter);
-            clockLabel.setText(currentTime);
-        });
-        timer.start();
 
         // Create wrapper with GridBagLayout
         JPanel dateTimeWrapper = new JPanel(new GridBagLayout());
@@ -141,7 +160,6 @@ public class HomePage extends JFrame {
         JPanel dateTimePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         dateTimePanel.setOpaque(false);
         dateTimePanel.add(dateLabel);
-        dateTimePanel.add(clockLabel);
 
         // Setup GridBagConstraints
         GridBagConstraints gbc = new GridBagConstraints();
@@ -155,28 +173,22 @@ public class HomePage extends JFrame {
         dateTimeWrapper.add(dateTimePanel, gbc);
         headerPanel.add(dateTimeWrapper, BorderLayout.WEST);
 
-
-        // Create user info panel
+        // Create user info panel for the top right
         userInfoPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.RIGHT), AppConstant.HEADER_BACKGROUND_COLOR);
         userInfoPanel.setOpaque(false);
 
-        // Create Mini Music Player Panel
-        JPanel miniMusicPlayerPanel = createMiniMusicPlayerPanel();
-        userInfoPanel.add(miniMusicPlayerPanel);
-
         // Determine user role
-        String userRole = determineUserRole(roles);
+        String userRole = determineUserRole(currentUser.getRoles());
 
         // Create and add username label
-        if (username == null) {
-            usernameLabel = new JLabel("???" + " - " + userRole);
-
+        if (currentUser.getFullName() == null) {
+            fullNameLabel = GuiUtil.createLabel("???" + " - " + userRole);
         } else {
-            usernameLabel = new JLabel(username + " - " + userRole);
+            fullNameLabel = GuiUtil.createLabel(currentUser.getFullName() + " - " + userRole);
         }
-        usernameLabel.setForeground(GuiUtil.darkenColor(AppConstant.TEXT_COLOR, 0.2f));
+        fullNameLabel.setForeground(AppConstant.TEXT_COLOR);
 
-        userInfoPanel.add(usernameLabel);
+        userInfoPanel.add(fullNameLabel);
 
         // Create and add avatar label
         avatarLabel = createUserAvatar();
@@ -188,9 +200,12 @@ public class HomePage extends JFrame {
     }
 
     private JPanel createMiniMusicPlayerPanel() throws IOException {
-        miniMusicPlayerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        miniMusicPlayerPanel.setBackground(AppConstant.HEADER_BACKGROUND_COLOR);
-        miniMusicPlayerPanel.setOpaque(false);
+        JPanel miniMusicPlayerPanel = new JPanel(new BorderLayout());
+        miniMusicPlayerPanel.setOpaque(true);
+
+        // Create a more organized layout with FlowLayout center alignment
+        JPanel controlsWrapper = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 5));
+        controlsWrapper.setOpaque(false);
 
         // Create scrolling text label
         scrollingLabel = new ScrollingLabel();
@@ -209,8 +224,6 @@ public class HomePage extends JFrame {
             }
             scrollingLabel.repaint();
         });
-
-        miniMusicPlayerPanel.add(scrollingLabel);
 
         // Spinning disc with song image
         spinningDisc = new JLabel() {
@@ -236,6 +249,7 @@ public class HomePage extends JFrame {
                 g2d.dispose();
             }
         };
+
         spinTimer = new Timer(TIMER_DELAY, e -> {
             rotationAngle += SPIN_SPEED;
             if (rotationAngle >= 2 * Math.PI) {
@@ -249,9 +263,12 @@ public class HomePage extends JFrame {
         // Playback slider
         JPanel sliderPanel = new JPanel(new BorderLayout());
         sliderPanel.setOpaque(false);
+        sliderPanel.setPreferredSize(new Dimension(300, 60));
+        sliderPanel.setMaximumSize(new Dimension(300, 60));
+
         playbackSlider = new JSlider();
         playbackSlider.setPreferredSize(new Dimension(300, 40));
-        playbackSlider.setMaximumSize(new Dimension(Integer.MAX_VALUE, playbackSlider.getPreferredSize().height));
+        playbackSlider.setMaximumSize(new Dimension(300, 40));
         playbackSlider.setBackground(AppConstant.HEADER_BACKGROUND_COLOR);
         playbackSlider.setForeground(AppConstant.TEXT_COLOR);
         playbackSlider.setFocusable(false);
@@ -260,8 +277,12 @@ public class HomePage extends JFrame {
         sliderPanel.add(createLabelsPanel(), BorderLayout.SOUTH);
 
         playbackSlider.addMouseListener(new MouseAdapter() {
+
             @Override
             public void mousePressed(MouseEvent e) {
+                if (musicPlayerGUI.getMusicPlayer().isHasAd()) {
+                    return;
+                }
                 try {
                     musicPlayerGUI.getMusicPlayer().pauseSong();
                 } catch (IOException ex) {
@@ -270,7 +291,16 @@ public class HomePage extends JFrame {
             }
 
             @Override
+            public void mouseClicked(MouseEvent e) {
+
+            }
+
+            @Override
             public void mouseReleased(MouseEvent e) {
+
+                if (musicPlayerGUI.getMusicPlayer().isHasAd()) {
+                    return;
+                }
                 int sliderValue = playbackSlider.getValue();
 
                 int newTimeInMilli = (int) (sliderValue
@@ -285,8 +315,9 @@ public class HomePage extends JFrame {
                 enablePauseButtonDisablePlayButton();
             }
         });
-        // Control buttons panel
-        controlButtonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 0));
+
+        // Control buttons panel - now using FlowLayout CENTER for better alignment
+        controlButtonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 0));
         controlButtonsPanel.setBackground(AppConstant.HEADER_BACKGROUND_COLOR);
         controlButtonsPanel.setVisible(false);
         controlButtonsPanel.setOpaque(false);
@@ -341,7 +372,6 @@ public class HomePage extends JFrame {
         playMusicButton.setFont(FontUtil.getJetBrainsMonoFont(Font.BOLD, 14));
         playMusicButton.setBorderPainted(false);
         playMusicButton.setContentAreaFilled(true);
-
         playMusicButton.setBackground(AppConstant.BACKGROUND_COLOR);
         playMusicButton.setForeground(AppConstant.TEXT_COLOR);
 
@@ -357,35 +387,44 @@ public class HomePage extends JFrame {
                 spinningDisc.setVisible(false);
                 controlButtonsPanel.setVisible(false);
                 playbackSlider.setVisible(false);
+                labelEnd.setVisible(false);
+                labelBeginning.setVisible(false);
                 stopDiscSpinning();
                 stopTextScrolling();
                 scrollPosition = 0;
-
                 playbackSlider.setValue(0);
                 scrollingLabel.setVisible(false);
                 playMusicButton.setText("Play music!");
 
-
-                //Return to original color
-                extractColor(AppConstant.BACKGROUND_COLOR, AppConstant.TEXT_COLOR, AppConstant.TEXT_COLOR);
-                GuiUtil.setGradientBackground(headerPanel, primaryColor, GuiUtil.darkenColor(primaryColor, 0.1f), 0.5f,
-                        0.5f, 0.5f);
-                dateLabel.setForeground(GuiUtil.darkenColor(AppConstant.TEXT_COLOR, 0.2f));
-                clockLabel.setForeground(GuiUtil.darkenColor(AppConstant.TEXT_COLOR, 0.2f));
-                usernameLabel.setForeground(GuiUtil.darkenColor(AppConstant.TEXT_COLOR, 0.2f));
-
-
+                // Return to original color
+                extractColor(AppConstant.BACKGROUND_COLOR, AppConstant.TEXT_COLOR, AppConstant.TEXTFIELD_BACKGROUND_COLOR);
+                dateLabel.setForeground(AppConstant.TEXT_COLOR);
+                fullNameLabel.setForeground(AppConstant.TEXT_COLOR);
             } else {
                 openMusicPlayer();
             }
         });
 
-        // Assemble mini music player components
-        miniMusicPlayerPanel.add(spinningDisc);
-        miniMusicPlayerPanel.add(sliderPanel);
-        miniMusicPlayerPanel.add(controlButtonsPanel);
-        miniMusicPlayerPanel.add(playMusicButton);
+        // Create layout for player elements
+        JPanel spinAndTextPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        spinAndTextPanel.setOpaque(false);
+        spinAndTextPanel.add(spinningDisc);
+        spinAndTextPanel.add(scrollingLabel);
 
+        // Create panel for controls
+        JPanel playerControlsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
+        playerControlsPanel.setOpaque(false);
+        playerControlsPanel.add(controlButtonsPanel);
+
+        // Add all components with better organization
+        controlsWrapper.add(spinAndTextPanel);
+        controlsWrapper.add(sliderPanel);
+        controlsWrapper.add(playerControlsPanel);
+        controlsWrapper.add(playMusicButton);
+
+        // Add padding to the panel
+        miniMusicPlayerPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        miniMusicPlayerPanel.add(controlsWrapper, BorderLayout.CENTER);
 
         return miniMusicPlayerPanel;
     }
@@ -424,10 +463,12 @@ public class HomePage extends JFrame {
         labelsPanel.setOpaque(false);
 
         labelBeginning = GuiUtil.createSpotifyFontLabel("00:00", Font.PLAIN, 18);
-        labelBeginning.setForeground(secondaryColor);
+        labelBeginning.setForeground(textColor);
+        labelBeginning.setVisible(false);
 
         labelEnd = GuiUtil.createSpotifyFontLabel("00:00", Font.PLAIN, 18);
-        labelEnd.setForeground(secondaryColor);
+        labelEnd.setForeground(textColor);
+        labelEnd.setVisible(false);
 
         // Add labels to labelsPanel
         labelsPanel.add(labelBeginning, BorderLayout.WEST);
@@ -533,43 +574,61 @@ public class HomePage extends JFrame {
 
     }
 
-    public void extractColor(Color primaryColor, Color secondaryColor, Color tertiaryColor) {
-        this.primaryColor = primaryColor;
-        this.secondaryColor = secondaryColor;
+    public void extractColor(Color backgroundColor, Color textColor, Color accentColor) {
+        this.backgroundColor = backgroundColor;
+        this.textColor = textColor;
 
-        GuiUtil.changeButtonIconColor(nextButton, secondaryColor);
-        GuiUtil.changeButtonIconColor(prevButton, secondaryColor);
-        GuiUtil.changeButtonIconColor(playButton, secondaryColor);
-        GuiUtil.changeButtonIconColor(pauseButton, secondaryColor);
+        // Update all control colors
+        GuiUtil.changeButtonIconColor(nextButton, textColor);
+        GuiUtil.changeButtonIconColor(prevButton, textColor);
+        GuiUtil.changeButtonIconColor(playButton, textColor);
+        GuiUtil.changeButtonIconColor(pauseButton, textColor);
 
-        playbackSlider.setBackground(GuiUtil.lightenColor(primaryColor, 0.3f));
-        playbackSlider.setForeground(tertiaryColor);
-        // playbackSlider.setPaintLabels(true);
-        GuiUtil.setGradientBackground(headerPanel, primaryColor, GuiUtil.darkenColor(primaryColor, 0.3f), 0.5f, 0.5f,
-                0.5f);
-        dateLabel.setForeground(GuiUtil.lightenColor(primaryColor, 0.2f));
-        clockLabel.setForeground(GuiUtil.lightenColor(primaryColor, 0.2f));
-        usernameLabel.setForeground(GuiUtil.lightenColor(primaryColor, 0.2f));
+        playbackSlider.setBackground(GuiUtil.lightenColor(backgroundColor, 0.3f));
+        playbackSlider.setForeground(accentColor);
 
-        playMusicButton.setBackground(primaryColor);
-        playMusicButton.setForeground(tertiaryColor);
+        // Force repaint of main panel to update the gradient
+        Container contentPane = getContentPane();
+        contentPane.repaint();
 
-        scrollingLabel.setForeground(secondaryColor);
+        // Update text colors
+        dateLabel.setForeground(textColor);
+        fullNameLabel.setForeground(textColor);
 
-        labelBeginning.setForeground(secondaryColor);
-        labelEnd.setForeground(secondaryColor);
+        playMusicButton.setBackground(backgroundColor);
+        playMusicButton.setForeground(textColor);
 
+        scrollingLabel.setForeground(textColor);
+        labelBeginning.setForeground(textColor);
+        labelEnd.setForeground(textColor);
+
+        // Update avatar if needed
+        if (currentUser.getAvatar() == null) {
+            userInfoPanel.remove(avatarLabel);
+            avatarLabel = createUserAvatar();
+            userInfoPanel.add(avatarLabel);
+            userInfoPanel.revalidate();
+            userInfoPanel.repaint();
+        }
+        //Apply again the mainPanel
+        GuiUtil.setGradientBackground(mainPanel,
+                GuiUtil.lightenColor(backgroundColor, 0.1f),
+                GuiUtil.darkenColor(backgroundColor, 0.1f),
+                0.5f, 0.5f, 0.8f);
+
+        //Welcome label
+        welcomeLabel.setForeground(textColor);
     }
 
     public String determineUserRole(Set<String> roles) {
-        if (roles.contains(AppConstant.ARTIST_ROLE)) {
-            return "Artist";
+        if (roles.contains(AppConstant.ADMIN_ROLE)) {
+            return "Admin";
         } else if (roles.contains(AppConstant.PREMIUM_ROLE)) {
             return "Premium user";
-        } else if (roles.contains(AppConstant.FREE_ROLE)) {
-            return "Free user";
+        } else if (roles.contains(AppConstant.ARTIST_ROLE)) {
+            return "Artist";
         } else {
-            return "Admin";
+            return "Free user";
         }
     }
 
@@ -577,102 +636,84 @@ public class HomePage extends JFrame {
         spinningDisc.setVisible(true);
         playbackSlider.setVisible(true);
         controlButtonsPanel.setVisible(true);
+        labelBeginning.setVisible(true);
+        labelEnd.setVisible(true);
         startTextScrolling();
+        startDiscSpinning();
         playMusicButton.setText("Stop music!");
     }
 
     private JPanel createNavBar() {
-        JPanel navBar = new JPanel();
-        navBar.setLayout(new BoxLayout(navBar, BoxLayout.Y_AXIS));
-        navBar.setBackground(AppConstant.NAVBAR_BACKGROUND_COLOR);
-        navBar.setPreferredSize(new Dimension(300, getHeight()));
-
-        navBar.add(createTitleLabel());
-        navBar.add(createLogoLabel());
-        navBar.add(Box.createRigidArea(new Dimension(0, 20)));
-
-        homeButton = createNavButton("Trang chủ", "home");
-        navButtons.put("home", homeButton);
-        JButton productsButton = createNavButton("Sản phẩm", "products");
-        navButtons.put("products", productsButton);
-        JButton usersButton = createNavButton("Nhân viên", "users");
-        navButtons.put("users", usersButton);
-        JButton discountsButton = createNavButton("Giảm giá", "discounts");
-        navButtons.put("discounts", discountsButton);
-        JButton salesButton = createNavButton("Bán hàng", "sales");
-        navButtons.put("sales", salesButton);
-        JButton ordersButton = createNavButton("Hóa đơn", "orders");
-        navButtons.put("orders", ordersButton);
-        JButton statisticsButton = createNavButton("Thống kê", "statistics");
-        navButtons.put("statistics", statisticsButton);
-
-        if (SecurityUtils.getAuthorities().contains(AppConstant.ADMIN_ROLE)) {
-            navBar.add(homeButton);
-            navBar.add(productsButton);
-            navBar.add(usersButton);
-            navBar.add(discountsButton);
-            navBar.add(salesButton);
-            navBar.add(ordersButton);
-            navBar.add(statisticsButton);
-        } else if (SecurityUtils.getAuthorities().contains(AppConstant.ARTIST_ROLE)) {
-            navBar.add(homeButton);
-            navBar.add(productsButton);
-            navBar.add(discountsButton);
-            navBar.add(salesButton);
-            navBar.add(ordersButton);
-            navBar.add(statisticsButton);
-        } else if (SecurityUtils.getAuthorities().contains(AppConstant.FREE_ROLE)) {
-            navBar.add(homeButton);
-        } else if (SecurityUtils.getAuthorities().contains(AppConstant.PREMIUM_ROLE)) {
-            navBar.add(homeButton);
-            navBar.add(productsButton);
-            navBar.add(discountsButton);
-            navBar.add(ordersButton);
-            navBar.add(statisticsButton);
-        }
-
-        navBar.add(Box.createVerticalGlue());
-        navBar.add(createQuoteLabel());
-
-        return navBar;
+        JPanel sideNav = new JPanel();
+        sideNav.setLayout(new BoxLayout(sideNav, BoxLayout.Y_AXIS));
+        sideNav.setBackground(AppConstant.BACKGROUND_COLOR);
+        sideNav.setPreferredSize(new Dimension(300, getHeight()));
+        return sideNav;
     }
 
-    public void updateUsernameLabel(String newUsername) {
-        usernameLabel.setText(newUsername + " - " + determineUserRole(roles));
-    }
-
-    public void updateAvatarImage(String imagePath) {
-        BufferedImage originalImage;
-        try {
-            originalImage = ImageIO.read(new File(imagePath));
-        } catch (IOException e) {
-            e.printStackTrace();
-            originalImage = GuiUtil.createDefaultAvatar(50, 50);
-        }
-
-        // Create a high-quality circular avatar
-        BufferedImage circularImage = GuiUtil.createSmoothCircularAvatar(originalImage, 50);
-
-        // Update the avatar label with the new circular image
-        avatarLabel.setIcon(new ImageIcon(circularImage));
-    }
 
     private JLabel createUserAvatar() {
-        BufferedImage originalImage;
+        BufferedImage originalImage = null;
+        boolean useDefaultAvatar = false;
+
         try {
-            originalImage = ImageIO.read(new File(userImageLink));
+            if (currentUser.getAvatar() != null) {
+                originalImage = ImageIO.read(new File(currentUser.getAvatar().getFileUrl()));
+            } else {
+                useDefaultAvatar = true;
+            }
         } catch (IOException e) {
-            originalImage = GuiUtil.createDefaultAvatar(50, 50);
+            useDefaultAvatar = true;
         }
 
-        BufferedImage circularImage = GuiUtil.createSmoothCircularAvatar(originalImage, 50);
+        int size = 40;
 
-        avatarLabel = new JLabel(new ImageIcon(circularImage));
+        BufferedImage avatarImage;
+        if (useDefaultAvatar) {
+            avatarImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2d = avatarImage.createGraphics();
+
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+            Color bgColor = this.backgroundColor != null ? this.backgroundColor : AppConstant.NAVBAR_BACKGROUND_COLOR;
+            Color textColor = this.textColor != null ? this.textColor : AppConstant.TEXT_COLOR;
+
+            g2d.setColor(bgColor);
+            g2d.fillOval(0, 0, size, size);
+
+            String initial = currentUser.getUsername() != null && !currentUser.getUsername().isEmpty() ?
+                    currentUser.getUsername().substring(0, 1).toUpperCase() : "U";
+
+            float fontSize = (float) size * 0.4f;
+            g2d.setColor(textColor);
+            g2d.setFont(FontUtil.getJetBrainsMonoFont(Font.BOLD, fontSize));
+
+            FontMetrics fm = g2d.getFontMetrics();
+            int textWidth = fm.stringWidth(initial);
+            int textHeight = fm.getAscent();
+
+            int x = (size - textWidth) / 2;
+            int y = (size - textHeight) / 2 + fm.getAscent();
+
+            g2d.drawString(initial, x, y);
+            g2d.dispose();
+        } else {
+            // Use the actual user image and make it circular
+            avatarImage = GuiUtil.createSmoothCircularAvatar(originalImage, size);
+        }
+
+        avatarLabel = new JLabel(new ImageIcon(avatarImage));
         avatarLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        JPopupMenu popupMenu = new JPopupMenu();
-        JMenuItem profileItem = new JMenuItem("Account");
-        JMenuItem logoutItem = new JMenuItem("Log out");
+        // Ensure the label size matches the image size
+        avatarLabel.setPreferredSize(new Dimension(size, size));
+
+        JPopupMenu popupMenu = GuiUtil.createPopupMenu(backgroundColor, textColor);
+        JMenuItem profileItem = GuiUtil.createMenuItem("Account");
+        JMenuItem logoutItem = GuiUtil.createMenuItem("Log out");
+
 
         popupMenu.add(profileItem);
         popupMenu.add(logoutItem);
@@ -685,7 +726,6 @@ public class HomePage extends JFrame {
             }
         });
         profileItem.addActionListener(e -> {
-            resetNavButtonColors();
             navigateTo("profile");
         });
 
@@ -700,18 +740,14 @@ public class HomePage extends JFrame {
     }
 
     private void logout() throws IOException {
-        int option = GuiUtil.showConfirmMessageDialog(this, "Do you really want to log out?", "Exit confirm",
-                JOptionPane.YES_NO_OPTION);
+        int option = GuiUtil.showConfirmMessageDialog(this, "Do you really want to log out MuseMoe? We'll miss you :(", "Logout confirm");
         if (option == JOptionPane.YES_OPTION) {
             this.dispose();
             SwingUtilities.invokeLater(() -> {
                 LoginPage loginPage = new LoginPage();
                 UIManager.put("TitlePane.iconSize", new Dimension(24, 24));
                 loginPage.getUsernameField().setText(currentUser.getUsername());
-                /*
-                 * Remember username after logging out
-                 * */
-                loginPage.setIconImage(GuiUtil.createImageIcon(AppConstant.MUSE_MOE_ICON_PATH, 512, 512).getImage());
+                loginPage.setIconImage(GuiUtil.createImageIcon(AppConstant.MUSE_MOE_LOGO_PATH, 512, 512).getImage());
                 loginPage.setVisible(true);
             });
 
@@ -720,43 +756,30 @@ public class HomePage extends JFrame {
             }
             MusicPlayerGUI.instance = null;
         }
-
     }
 
     private JPanel createCenterPanel() {
         cardLayout = new CardLayout();
         centerPanel = new JPanel(cardLayout);
+        centerPanel.setOpaque(false);
 
+        JPanel homePanel = createHomePanel();
+        homePanel.setOpaque(false);
+        homePanel.setName("home");
 
+        centerPanel.add(homePanel, "home");
         return centerPanel;
     }
 
-    private JLabel createTitleLabel() {
-        JLabel titleLabel = new JLabel("Muse Moe", SwingConstants.CENTER);
-        titleLabel.setFont(FontUtil.getJetBrainsMonoFont(Font.BOLD, 30));
-        titleLabel.setForeground(AppConstant.BUTTON_TEXT_COLOR);
-        titleLabel.setBorder(BorderFactory.createEmptyBorder(20, 0, 10, 0));
-        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        return titleLabel;
-    }
 
     private JLabel createLogoLabel() {
-        ImageIcon logoIcon = new ImageIcon(AppConstant.LOGO_PATH);
+        ImageIcon logoIcon = new ImageIcon(AppConstant.MUSE_MOE_LOGO_PATH);
         Image logoImage = logoIcon.getImage().getScaledInstance(200, 200, Image.SCALE_SMOOTH);
         JLabel logoLabel = new JLabel(new ImageIcon(logoImage));
         logoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         return logoLabel;
     }
 
-    private JLabel createQuoteLabel() {
-        JLabel quoteLabel = new JLabel(
-                "<html><div style='text-align: center;'>\"Cà phê và sách – vị đắng và tri thức quyện thành niềm say mê bất tận.\"<br></br><span style='color: #D7B899;'>-VoxNuts</span></div></html>");
-        quoteLabel.setFont(FontUtil.getJetBrainsMonoFont(Font.ITALIC, 12));
-        quoteLabel.setForeground(AppConstant.BUTTON_TEXT_COLOR);
-        quoteLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        quoteLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        return quoteLabel;
-    }
 
     private JButton createNavButton(String text, String cardName) {
         JButton button = new JButton(text);
@@ -785,36 +808,20 @@ public class HomePage extends JFrame {
     }
 
     private JPanel createHomePanel() {
-        JPanel homePanel = new JPanel(new BorderLayout());
-        homePanel.add(createGifLabel(), BorderLayout.CENTER);
-        homePanel.add(createCenterTitleLabel(), BorderLayout.NORTH);
-        return homePanel;
-    }
+        JPanel mainContent = new JPanel(new BorderLayout());
+        mainContent.setOpaque(false);  // Make this panel transparent
 
-    private JLabel createGifLabel() {
-        ImageIcon gifIcon = new ImageIcon(AppConstant.GIF_PATH);
-        JLabel gifLabel = new JLabel(gifIcon) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                g.drawImage(gifIcon.getImage(), 0, 0, getWidth(), getHeight(), this);
-            }
-        };
-        gifLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        gifLabel.setVerticalAlignment(SwingConstants.CENTER);
-        return gifLabel;
-    }
+        JPanel backgroundPanel = new JPanel(new GridBagLayout());
+        backgroundPanel.setOpaque(false);
 
-    private JLabel createCenterTitleLabel() {
-        JLabel centerTitleLabel = new JLabel("LATTE LITERATURE", SwingConstants.CENTER);
-        centerTitleLabel.setFont(FontUtil.getJetBrainsMonoFont(Font.BOLD, 50));
-        centerTitleLabel.setForeground(AppConstant.ACTIVE_BACKGROUND_COLOR);
-        centerTitleLabel.setBackground(AppConstant.NAVBAR_BACKGROUND_COLOR);
-        centerTitleLabel.setOpaque(true);
-        centerTitleLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        centerTitleLabel.setVerticalAlignment(SwingConstants.TOP);
-        centerTitleLabel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
-        return centerTitleLabel;
+        welcomeLabel = new JLabel("Welcome to Muse Moe", SwingConstants.CENTER);
+        welcomeLabel.setFont(FontUtil.getJetBrainsMonoFont(Font.BOLD, 36));
+        welcomeLabel.setForeground(AppConstant.TEXT_COLOR);
+
+        backgroundPanel.add(welcomeLabel);
+        mainContent.add(backgroundPanel, BorderLayout.CENTER);
+
+        return mainContent;
     }
 
 
@@ -825,23 +832,22 @@ public class HomePage extends JFrame {
             g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
                     RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
+            // Calculate dimensions relative to component size
+            int width = getWidth();
+            int height = getHeight();
+            float centerY = height / 2.0f;
+
             FontMetrics fm = g2d.getFontMetrics();
             String text = getText();
             int textWidth = fm.stringWidth(text);
 
-            // Draw text twice for seamless scrolling
+            // Draw text with responsive positioning
             g2d.setColor(getForeground());
-            g2d.drawString(text, -scrollPosition, (float) getHeight() / 2 + (float) fm.getAscent() / 2);
-            g2d.drawString(text, textWidth - scrollPosition, (float) getHeight() / 2 + (float) fm.getAscent() / 2);
+            float textY = centerY + (float) fm.getAscent() / 2;
+            g2d.drawString(text, -scrollPosition, textY);
+            g2d.drawString(text, textWidth - scrollPosition, textY);
 
             g2d.dispose();
-        }
-    }
-
-    private void resetNavButtonColors() {
-        for (JButton button : navButtons.values()) {
-            button.setForeground(AppConstant.BUTTON_TEXT_COLOR);
-            button.setBackground(AppConstant.BUTTON_BACKGROUND_COLOR);
         }
     }
 

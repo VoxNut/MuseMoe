@@ -1,7 +1,7 @@
 package com.javaweb.utils;
 
+import com.javaweb.enums.BaseEnum;
 import com.javaweb.exception.EnumNotFoundException;
-import com.javaweb.utils.client.impl.BaseEnum;
 
 import java.util.Arrays;
 

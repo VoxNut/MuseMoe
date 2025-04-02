@@ -1,6 +1,5 @@
 package com.javaweb.constant;
 
-import javax.swing.*;
 import java.awt.*;
 
 public class AppConstant {
@@ -72,12 +71,15 @@ public class AppConstant {
     public static final Color MUSIC_PLAYER_TEXT_COLOR = Color.decode("#FFFFFF");
 
     //LOGO
-    public static final String LOGO_PATH = "src/main/java/com/javaweb/view/imgs/icon/muse_moe_no_bg.png";
-    public static final String SPOTIFY_LOGO_PATH = "src/main/java/com/javaweb/view/imgs/icon/muse_moe_no_bg.png";
-    public static final String MUSE_MOE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/muse_moe_no_bg.png";
+    public static final String MUSE_MOE_LOGO_PATH = "src/main/java/com/javaweb/view/imgs/logo/muse_moe_no_bg.png";
 
 
-    public static final String GIF_PATH = "src/main/java/com/javaweb/view/imgs/back_ground/LatteLiteratureBackGround.gif";
+    //ICON
+    public static final String SUCCESS_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/success-icon.png";
+    public static final String INFORMATION_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/information-icon.png";
+    public static final String WARNING_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/warning-icon.jpg";
+    public static final String ERROR_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/error-icon.png";
+
 
     //FONT
     public static final String FONT_PATH = "src/main/java/com/javaweb/view/fonts/IBMPlexSansJP-Regular.ttf";
@@ -92,9 +94,13 @@ public class AppConstant {
     public static final String CHANGE_PASSWORD_FAIL = "change_password_fail";
     public static final String DEFAULT_PASSWORD = "123321";
     public static final String DEFAULT_USER_AVT_PATH = "src/main/java/com/javaweb/view/imgs/avatars/anonymous.png";
-    public static final String SUCCESS_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/success-icon.png";
-    public static final Icon SUCCESS_ICON = new ImageIcon(new ImageIcon(SUCCESS_ICON_PATH)
-            .getImage()
-            .getScaledInstance(50, 50, Image.SCALE_SMOOTH));
+    public static final String GIF_PATH = "src/main/java/com/javaweb/view/imgs/back_ground/LatteLiteratureBackGround.gif";
+    public static final int SONGS_BEFORE_AD = 3;
 
+
+    //ADS
+    public static final String MUSE_MOE_AD = "src/main/java/com/javaweb/view/custom/musicplayer/advertisement/museMoe.mp3";
+    public static final String STUDY_SMART_AD = "src/main/java/com/javaweb/view/custom/musicplayer/advertisement/studySmart.mp3";
+    public static final String BREW_SPOT_AD = "src/main/java/com/javaweb/view/custom/musicplayer/advertisement/theBrewSpot.mp3";
+    public static final String INSPIRATION_AD = "src/main/java/com/javaweb/view/custom/musicplayer/advertisement/truyenCamHung.mp3";
 }

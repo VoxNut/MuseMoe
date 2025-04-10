@@ -3,7 +3,6 @@ package com.javaweb.converter;
 import com.javaweb.entity.SongEntity;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.model.request.SongRequestDTO;
-import com.javaweb.utils.Mp3Util;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
@@ -16,8 +15,6 @@ public class SongConverter implements EntityConverter<SongEntity, SongRequestDTO
 
     private final ModelMapper modelMapper;
 
-
-    private final Mp3Util mp3Util;
 
     @Override
     public SongDTO toDTO(SongEntity entity) {

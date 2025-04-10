@@ -4,6 +4,7 @@ package com.javaweb.view.mini_musicplayer.event;
 import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
 
+import javax.swing.*;
 import java.awt.*;
 
 // Mediator design pattern
@@ -52,8 +53,10 @@ public class MusicPlayerMediator {
     }
 
     public void notifyPlaybackProgress(int frame, int timeInMillis) {
-        publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.PLAYBACK_PROGRESS,
-                new int[]{frame, timeInMillis}));
+        final int[] data = new int[]{frame, timeInMillis};
+        SwingUtilities.invokeLater(() -> {
+            publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.PLAYBACK_PROGRESS, data));
+        });
     }
 
     public void notifyRepeatModeChanged(Object repeatMode) {

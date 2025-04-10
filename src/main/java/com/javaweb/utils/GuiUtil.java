@@ -340,8 +340,7 @@ public class GuiUtil {
 
         // Change the button icon
         for (Component component : datePicker.getComponents()) {
-            if (component instanceof JButton) {
-                JButton button = (JButton) component;
+            if (component instanceof JButton button) {
                 button.setIcon(GuiUtil.createImageIcon(AppConstant.CALENDAR_PATH, 30, 30));
                 button.setText("");
                 button.setBorderPainted(false);
@@ -434,8 +433,7 @@ public class GuiUtil {
 
     public static void rotateButtonIcon(JButton button, double angleDegrees) {
         Icon icon = button.getIcon();
-        if (icon instanceof ImageIcon) {
-            ImageIcon imageIcon = (ImageIcon) icon;
+        if (icon instanceof ImageIcon imageIcon) {
             Image image = imageIcon.getImage();
 
             // Convert to BufferedImage
@@ -475,8 +473,7 @@ public class GuiUtil {
 
     public static void rotateLabelIcon(JLabel label, double angleDegrees) {
         Icon icon = label.getIcon();
-        if (icon instanceof ImageIcon) {
-            ImageIcon imageIcon = (ImageIcon) icon;
+        if (icon instanceof ImageIcon imageIcon) {
             Image image = imageIcon.getImage();
 
             // Convert to BufferedImage
@@ -516,8 +513,7 @@ public class GuiUtil {
 
     public static void changeButtonIconColor(JButton button, Color color) {
         Icon icon = button.getIcon();
-        if (icon instanceof ImageIcon) {
-            ImageIcon imageIcon = (ImageIcon) icon;
+        if (icon instanceof ImageIcon imageIcon) {
             Image image = imageIcon.getImage();
 
             BufferedImage bufferedImage = new BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_ARGB);
@@ -537,8 +533,7 @@ public class GuiUtil {
 
     public static void changeLabelIconColor(JLabel label, Color color) {
         Icon icon = label.getIcon();
-        if (icon instanceof ImageIcon) {
-            ImageIcon imageIcon = (ImageIcon) icon;
+        if (icon instanceof ImageIcon imageIcon) {
             Image image = imageIcon.getImage();
 
             BufferedImage bufferedImage = new BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_ARGB);
@@ -598,8 +593,7 @@ public class GuiUtil {
 
         // Prepare the Graphics2D object
         Graphics2D g2 = output.createGraphics();
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        configureGraphicsForHighQuality(g2);
 
         // Draw the original image
         g2.drawImage(image, 0, 0, null);

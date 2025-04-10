@@ -9,6 +9,7 @@ import java.io.IOException;
 
 //Replay, pause, play current, cycle repeat, set column
 public class MusicPlayerFacade {
+
     private static MusicPlayerFacade instance;
     private final MusicPlayer player;
     private final MusicPlayerMediator mediator;
@@ -104,7 +105,7 @@ public class MusicPlayerFacade {
             ioException.printStackTrace();
         }
     }
-    
+
 
     public int getCurrentTimeInMilli() {
         return player.getCurrentTimeInMilli();

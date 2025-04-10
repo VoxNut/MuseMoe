@@ -108,8 +108,13 @@ public class MusicPlayer extends PlaybackListener {
     public void loadSong(SongDTO song) throws IOException {
         resetPlaybackPosition();
         // stop the song if possible
-        if (!songFinished)
-            stopSong();
+        stopSong();
+
+        try {
+            Thread.sleep(50);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
 
 
         //Check if Free user has meet the ads condition.
@@ -321,27 +326,43 @@ public class MusicPlayer extends PlaybackListener {
     // create a thread that will handle updating the slider
     private void startPlaybackSliderThread() {
         if (sliderThread != null && sliderThread.isAlive()) {
-            sliderThread.interrupt(); // Stop existing thread if any
+            sliderThread.interrupt();
+            try {
+                sliderThread.join(200);
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+            }
         }
 
         sliderThread = new Thread(() -> {
             try {
+                // Store important values locally to prevent race conditions
+                final SongDTO currentSongCopy = currentSong;
+                if (currentSongCopy == null) return;
+
+                final int totalFrames = currentSongCopy.getMp3File().getFrameCount();
+                final double frameRate = currentSongCopy.getFrameRatePerMilliseconds();
+                final long songDurationMs = currentSongCopy.getMp3File().getLengthInMilliseconds();
+
+                // Handle pause state correctly (with timeout to prevent deadlock)
                 if (isPaused) {
                     synchronized (playSignal) {
-                        while (isPaused) { // Use while loop for safety
-                            playSignal.wait(); // Add timeout
+                        try {
+                            playSignal.wait(5000); // Wait up to 5 seconds
+                        } catch (InterruptedException e) {
+                            return; // Exit if interrupted
                         }
                     }
                 }
 
                 // Adjust startTime to account for the currentTimeInMilli
                 long startTime = System.currentTimeMillis() - currentTimeInMilli;
-                int totalFrames = currentSong.getMp3File().getFrameCount();
-                double frameRate = currentSong.getFrameRatePerMilliseconds();
-                long songDurationMs = currentSong.getMp3File().getLengthInMilliseconds();
 
+                // Main update loop
                 while (!Thread.currentThread().isInterrupted()) {
-                    if (isPaused || songFinished || pressedNext || pressedPrev || pressedShuffle || pressedReplay) {
+                    // Check if we should exit the loop
+                    if (isPaused || songFinished || pressedNext || pressedPrev ||
+                            pressedShuffle || pressedReplay || advancedPlayer == null) {
                         break;
                     }
 
@@ -353,24 +374,38 @@ public class MusicPlayer extends PlaybackListener {
                     // Calculate frame position
                     calculatedFrame = (int) (elapsedTime * frameRate);
 
-                    // Update UI on EDT
-                    if (calculatedFrame <= totalFrames && elapsedTime <= songDurationMs) {
+                    // Ensure we don't exceed song boundaries
+                    if (calculatedFrame > totalFrames) {
+                        calculatedFrame = totalFrames;
+                    }
+
+                    // Only notify mediator if the thread isn't interrupted and we're still playing
+                    if (!Thread.currentThread().isInterrupted() && !isPaused &&
+                            !songFinished && advancedPlayer != null) {
+                        // Use invokeAndWait to ensure UI updates happen synchronously
                         mediator.notifyPlaybackProgress(calculatedFrame, currentTimeInMilli);
-                    } else {
+                    }
+
+                    // Exit if we've reached the end
+                    if (calculatedFrame >= totalFrames || elapsedTime >= songDurationMs) {
                         break;
                     }
+
+                    // Sleep for a very short time to reduce CPU usage
                     try {
-                        Thread.sleep(10);
+                        Thread.sleep(50);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                         break;
                     }
                 }
             } catch (Exception e) {
-                Thread.currentThread().interrupt();
+                System.err.println("Playback slider thread error: " + e.getMessage());
+                e.printStackTrace();
             }
-        });
+        }, "PlaybackSliderThread");
 
+        // Make it a daemon thread so it doesn't prevent JVM shutdown
         sliderThread.setDaemon(true);
         sliderThread.start();
     }

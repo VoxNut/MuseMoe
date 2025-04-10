@@ -62,7 +62,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private JPanel topPanel;
     private JPanel footerPanel;
     private JPanel combinedCenterPanel;
-    private JPanel navBar;
+    private JPanel libraryPanel;
     private final JPanel mainPanel;
     private JLabel welcomeLabel;
 
@@ -129,9 +129,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         combinedCenterPanel = new JPanel(new BorderLayout());
         combinedCenterPanel.setOpaque(false);
 
-        navBar = createNavBar();
-        navBar.setOpaque(false);
-        combinedCenterPanel.add(navBar, BorderLayout.WEST);
+        libraryPanel = createLibraryPanel();
+        libraryPanel.setOpaque(false);
+        combinedCenterPanel.add(libraryPanel, BorderLayout.WEST);
 
         centerPanel = createCenterPanel();
         centerPanel.setOpaque(false);
@@ -617,12 +617,12 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         playMusicButton.setText("Stop music!");
     }
 
-    private JPanel createNavBar() {
-        JPanel sideNav = new JPanel();
-        sideNav.setLayout(new BoxLayout(sideNav, BoxLayout.Y_AXIS));
-        sideNav.setBackground(AppConstant.BACKGROUND_COLOR);
-        sideNav.setPreferredSize(new Dimension(300, getHeight()));
-        return sideNav;
+    private JPanel createLibraryPanel() {
+        JPanel libraryNav = new JPanel();
+        libraryNav.setLayout(new BoxLayout(libraryNav, BoxLayout.Y_AXIS));
+        libraryNav.setBackground(AppConstant.BACKGROUND_COLOR);
+        libraryNav.setPreferredSize(new Dimension(300, getHeight()));
+        return libraryNav;
     }
 
 
@@ -700,7 +700,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             }
         });
         profileItem.addActionListener(e -> {
-            navigateTo("profile");
+//            navigateTo("profile");
         });
 
         avatarLabel.addMouseListener(new MouseAdapter() {
@@ -754,32 +754,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         return logoLabel;
     }
 
-
-    private JButton createNavButton(String text, String cardName) {
-        JButton button = new JButton(text);
-        button.setAlignmentX(Component.CENTER_ALIGNMENT);
-        button.setPreferredSize(new Dimension(400, 60));
-        button.setMaximumSize(new Dimension(400, 60));
-        button.setBackground(AppConstant.BUTTON_BACKGROUND_COLOR);
-        button.setForeground(AppConstant.BUTTON_TEXT_COLOR);
-        button.setFont(FontUtil.getJetBrainsMonoFont(Font.BOLD, 20));
-        button.setFocusPainted(false);
-        button.addActionListener(e -> {
-            navigateTo(cardName);
-        });
-        return button;
-    }
-
-
-    private void navigateTo(String cardName) {
-        cardLayout.show(centerPanel, cardName);
-        for (Component component : centerPanel.getComponents()) {
-            if (cardName.equals(component.getName())) {
-                component.setVisible(true);
-                component.addNotify();
-            }
-        }
-    }
 
     private JPanel createHomePanel() {
         JPanel mainContent = new JPanel(new BorderLayout());
@@ -843,7 +817,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 GuiUtil.darkenColor(backgroundColor, 0.1f),
                 0.5f, 0.5f, 0.8f);
 
-        //Welcome label
+
         welcomeLabel.setForeground(textColor);
     }
 
@@ -897,8 +871,10 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
                 case PLAYBACK_PROGRESS -> {
                     int[] data = (int[]) event.getData();
-                    setPlaybackSliderValue(data[0]);
-                    updateSongTimeLabel(data[1]);
+                    if (!playbackSlider.getValueIsAdjusting()) {
+                        setPlaybackSliderValue(data[0]);
+                        updateSongTimeLabel(data[1]);
+                    }
                 }
                 // Starting to show the playback slider in the Home Page.
                 case HOME_PAGE_SLIDER_CHANGED -> showPlaybackSlider();

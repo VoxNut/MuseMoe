@@ -86,7 +86,7 @@ public class Test {
     public static void main(String[] args) {
         // Specify the package/directory path
         disableJaudiotaggerLogging();
-        String packagePath = "src/main/java/com/javaweb/view/custom/musicplayer/advertisement";
+        String packagePath = "src/main/java/com/javaweb/view/mini_musicplayer/audio";
         File directory = new File(packagePath);
 
         if (!directory.exists() || !directory.isDirectory()) {

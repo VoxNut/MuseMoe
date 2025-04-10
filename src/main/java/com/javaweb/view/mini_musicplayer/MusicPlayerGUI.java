@@ -305,6 +305,7 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
         loadSong = GuiUtil.createMenuItem("Load Song");
         loadSong.addActionListener(e -> {
             try {
+
                 if (playerFacade.isHavingAd()) {
                     GuiUtil.showInfoMessageDialog(this, "Please patience finishing ads. That helps us a lot :)");
                     return;
@@ -935,8 +936,10 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
 
                 case PLAYBACK_PROGRESS -> {
                     int[] data = (int[]) event.getData();
-                    setPlaybackSliderValue(data[0]);
-                    updateSongTimeLabel(data[1]);
+                    if (!playbackSlider.getValueIsAdjusting()) {
+                        setPlaybackSliderValue(data[0]);
+                        updateSongTimeLabel(data[1]);
+                    }
                 }
 
                 case REPEAT_MODE_CHANGED -> {

@@ -63,6 +63,10 @@ public class CommonApiUtil {
         return getUserApiClient().fetchUserById(id);
     }
 
+    public static UserDTO fetchCurrentUser() {
+        return getUserApiClient().fetchCurrentUser();
+    }
+
     public static UserDTO fetchUserByPhone(String phone) {
         return getUserApiClient().fetchUserByPhone(phone);
     }

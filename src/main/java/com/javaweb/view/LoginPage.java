@@ -4,6 +4,7 @@ import com.javaweb.constant.AppConstant;
 import com.javaweb.enums.AccountStatus;
 import com.javaweb.model.dto.UserDTO;
 import com.javaweb.utils.*;
+import com.javaweb.view.user.UserSessionManager;
 import lombok.Getter;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -61,7 +62,7 @@ public class LoginPage extends JFrame {
 
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setLocationRelativeTo(null);
-        GuiUtil.applyWindowStyle(this);
+        GuiUtil.styleTitleBar(this, GuiUtil.lightenColor(AppConstant.BACKGROUND_COLOR, 0.12), AppConstant.TEXT_COLOR);
 
         addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
@@ -566,7 +567,9 @@ public class LoginPage extends JFrame {
                 CommonApiUtil.updateLastLoginTime();
                 // Authentication successful
                 this.dispose();
-                HomePage homePage = new HomePage(user);
+                //Init user for
+                UserSessionManager.getInstance().initializeSession(user);
+                HomePage homePage = new HomePage();
                 UIManager.put("TitlePane.iconSize", new Dimension(24, 24));
                 homePage.setIconImage(GuiUtil.createImageIcon(AppConstant.MUSE_MOE_LOGO_PATH, 512, 512).getImage());
                 homePage.setVisible(true);

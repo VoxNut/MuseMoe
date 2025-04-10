@@ -58,12 +58,13 @@ public class AppConstant {
     public static final String SPEAKER_75_ICON = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/75v-speaker-icon.png";
     public static final String PREVIOUS_ICON_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/previous-icon.png";
     public static final String PREVIOUS_HOVER_ICON_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/previous-hover-icon.png";
-    public static final String DEFAULT_COVER_PATH = "src/main/java/com/javaweb/view/custom/musicplayer/album_cover/record2.png";
+
+    public static final String DEFAULT_COVER_PATH = "src/main/java/com/javaweb/view/mini_musicplayer/album_cover/record2.png";
     public static final String SHUFFLE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/shuffle-icon.png";
     public static final String REPLAY_ICON_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/replay-icon.png";
     public static final String HEART_ICON = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/heart-icon.png";
     public static final String HEART_OUTLINE_ICON = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/heart-outline.png";
-    public static final String LIKED_SONG_PATH = "src/main/java/com/javaweb/view/custom/musicplayer/playlist/liked_songs.txt";
+    public static final String LIKED_SONG_PATH = "src/main/java/com/javaweb/view/mini_musicplayer/playlist/liked_songs.txt";
     public static final String REPEAT_ICON_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/repeat-icon.png";
     public static final String ON_REPEAT_ICON_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/on-repeat-icon.png";
     public static final String REPEAT_1_ICON_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/repeat-1-icon.png";
@@ -99,8 +100,8 @@ public class AppConstant {
 
 
     //ADS
-    public static final String MUSE_MOE_AD = "src/main/java/com/javaweb/view/custom/musicplayer/advertisement/museMoe.mp3";
-    public static final String STUDY_SMART_AD = "src/main/java/com/javaweb/view/custom/musicplayer/advertisement/studySmart.mp3";
-    public static final String BREW_SPOT_AD = "src/main/java/com/javaweb/view/custom/musicplayer/advertisement/theBrewSpot.mp3";
-    public static final String INSPIRATION_AD = "src/main/java/com/javaweb/view/custom/musicplayer/advertisement/truyenCamHung.mp3";
+    public static final String MUSE_MOE_AD = "src/main/java/com/javaweb/view/mini_musicplayer/advertisement/museMoe.mp3";
+    public static final String STUDY_SMART_AD = "src/main/java/com/javaweb/view/mini_musicplayer/advertisement/studySmart.mp3";
+    public static final String BREW_SPOT_AD = "src/main/java/com/javaweb/view/mini_musicplayer/advertisement/theBrewSpot.mp3";
+    public static final String INSPIRATION_AD = "src/main/java/com/javaweb/view/mini_musicplayer/advertisement/truyenCamHung.mp3";
 }

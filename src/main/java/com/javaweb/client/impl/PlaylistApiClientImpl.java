@@ -18,15 +18,17 @@ public class PlaylistApiClientImpl implements PlaylistApiClient {
     private final ApiConfig apiConfig;
     private final Mp3Util mp3Util;
 
+
     @Override
     public List<PlaylistDTO> findPlaylistByUserId() {
         try {
+
             String url = apiConfig.buildPlaylistUrl("");
             String responseEntity = apiClient.get(url);
 
             List<PlaylistDTO> playlistDTOS = responseParser.parseReference(
                     responseEntity,
-                    new TypeReference<List<PlaylistDTO>>() {
+                    new TypeReference<>() {
                     });
 
             playlistDTOS.stream()

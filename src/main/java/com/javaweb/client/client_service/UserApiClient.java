@@ -24,4 +24,6 @@ public interface UserApiClient {
     UserDTO fetchUserByEmail(String email);
 
     void updateLastLoginTime();
+
+    UserDTO fetchCurrentUser();
 }

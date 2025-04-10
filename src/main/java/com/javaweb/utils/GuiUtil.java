@@ -1,7 +1,6 @@
 package com.javaweb.utils;
 
 import com.javaweb.constant.AppConstant;
-import com.javaweb.view.custom.button.CustomButtonUI;
 import com.javaweb.view.custom.spinner.DateLabelFormatter;
 import com.javaweb.view.custom.table.BorderedHeaderRenderer;
 import com.javaweb.view.custom.table.BorderedTableCellRenderer;
@@ -98,15 +97,38 @@ public class GuiUtil {
         table.setDefaultRenderer(Object.class, new BorderedTableCellRenderer());
     }
 
+    //    public static JButton createButton(String text) {
+//        JButton button = new JButton(text);
+//        button.setUI(new CustomButtonUI(AppConstant.BUTTON_BACKGROUND_COLOR, AppConstant.BUTTON_TEXT_COLOR, AppConstant.DISABLE_BACKGROUND_BUTTON, AppConstant.DISABLE_TEXT_BUTTON, AppConstant.DISABLE_BACKGROUND_BUTTON, AppConstant.DISABLE_TEXT_BUTTON));
+//        button.setFont(FontUtil.getJetBrainsMonoFont(Font.BOLD, 16));
+//        button.setBorderPainted(false);
+//        button.setContentAreaFilled(false);
+//        button.setFocusPainted(false);
+//        button.setOpaque(true);
+//        return button;
+//    }
     public static JButton createButton(String text) {
         JButton button = new JButton(text);
-        button.setUI(new CustomButtonUI(AppConstant.BUTTON_BACKGROUND_COLOR, AppConstant.BUTTON_TEXT_COLOR, AppConstant.DISABLE_BACKGROUND_BUTTON, AppConstant.DISABLE_TEXT_BUTTON, AppConstant.DISABLE_BACKGROUND_BUTTON, AppConstant.DISABLE_TEXT_BUTTON));
-        button.setFont(FontUtil.getJetBrainsMonoFont(Font.BOLD, 16));
-        button.setBorderPainted(false);
-        button.setContentAreaFilled(false);
-        button.setFocusPainted(false);
-        button.setOpaque(true);
+        button.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
         return button;
+    }
+
+    public static void styleButton(JButton button, Color bgColor, Color textColor, Color accentColor) {
+        button.setBackground(GuiUtil.darkenColor(bgColor, 0.15f));
+        button.setForeground(textColor);
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setContentAreaFilled(true);
+        // Add hover effect
+        button.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                button.setBackground(accentColor);
+            }
+
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                button.setBackground(GuiUtil.darkenColor(bgColor, 0.15f));
+            }
+        });
     }
 
     public static JButton createButton(String text, int size) {
@@ -1191,15 +1213,38 @@ public class GuiUtil {
 
     public static void styleDialog(JDialog dialog, Color backgroundColor, Color textColor) {
         dialog.getRootPane().putClientProperty("TitlePane.font", FontUtil.getSpotifyFont(Font.BOLD, 16));
-        dialog.getRootPane().putClientProperty("JRootPane.titleBarBackground", darkenColor(backgroundColor, 0.2f));
+        dialog.getRootPane().putClientProperty("JRootPane.titleBarBackground", backgroundColor);
         dialog.getRootPane().putClientProperty("JRootPane.titleBarForeground", textColor);
-        dialog.getRootPane().putClientProperty("JRootPane.titleBarInactiveBackground", darkenColor(backgroundColor, 0.2f));
+        dialog.getRootPane().putClientProperty("JRootPane.titleBarInactiveBackground", backgroundColor);
         dialog.getRootPane().putClientProperty("JRootPane.titleBarInactiveForeground", textColor);
 
         dialog.getRootPane().setBorder(BorderFactory.createEmptyBorder());
 
         // Apply the changes
         SwingUtilities.updateComponentTreeUI(dialog);
+    }
+
+    public static void styleTitleBar(JFrame frame, Color backgroundColor, Color textColor, int fontSize) {
+        // Create a slightly darker background for the title bar
+        Color titleBarBackground = darkenColor(backgroundColor, 0.1f);
+
+        // Set title bar font
+        frame.getRootPane().putClientProperty("TitlePane.font", FontUtil.getSpotifyFont(Font.BOLD, fontSize));
+
+        // Set title bar colors
+        frame.getRootPane().putClientProperty("JRootPane.titleBarBackground", titleBarBackground);
+        frame.getRootPane().putClientProperty("JRootPane.titleBarForeground", textColor);
+
+        // Set inactive state colors
+        frame.getRootPane().putClientProperty("JRootPane.titleBarInactiveBackground", titleBarBackground);
+        frame.getRootPane().putClientProperty("JRootPane.titleBarInactiveForeground", darkenColor(textColor, 0.2f));
+
+        // Apply the changes to the frame
+        SwingUtilities.updateComponentTreeUI(frame.getContentPane());
+    }
+
+    public static void styleTitleBar(JFrame frame, Color backgroundColor, Color textColor) {
+        styleTitleBar(frame, backgroundColor, textColor, 18);
     }
 
     public static void setGradientBackground(JToolBar toolBar, Color centerColor, Color outerColor,
@@ -1246,19 +1291,6 @@ public class GuiUtil {
         g2d.dispose();
     }
 
-    public static void applyWindowStyle(JFrame window) {
-        JRootPane rootPane = window.getRootPane();
-
-        rootPane.putClientProperty("JRootPane.titleBarBackground", AppConstant.BACKGROUND_COLOR);
-        rootPane.putClientProperty("JRootPane.titleBarForeground", AppConstant.TEXT_COLOR);
-        rootPane.putClientProperty("JRootPane.titleBarInactiveBackground", AppConstant.BACKGROUND_COLOR);
-        rootPane.putClientProperty("JRootPane.titleBarInactiveForeground",
-                GuiUtil.darkenColor(AppConstant.TEXT_COLOR, 0.2f));
-
-        // FlatLaf specific properties
-        rootPane.putClientProperty("flatlaf.menuBarEmbedded", true);
-        rootPane.putClientProperty("flatlaf.unifiedBackground", true);
-    }
 
     public static JDialog createCustomMessageDialog(Component parent, String message, String title, int messageType,
                                                     Color bgColor, Color textColor, Color accentColor) {
@@ -1438,16 +1470,12 @@ public class GuiUtil {
     }
 
     private static int getMessageTypeForPath(String iconPath) {
-        switch (iconPath) {
-            case AppConstant.ERROR_ICON_PATH:
-                return JOptionPane.ERROR_MESSAGE;
-            case AppConstant.WARNING_ICON_PATH:
-                return JOptionPane.WARNING_MESSAGE;
-            case AppConstant.INFORMATION_ICON_PATH:
-                return JOptionPane.INFORMATION_MESSAGE;
-            default:
-                return JOptionPane.PLAIN_MESSAGE;
-        }
+        return switch (iconPath) {
+            case AppConstant.ERROR_ICON_PATH -> JOptionPane.ERROR_MESSAGE;
+            case AppConstant.WARNING_ICON_PATH -> JOptionPane.WARNING_MESSAGE;
+            case AppConstant.INFORMATION_ICON_PATH -> JOptionPane.INFORMATION_MESSAGE;
+            default -> JOptionPane.PLAIN_MESSAGE;
+        };
     }
 
 }

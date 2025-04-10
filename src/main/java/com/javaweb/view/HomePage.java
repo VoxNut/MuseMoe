@@ -5,9 +5,14 @@ import com.javaweb.model.dto.SongDTO;
 import com.javaweb.model.dto.UserDTO;
 import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
-import com.javaweb.utils.SecurityUtils;
-import com.javaweb.view.custom.musicplayer.MusicPlayerGUI;
-import lombok.Getter;
+import com.javaweb.view.mini_musicplayer.MusicPlayerGUI;
+import com.javaweb.view.mini_musicplayer.event.MusicPlayerFacade;
+import com.javaweb.view.mini_musicplayer.event.MusicPlayerMediator;
+import com.javaweb.view.mini_musicplayer.event.PlayerEvent;
+import com.javaweb.view.mini_musicplayer.event.PlayerEventListener;
+import com.javaweb.view.theme.ThemeChangeListener;
+import com.javaweb.view.theme.ThemeManager;
+import com.javaweb.view.user.UserSessionManager;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -21,20 +26,18 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Set;
 
-public class HomePage extends JFrame {
+public class HomePage extends JFrame implements PlayerEventListener, ThemeChangeListener {
     private static final Dimension FRAME_SIZE = new Dimension(1024, 768);
     private CardLayout cardLayout;
     private JPanel centerPanel;
     private JLabel avatarLabel;
     private JLabel fullNameLabel;
-    @Getter
-    private final UserDTO currentUser;
     private MusicPlayerGUI musicPlayerGUI;
     private JLabel spinningDisc;
     private JPanel controlButtonsPanel;
     private Color backgroundColor = AppConstant.BACKGROUND_COLOR;
     private Color textColor = AppConstant.TEXT_COLOR;
-    private final Color accentColor = AppConstant.TEXTFIELD_BACKGROUND_COLOR;
+    private Color accentColor = GuiUtil.darkenColor(AppConstant.BACKGROUND_COLOR, 0.1);
     private JSlider playbackSlider;
     private JButton prevButton;
     private JButton playButton;
@@ -62,17 +65,22 @@ public class HomePage extends JFrame {
     private final JPanel mainPanel;
     private JLabel welcomeLabel;
 
-    public HomePage(UserDTO currentUser) throws IOException {
-        this.currentUser = currentUser;
-        initializeFrame();
+    private final MusicPlayerFacade playerFacade;
 
+    public HomePage() throws IOException {
+        initializeFrame();
         mainPanel = createMainPanel();
         add(mainPanel);
         spinningDisc.setIcon(
                 GuiUtil.createDiscImageIcon(GuiUtil.createBufferImage(AppConstant.DEFAULT_COVER_PATH), 50, 50, 7));
-        SecurityUtils.setAuthorities(currentUser.getRoles());
 
         setVisible(true);
+
+        playerFacade = MusicPlayerFacade.getInstance();
+
+        MusicPlayerMediator.getInstance().subscribeToPlayerEvents(this);
+        ThemeManager.getInstance().addThemeChangeListener(this);
+
     }
 
 
@@ -84,8 +92,7 @@ public class HomePage extends JFrame {
         //Doing nothing because I want user to confirm when logging out
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setLocationRelativeTo(null);
-        //Styling windows
-        GuiUtil.applyWindowStyle(this);
+        GuiUtil.styleTitleBar(this, GuiUtil.lightenColor(backgroundColor, 0.12), textColor);
 
         //Show option pane when user log out
         addWindowListener(new java.awt.event.WindowAdapter() {
@@ -178,13 +185,15 @@ public class HomePage extends JFrame {
         userInfoPanel.setOpaque(false);
 
         // Determine user role
-        String userRole = determineUserRole(currentUser.getRoles());
+        String userRole = determineUserRole(
+                getCurrentUser().getRoles()
+        );
 
         // Create and add username label
-        if (currentUser.getFullName() == null) {
+        if (getCurrentUser().getFullName() == null) {
             fullNameLabel = GuiUtil.createLabel("???" + " - " + userRole);
         } else {
-            fullNameLabel = GuiUtil.createLabel(currentUser.getFullName() + " - " + userRole);
+            fullNameLabel = GuiUtil.createLabel(getCurrentUser().getFullName() + " - " + userRole);
         }
         fullNameLabel.setForeground(AppConstant.TEXT_COLOR);
 
@@ -280,36 +289,27 @@ public class HomePage extends JFrame {
 
             @Override
             public void mousePressed(MouseEvent e) {
-                if (musicPlayerGUI.getMusicPlayer().isHasAd()) {
+                if (playerFacade.isHavingAd()) {
                     return;
                 }
-                try {
-                    musicPlayerGUI.getMusicPlayer().pauseSong();
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                }
+                playerFacade.pauseSong();
             }
 
-            @Override
-            public void mouseClicked(MouseEvent e) {
-
-            }
 
             @Override
             public void mouseReleased(MouseEvent e) {
 
-                if (musicPlayerGUI.getMusicPlayer().isHasAd()) {
+                if (playerFacade.isHavingAd()) {
                     return;
                 }
                 int sliderValue = playbackSlider.getValue();
 
                 int newTimeInMilli = (int) (sliderValue
-                        / musicPlayerGUI.getMusicPlayer().getCurrentSong().getFrameRatePerMilliseconds());
+                        / playerFacade.getCurrentSong().getFrameRatePerMilliseconds());
 
-                musicPlayerGUI.getMusicPlayer().setCurrentTimeInMilli(newTimeInMilli);
-                musicPlayerGUI.getMusicPlayer().setCurrentFrame(sliderValue);
-
-                musicPlayerGUI.getMusicPlayer().playCurrentSong();
+                playerFacade.setCurrentTimeInMilli(newTimeInMilli);
+                playerFacade.setCurrentFrame(sliderValue);
+                playerFacade.playCurrentSong();
 
                 // toggle on pause button and toggle off play button
                 enablePauseButtonDisablePlayButton();
@@ -325,18 +325,17 @@ public class HomePage extends JFrame {
         // Previous button
         prevButton = GuiUtil.changeButtonIconColor(AppConstant.PREVIOUS_ICON_PATH, AppConstant.TEXT_COLOR, 20, 20);
         prevButton.addActionListener(e -> {
-            try {
-                musicPlayerGUI.getMusicPlayer().prevSong();
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
+            playerFacade.prevSong();
         });
 
         // Play button
         playButton = GuiUtil.changeButtonIconColor(AppConstant.PLAY_ICON_PATH, AppConstant.TEXT_COLOR, 20, 20);
         playButton.setBorderPainted(false);
         playButton.addActionListener(e -> {
-            musicPlayerGUI.getMusicPlayer().playCurrentSong();
+            if (playerFacade.isHavingAd()) {
+                return;
+            }
+            playerFacade.playCurrentSong();
         });
 
         // Pause button
@@ -344,21 +343,14 @@ public class HomePage extends JFrame {
         pauseButton.setBorderPainted(false);
         pauseButton.setVisible(false);
         pauseButton.addActionListener(e -> {
-            try {
-                musicPlayerGUI.getMusicPlayer().pauseSong();
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
+            if (playerFacade.isHavingAd()) return;
+            playerFacade.pauseSong();
         });
 
         // Next button
         nextButton = GuiUtil.changeButtonIconColor(AppConstant.NEXT_ICON_PATH, AppConstant.TEXT_COLOR, 20, 20);
         nextButton.addActionListener(e -> {
-            try {
-                musicPlayerGUI.getMusicPlayer().nextSong();
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
+            playerFacade.nextSong();
         });
 
         // Add buttons to control panel
@@ -377,12 +369,9 @@ public class HomePage extends JFrame {
 
         playMusicButton.addActionListener(e -> {
             if (playMusicButton.getText().equals("Stop music!")) {
-                try {
-                    musicPlayerGUI.getMusicPlayer().pauseSong();
-                    musicPlayerGUI.dispose();
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                }
+                playerFacade.pauseSong();
+                musicPlayerGUI.dispose();
+
 
                 spinningDisc.setVisible(false);
                 controlButtonsPanel.setVisible(false);
@@ -397,7 +386,7 @@ public class HomePage extends JFrame {
                 playMusicButton.setText("Play music!");
 
                 // Return to original color
-                extractColor(AppConstant.BACKGROUND_COLOR, AppConstant.TEXT_COLOR, AppConstant.TEXTFIELD_BACKGROUND_COLOR);
+                onThemeChanged(AppConstant.BACKGROUND_COLOR, AppConstant.TEXT_COLOR, AppConstant.TEXTFIELD_BACKGROUND_COLOR);
                 dateLabel.setForeground(AppConstant.TEXT_COLOR);
                 fullNameLabel.setForeground(AppConstant.TEXT_COLOR);
             } else {
@@ -432,17 +421,17 @@ public class HomePage extends JFrame {
     private void openMusicPlayer() {
         try {
             if (musicPlayerGUI != null) {
-                if (musicPlayerGUI.getMusicPlayer().getCurrentSong() != null) {
-                    showMusicPlayerHeader();
-                    extractColor(musicPlayerGUI.getBackgroundColor(), musicPlayerGUI.getTextColor(), musicPlayerGUI.getAccentColor());
+                if (playerFacade.getCurrentSong() != null) {
+                    showPlaybackSlider();
+                    onThemeChanged(musicPlayerGUI.getBackgroundColor(), musicPlayerGUI.getTextColor(), musicPlayerGUI.getAccentColor());
                     enablePlayButtonDisablePauseButton();
-                    updatePlaybackSlider(musicPlayerGUI.getMusicPlayer().getCurrentSong());
-                    updateSpinningDisc(musicPlayerGUI.getMusicPlayer().getCurrentSong());
-                    updateScrollingText(musicPlayerGUI.getMusicPlayer().getCurrentSong());
-                    setPlaybackSliderValue(musicPlayerGUI.getMusicPlayer().getCalculatedFrame());
+                    updatePlaybackSlider(playerFacade.getCurrentSong());
+                    updateSpinningDisc(playerFacade.getCurrentSong());
+                    updateScrollingText(playerFacade.getCurrentSong());
+                    setPlaybackSliderValue(playerFacade.getCalculatedFrame());
                 }
             }
-            musicPlayerGUI = MusicPlayerGUI.getInstance(this);
+            musicPlayerGUI = MusicPlayerGUI.getInstance();
             if (musicPlayerGUI.isVisible()) {
                 musicPlayerGUI.toFront();
                 musicPlayerGUI.requestFocus();
@@ -477,6 +466,7 @@ public class HomePage extends JFrame {
 
         return labelsPanel;
     }
+
 
     public void updatePlaybackSlider(SongDTO song) {
         // Set slider range based on total frames instead of milliseconds
@@ -574,51 +564,6 @@ public class HomePage extends JFrame {
 
     }
 
-    public void extractColor(Color backgroundColor, Color textColor, Color accentColor) {
-        this.backgroundColor = backgroundColor;
-        this.textColor = textColor;
-
-        // Update all control colors
-        GuiUtil.changeButtonIconColor(nextButton, textColor);
-        GuiUtil.changeButtonIconColor(prevButton, textColor);
-        GuiUtil.changeButtonIconColor(playButton, textColor);
-        GuiUtil.changeButtonIconColor(pauseButton, textColor);
-
-        playbackSlider.setBackground(GuiUtil.lightenColor(backgroundColor, 0.3f));
-        playbackSlider.setForeground(accentColor);
-
-        // Force repaint of main panel to update the gradient
-        Container contentPane = getContentPane();
-        contentPane.repaint();
-
-        // Update text colors
-        dateLabel.setForeground(textColor);
-        fullNameLabel.setForeground(textColor);
-
-        playMusicButton.setBackground(backgroundColor);
-        playMusicButton.setForeground(textColor);
-
-        scrollingLabel.setForeground(textColor);
-        labelBeginning.setForeground(textColor);
-        labelEnd.setForeground(textColor);
-
-        // Update avatar if needed
-        if (currentUser.getAvatar() == null) {
-            userInfoPanel.remove(avatarLabel);
-            avatarLabel = createUserAvatar();
-            userInfoPanel.add(avatarLabel);
-            userInfoPanel.revalidate();
-            userInfoPanel.repaint();
-        }
-        //Apply again the mainPanel
-        GuiUtil.setGradientBackground(mainPanel,
-                GuiUtil.lightenColor(backgroundColor, 0.1f),
-                GuiUtil.darkenColor(backgroundColor, 0.1f),
-                0.5f, 0.5f, 0.8f);
-
-        //Welcome label
-        welcomeLabel.setForeground(textColor);
-    }
 
     public String determineUserRole(Set<String> roles) {
         if (roles.contains(AppConstant.ADMIN_ROLE)) {
@@ -632,7 +577,7 @@ public class HomePage extends JFrame {
         }
     }
 
-    public void showMusicPlayerHeader() {
+    public void showPlaybackSlider() {
         spinningDisc.setVisible(true);
         playbackSlider.setVisible(true);
         controlButtonsPanel.setVisible(true);
@@ -657,8 +602,8 @@ public class HomePage extends JFrame {
         boolean useDefaultAvatar = false;
 
         try {
-            if (currentUser.getAvatar() != null) {
-                originalImage = ImageIO.read(new File(currentUser.getAvatar().getFileUrl()));
+            if (getCurrentUser().getAvatar() != null) {
+                originalImage = ImageIO.read(new File(getCurrentUser().getAvatar().getFileUrl()));
             } else {
                 useDefaultAvatar = true;
             }
@@ -683,8 +628,8 @@ public class HomePage extends JFrame {
             g2d.setColor(bgColor);
             g2d.fillOval(0, 0, size, size);
 
-            String initial = currentUser.getUsername() != null && !currentUser.getUsername().isEmpty() ?
-                    currentUser.getUsername().substring(0, 1).toUpperCase() : "U";
+            String initial = getCurrentUser().getUsername() != null && !getCurrentUser().getUsername().isEmpty() ?
+                    getCurrentUser().getUsername().substring(0, 1).toUpperCase() : "U";
 
             float fontSize = (float) size * 0.4f;
             g2d.setColor(textColor);
@@ -746,13 +691,13 @@ public class HomePage extends JFrame {
             SwingUtilities.invokeLater(() -> {
                 LoginPage loginPage = new LoginPage();
                 UIManager.put("TitlePane.iconSize", new Dimension(24, 24));
-                loginPage.getUsernameField().setText(currentUser.getUsername());
+                loginPage.getUsernameField().setText(getCurrentUser().getUsername());
                 loginPage.setIconImage(GuiUtil.createImageIcon(AppConstant.MUSE_MOE_LOGO_PATH, 512, 512).getImage());
                 loginPage.setVisible(true);
             });
 
             if (musicPlayerGUI != null) {
-                musicPlayerGUI.getMusicPlayer().stopSong();
+                playerFacade.stopSong();
             }
             MusicPlayerGUI.instance = null;
         }
@@ -824,6 +769,56 @@ public class HomePage extends JFrame {
         return mainContent;
     }
 
+    @Override
+    public void onThemeChanged(Color backgroundColor, Color textColor, Color accentColor) {
+        this.backgroundColor = backgroundColor;
+        this.textColor = textColor;
+        this.accentColor = accentColor;
+        GuiUtil.styleTitleBar(this, GuiUtil.lightenColor(backgroundColor, 0.12), textColor);
+
+        // Update all control colors
+        GuiUtil.changeButtonIconColor(nextButton, textColor);
+        GuiUtil.changeButtonIconColor(prevButton, textColor);
+        GuiUtil.changeButtonIconColor(playButton, textColor);
+        GuiUtil.changeButtonIconColor(pauseButton, textColor);
+
+        playbackSlider.setBackground(GuiUtil.lightenColor(backgroundColor, 0.2f));
+        playbackSlider.setForeground(accentColor);
+
+        // Force repaint of main panel to update the gradient
+        Container contentPane = getContentPane();
+        contentPane.repaint();
+
+        // Update text colors
+        dateLabel.setForeground(textColor);
+        fullNameLabel.setForeground(textColor);
+
+        playMusicButton.setBackground(backgroundColor);
+        playMusicButton.setForeground(textColor);
+
+        scrollingLabel.setForeground(textColor);
+        labelBeginning.setForeground(textColor);
+        labelEnd.setForeground(textColor);
+
+        // Update avatar if needed
+        if (getCurrentUser().getAvatar() == null) {
+            userInfoPanel.remove(avatarLabel);
+            avatarLabel = createUserAvatar();
+            userInfoPanel.add(avatarLabel);
+            userInfoPanel.revalidate();
+            userInfoPanel.repaint();
+        }
+        //Apply again the mainPanel
+        GuiUtil.setGradientBackground(mainPanel,
+                GuiUtil.lightenColor(backgroundColor, 0.1f),
+                GuiUtil.darkenColor(backgroundColor, 0.1f),
+                0.5f, 0.5f, 0.8f);
+
+        //Welcome label
+        welcomeLabel.setForeground(textColor);
+
+    }
+
 
     private class ScrollingLabel extends JLabel {
         @Override
@@ -849,6 +844,52 @@ public class HomePage extends JFrame {
 
             g2d.dispose();
         }
+    }
+
+
+    @Override
+    public void onPlayerEvent(PlayerEvent event) {
+        SwingUtilities.invokeLater(() -> {
+            switch (event.getType()) {
+                case SONG_LOADED -> {
+                    SongDTO song = (SongDTO) event.getData();
+                    updatePlaybackSlider(song);
+                    setPlaybackSliderValue(0);
+                    updateSpinningDisc(song);
+                    updateScrollingText(song);
+                    showPlaybackSlider();
+                    enablePauseButtonDisablePlayButton();
+                }
+
+
+                case PLAYBACK_STARTED -> enablePauseButtonDisablePlayButton();
+
+
+                case PLAYBACK_PAUSED -> enablePlayButtonDisablePauseButton();
+
+
+                case PLAYBACK_PROGRESS -> {
+                    int[] data = (int[]) event.getData();
+                    setPlaybackSliderValue(data[0]);
+                    updateSongTimeLabel(data[1]);
+                }
+
+                case HOME_PAGE_SLIDER_CHANGED -> showPlaybackSlider();
+
+                case SLIDER_CHANGED -> setPlaybackSliderValue((int) event.getData());
+            }
+        });
+    }
+
+    @Override
+    public void dispose() {
+        ThemeManager.getInstance().removeThemeChangeListener(this);
+        MusicPlayerMediator.getInstance().unsubscribeFromPlayerEvents(this);
+        super.dispose();
+    }
+
+    private UserDTO getCurrentUser() {
+        return UserSessionManager.getInstance().getCurrentUser();
     }
 
 

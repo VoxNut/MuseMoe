@@ -1,16 +1,17 @@
 package com.javaweb.utils;
 
 import com.javaweb.model.dto.MyUserDetail;
+import lombok.Getter;
 import lombok.Setter;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.util.HashSet;
 import java.util.Set;
 
+@Getter
+@Setter
 public class SecurityUtils {
-    @Setter
-    private static Set<String> authorities;
 
+    private static Set<String> authorities;
 
     public static MyUserDetail getPrincipal() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -24,7 +25,5 @@ public class SecurityUtils {
         return null;
     }
 
-    public static Set<String> getAuthorities() {
-        return authorities != null ? authorities : new HashSet<>();
-    }
+
 }

@@ -96,6 +96,18 @@ class UserApiClientImpl implements UserApiClient {
     }
 
     @Override
+    public UserDTO fetchCurrentUser() {
+        try {
+            String url = apiConfig.buildUserUrl("/me");
+            String responseEntity = apiClient.get(url);
+            return responseParser.parseObject(responseEntity, UserDTO.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    @Override
     public UserDTO fetchUserByUsername(String username) {
         try {
             String encodedUsername = urlEncoder.encode(username);

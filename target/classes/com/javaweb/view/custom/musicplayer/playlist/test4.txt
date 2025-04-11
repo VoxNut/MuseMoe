@@ -1,0 +1,2 @@
+src\main\java\com\javaweb\view\custom\musicplayer\audio\Neon Tokyo.mp3
+src\main\java\com\javaweb\view\custom\musicplayer\audio\strobe light.mp3

@@ -1,5 +1,0 @@
-src\main\java\com\javaweb\view\custom\musicplayer\audio\Suisei - DAOKO.mp3
-src\main\java\com\javaweb\view\custom\musicplayer\audio\ghetto-patrol.mp3
-src\main\java\com\javaweb\view\custom\musicplayer\audio\mesmerizer.mp3
-src\main\java\com\javaweb\view\custom\musicplayer\audio\ghetto-patrol.mp3
-src\main\java\com\javaweb\view\custom\musicplayer\audio\hatachi-no-koi.mp3

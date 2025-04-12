@@ -1,3 +1,0 @@
-src\main\java\com\javaweb\view\custom\musicplayer\audio\breakfast.mp3
-src\main\java\com\javaweb\view\custom\musicplayer\audio\got-to-be-real.mp3
-src\main\java\com\javaweb\view\custom\musicplayer\audio\just-the-two-of-us.mp3

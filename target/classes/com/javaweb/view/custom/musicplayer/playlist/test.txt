@@ -1,3 +1,0 @@
-src\main\java\com\javaweb\view\custom\musicplayer\audio\532PM.mp3
-src\main\java\com\javaweb\view\custom\musicplayer\audio\going home.mp3
-src\main\java\com\javaweb\view\custom\musicplayer\audio\got-to-be-real.mp3

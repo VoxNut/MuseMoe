@@ -96,7 +96,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void updateLastLoginTime() {
-        UserEntity user = userRepository.findById(Objects.requireNonNull(SecurityUtils.getPrincipal()).getId())
+        Long currentUserId = Objects.requireNonNull(SecurityUtils.getPrincipal()).getId();
+        UserEntity user = userRepository.findById(currentUserId)
                 .orElseThrow(() -> new EntityNotFoundException("User with not found!"));
 
         user.setLastLogin(LocalDateTime.now());

@@ -2,9 +2,9 @@ package com.javaweb.view;
 
 import com.javaweb.constant.AppConstant;
 import com.javaweb.enums.AccountStatus;
-import com.javaweb.model.dto.RoleDTO;
 import com.javaweb.model.dto.UserDTO;
 import com.javaweb.utils.*;
+import com.javaweb.view.user.UserSessionManager;
 import lombok.Getter;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -21,8 +21,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
 
 public class LoginPage extends JFrame {
@@ -35,7 +33,6 @@ public class LoginPage extends JFrame {
     private JPasswordField passwordField;
     private JButton loginButton;
     private JButton exitButton;
-    private JLabel statusLabel;
     private JLabel forgotPasswordLabel;
 
     public LoginPage() {
@@ -46,25 +43,40 @@ public class LoginPage extends JFrame {
         mainPanel.add(createSignUpPanel(), "signup");
         add(mainPanel);
         addEventListeners();
-        GuiUtil.applyWindowStyle(this);
     }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             LoginPage loginPage = new LoginPage();
             UIManager.put("TitlePane.iconSize", new Dimension(20, 20));
-            loginPage.setIconImage(GuiUtil.createImageIcon(AppConstant.MUSE_MOE_ICON_PATH, 100, 100).getImage());
+            loginPage.setIconImage(GuiUtil.createImageIcon(AppConstant.MUSE_MOE_LOGO_PATH, 100, 100).getImage());
             loginPage.setVisible(true);
         });
     }
 
     private void initializeFrame() {
         setSize(FRAME_SIZE);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setMinimumSize(FRAME_SIZE);
         setMaximumSize(FRAME_SIZE);
         setResizable(false);
+
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setLocationRelativeTo(null);
+        GuiUtil.styleTitleBar(this, GuiUtil.lightenColor(AppConstant.BACKGROUND_COLOR, 0.12), AppConstant.TEXT_COLOR);
+
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent windowEvent) {
+                int option = GuiUtil.showConfirmMessageDialog(
+                        LoginPage.this,
+                        "Do you really want to exit MuseMoe? We'll miss you :(",
+                        "Exit"
+                );
+                if (option == JOptionPane.YES_OPTION) {
+                    System.exit(0);
+                }
+            }
+        });
     }
 
     private JPanel createMainPanel() {
@@ -363,7 +375,6 @@ public class LoginPage extends JFrame {
         addUsernameField(formPanel, gbc);
         addPasswordField(formPanel, gbc);
         addButtonsPanel(formPanel, gbc);
-        addStatusLabel(formPanel, gbc);
         addForgotPasswordLink(formPanel, gbc);
 
         return formPanel;
@@ -415,13 +426,6 @@ public class LoginPage extends JFrame {
         formPanel.add(buttonsPanel, gbc);
     }
 
-    private void addStatusLabel(JPanel formPanel, GridBagConstraints gbc) {
-        gbc.gridy++;
-        statusLabel = new JLabel("");
-        statusLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        statusLabel.setForeground(AppConstant.TEXT_COLOR);
-        formPanel.add(statusLabel, gbc);
-    }
 
     private void addForgotPasswordLink(JPanel formPanel, GridBagConstraints gbc) {
         gbc.gridy++;
@@ -457,7 +461,12 @@ public class LoginPage extends JFrame {
                 }
             }
         });
-        exitButton.addActionListener(e -> System.exit(0));
+        exitButton.addActionListener(e -> {
+            int option = GuiUtil.showConfirmMessageDialog(this, "Do you really want to exit MuseMoe? We'll miss you :(", "Exit");
+            if (option == JOptionPane.YES_OPTION) {
+                System.exit(0);
+            }
+        });
 
         forgotPasswordLabel.addMouseListener(new MouseAdapter() {
             @Override
@@ -468,30 +477,38 @@ public class LoginPage extends JFrame {
     }
 
     private void handleForgotPassword() {
-        String username = usernameField.getText().trim();
+        int option = GuiUtil.showConfirmMessageDialog(mainPanel, "You're going to be received an email. Do you actually want to reset your password?", "Reset password");
+        if (option == JOptionPane.YES_OPTION) {
+            String username = usernameField.getText().trim();
 
-        if (username.isEmpty()) {
-            GuiUtil.showWarningMessageDialog(this, "Pleas enter Username!.");
-            return;
+            if (username.isEmpty()) {
+                GuiUtil.showWarningMessageDialog(this, "Please enter Username!.");
+                return;
+            }
+
+
+            UserDTO user = CommonApiUtil.fetchUserByUsername(username);
+
+            if (user == null) {
+                GuiUtil.showWarningMessageDialog(this, "This user did not exist!");
+                return;
+            }
+
+            String userEmail = user.getEmail();
+
+            // Generate a temporary password
+            String tempPassword = generateTemporaryPassword();
+
+            // Update the user's password in the database
+            if (updatePasswordInDatabase(user.getId(), tempPassword)) {
+                // Send email with the temporary password
+                SendEmailUtil.sendEmail(userEmail, tempPassword);
+                GuiUtil.showInfoMessageDialog(this, "An email with instruction have been sending to you.");
+            } else {
+                GuiUtil.showErrorMessageDialog(this, "An error has occurred!");
+            }
+
         }
-
-
-        UserDTO user = CommonApiUtil.fetchUserByUsername(username);
-
-        String userEmail = user.getEmail();
-
-        // Generate a temporary password
-        String tempPassword = generateTemporaryPassword();
-
-        // Update the user's password in the database
-        if (updatePasswordInDatabase(user.getId(), tempPassword)) {
-            // Send email with the temporary password
-            SendEmailUtil.sendEmail(userEmail, tempPassword);
-            GuiUtil.showInfomationMessageDialog(this, "An email with instruction have been sending to you.");
-        } else {
-            GuiUtil.showErrorMessageDialog(this, "An error has occurred!");
-        }
-
 
     }
 
@@ -528,50 +545,45 @@ public class LoginPage extends JFrame {
             return;
         }
 
+        UserDTO user = CommonApiUtil.fetchUserByUsername(username);
+        if (user == null || user.getAccountStatus().equals(AccountStatus.INACTIVE)) {
+            GuiUtil.showErrorMessageDialog(this, "User not existed or deleted");
+            return;
+        }
+
+        HttpPost httpPost = new HttpPost("http://localhost:8081/login");
+        ArrayList<NameValuePair> params = new ArrayList<>();
+        params.add(new BasicNameValuePair("username", username));
+        params.add(new BasicNameValuePair("password", password));
+        httpPost.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
+
         try {
             CloseableHttpClient httpClient = HttpClientProvider.getHttpClient();
-            HttpPost httpPost = new HttpPost("http://localhost:8081/login");
-            ArrayList<NameValuePair> params = new ArrayList<>();
-            params.add(new BasicNameValuePair("username", username));
-            params.add(new BasicNameValuePair("password", password));
-            httpPost.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
             CloseableHttpResponse response = httpClient.execute(httpPost);
-
             int statusCode = response.getStatusLine().getStatusCode();
-            if (statusCode == 302 || statusCode == 200) {
-                // Authentication successful
-                statusLabel.setText("Login successful!");
-                // Fetch current user details
+
+            if (statusCode == 200) {
+                GuiUtil.showSuccessMessageDialog(this, "Login successfully!");
                 CommonApiUtil.updateLastLoginTime();
-                UserDTO user = CommonApiUtil.fetchUserByUsername(username);
-                if (user.getAccountStatus().equals(AccountStatus.INACTIVE)) {
-                    statusLabel.setText("User not existed or deleted");
-                    response.close();
-                }
-                String avatarLink;
-                if (user.getAvatar() != null) {
-                    avatarLink = user.getAvatar().getFileUrl();
-                } else {
-                    avatarLink = "";
-                }
-                String userFullName = user.getFullName();
-                Set<String> roles = new HashSet<>();
-                for (RoleDTO role : user.getRoles()) {
-                    roles.add("ROLE_" + role.getCode());
-                }
+                // Authentication successful
                 this.dispose();
-                HomePage homePage = new HomePage(avatarLink, userFullName, roles, user);
+                //Init user for
+                UserSessionManager.getInstance().initializeSession(user);
+                HomePage homePage = new HomePage();
                 UIManager.put("TitlePane.iconSize", new Dimension(24, 24));
-                homePage.setIconImage(GuiUtil.createImageIcon(AppConstant.MUSE_MOE_ICON_PATH, 512, 512).getImage());
+                homePage.setIconImage(GuiUtil.createImageIcon(AppConstant.MUSE_MOE_LOGO_PATH, 512, 512).getImage());
                 homePage.setVisible(true);
-            } else {
+            } else if (statusCode == 401) {
                 // Authentication failed
-                statusLabel.setText("Username or Password incorrect!");
-                response.close();
+                GuiUtil.showErrorMessageDialog(this, "Username or Password incorrect!");
+            } else {
+                // Other error
+                GuiUtil.showErrorMessageDialog(this, "An error occurred during login: Status " + statusCode);
             }
+            response.close();
         } catch (Exception e) {
             e.printStackTrace();
-            statusLabel.setText("An error has occurred!");
+            GuiUtil.showErrorMessageDialog(this, "An error has occurred!");
         }
     }
 

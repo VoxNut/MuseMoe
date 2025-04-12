@@ -95,7 +95,6 @@ public class UserAPI {
         }
     }
 
-    // New Endpoint for Password Reset
     @PutMapping("/reset_password")
     public ResponseEntity<Boolean> resetPassword(@RequestParam Map<String, Object> params) {
         try {

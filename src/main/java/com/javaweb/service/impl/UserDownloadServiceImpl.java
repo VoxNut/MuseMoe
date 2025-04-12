@@ -24,11 +24,12 @@ public class UserDownloadServiceImpl implements UserDownloadService {
 
     @Override
     public List<SongDTO> findAllDownloadedSongs() {
-        return userDownloadRepository
+        List<SongDTO> songDTOS = userDownloadRepository
                 .findByUserId(Objects.requireNonNull(SecurityUtils.getPrincipal()).getId())
                 .stream()
                 .map(UserDownloadEntity::getSong)
                 .map(songConverter::toDTO)
                 .collect(Collectors.toList());
+        return songDTOS;
     }
 }

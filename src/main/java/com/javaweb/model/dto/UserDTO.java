@@ -17,9 +17,8 @@ public class UserDTO extends AbstractDTO<UserDTO> implements Comparable<UserDTO>
     private String email;
     private AccountStatus accountStatus;
     private MediaDTO avatar;
-    private Set<RoleDTO> roles = new HashSet<>();
+    private Set<String> roles = new HashSet<>();
     private String role;
-    private String visibleRoles;
     private String preferredLanguage;
 
 

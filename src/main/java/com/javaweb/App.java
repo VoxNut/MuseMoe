@@ -59,7 +59,7 @@ public class App {
         UIManager.put("ProgressBar.arc", 500);
         UIManager.put("TextComponent.arc", 500);
         UIManager.put("TitlePane.iconSize", new Dimension(24, 24));
-        
+
 
     }
 
@@ -73,7 +73,7 @@ public class App {
 
         LoginPage loginPage = new LoginPage();
 
-        loginPage.setIconImage(GuiUtil.createImageIcon(AppConstant.MUSE_MOE_ICON_PATH, 512, 512).getImage());
+        loginPage.setIconImage(GuiUtil.createImageIcon(AppConstant.MUSE_MOE_LOGO_PATH, 512, 512).getImage());
 
         loginPage.setVisible(true);
 

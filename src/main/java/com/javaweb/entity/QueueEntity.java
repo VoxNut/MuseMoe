@@ -21,5 +21,17 @@ public class QueueEntity extends BaseEntity {
 
     @Column(name = "position")
     private Integer position;
-    
+
+
+    public QueueEntity() {
+
+    }
+
+    public QueueEntity(UserEntity user, SongEntity song, Integer nextPosition) {
+        this.user = user;
+        this.song = song;
+        this.position = nextPosition;
+    }
+
+
 }

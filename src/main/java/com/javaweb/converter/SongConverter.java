@@ -3,7 +3,6 @@ package com.javaweb.converter;
 import com.javaweb.entity.SongEntity;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.model.request.SongRequestDTO;
-import com.javaweb.utils.Mp3Util;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
@@ -17,8 +16,6 @@ public class SongConverter implements EntityConverter<SongEntity, SongRequestDTO
     private final ModelMapper modelMapper;
 
 
-    private final Mp3Util mp3Util;
-
     @Override
     public SongDTO toDTO(SongEntity entity) {
         if (entity == null) {
@@ -28,7 +25,9 @@ public class SongConverter implements EntityConverter<SongEntity, SongRequestDTO
 
         dto.setSongTitle(entity.getTitle());
         dto.setAudioFilePath(entity.getAudioFile().getFileUrl());
-        dto.setAlbum(entity.getAlbum().getTitle());
+        if (entity.getAlbum() != null) {
+            dto.setAlbum(entity.getAlbum().getTitle());
+        }
         if (entity.getArtists() != null) {
             dto.setSongArtist(entity.getArtists().stream()
                     .map(artist -> artist.getUser().getFullName())

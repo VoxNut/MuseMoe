@@ -45,7 +45,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         // Copy remaining properties
         myUserDetail.setId(userEntity.getId());
         myUserDetail.setFullName(userEntity.getFullName());
-
+      
 
         return myUserDetail;
     }

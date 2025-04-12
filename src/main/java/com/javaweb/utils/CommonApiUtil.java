@@ -1,16 +1,17 @@
 package com.javaweb.utils;
 
 import com.javaweb.App;
+import com.javaweb.client.client_service.*;
+import com.javaweb.client.impl.ApiServiceFactory;
 import com.javaweb.enums.RoleType;
 import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.model.dto.UserDTO;
-import com.javaweb.utils.client.client_service.*;
-import com.javaweb.utils.client.impl.ApiServiceFactory;
 
 import java.util.List;
 import java.util.Set;
 
+//Facade Design Pattern
 public class CommonApiUtil {
 
     private static UserApiClient getUserApiClient() {
@@ -31,6 +32,10 @@ public class CommonApiUtil {
 
     private static SongLikesApiClient getSongLikesApiClient() {
         return App.getBean(ApiServiceFactory.class).createSonglikesdApiClient();
+    }
+
+    private static PlayHistoryApiClient getPlayHistoryApiClient() {
+        return App.getBean(ApiServiceFactory.class).createPlayHistoryApiClient();
     }
 
     // USER
@@ -56,6 +61,10 @@ public class CommonApiUtil {
 
     public static UserDTO fetchUserById(Long id) {
         return getUserApiClient().fetchUserById(id);
+    }
+
+    public static UserDTO fetchCurrentUser() {
+        return getUserApiClient().fetchCurrentUser();
     }
 
     public static UserDTO fetchUserByPhone(String phone) {
@@ -104,6 +113,12 @@ public class CommonApiUtil {
 
     public static List<PlaylistDTO> fetchAllPlaylists() {
         return getPlaylistApiClient().findAllPlaylists();
+    }
+
+    // Play_History
+
+    public static boolean logPlayHistory(Long songId) {
+        return getPlayHistoryApiClient().createNewPlayHistory(songId);
     }
 
 

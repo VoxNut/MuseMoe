@@ -17,6 +17,9 @@ public class ArtistEntity extends BaseEntity {
     @JoinColumn(name = "user_id", unique = true, nullable = false)
     private UserEntity user;
 
+    @Column(name = "stage_name")
+    private String stageName;
+
     @Column(columnDefinition = "TEXT")
     private String bio;
 

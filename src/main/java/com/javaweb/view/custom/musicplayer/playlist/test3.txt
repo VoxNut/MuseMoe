@@ -1,5 +1,0 @@
-src\main\java\com\javaweb\view\custom\musicplayer\audio\532PM.mp3
-src\main\java\com\javaweb\view\custom\musicplayer\audio\apple-house.mp3
-src\main\java\com\javaweb\view\custom\musicplayer\audio\im in space.mp3
-src\main\java\com\javaweb\view\custom\musicplayer\audio\Her.mp3
-src\main\java\com\javaweb\view\custom\musicplayer\audio\food court.mp3

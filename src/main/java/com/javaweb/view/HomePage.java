@@ -13,6 +13,7 @@ import com.javaweb.view.mini_musicplayer.event.PlayerEventListener;
 import com.javaweb.view.theme.ThemeChangeListener;
 import com.javaweb.view.theme.ThemeManager;
 import com.javaweb.view.user.UserSessionManager;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -27,6 +28,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Set;
 
+@Slf4j
 public class HomePage extends JFrame implements PlayerEventListener, ThemeChangeListener {
     private static final Dimension FRAME_SIZE = new Dimension(1024, 768);
     private CardLayout cardLayout;
@@ -67,6 +69,14 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private JLabel welcomeLabel;
 
     private final MusicPlayerFacade playerFacade;
+    private JButton lookupIcon;
+    private JButton homeIcon;
+    private JTextField searchField;
+    private JPanel searchBarWrapper;
+    private JLabel helpLabel;
+    private JPanel helpPanel;
+    private JPanel rightPanel;
+    private JPanel datePanel;
 
     public HomePage() throws IOException {
         initializeFrame();
@@ -142,53 +152,166 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         footerPanel = createMiniMusicPlayerPanel();
         footerPanel.setOpaque(false);
         mainPanel.add(footerPanel, BorderLayout.SOUTH);
-
+        mainPanel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (searchField.hasFocus() && !searchField.contains(e.getPoint())) {
+                    searchField.transferFocus();
+                }
+            }
+        });
         return mainPanel;
     }
 
 
     private JPanel createHeaderPanel() {
-        JPanel headerPanel = GuiUtil.createPanel(new BorderLayout(), AppConstant.HEADER_BACKGROUND_COLOR);
+        JPanel headerPanel = new JPanel(new BorderLayout(10, 0));
+        headerPanel.setBackground(backgroundColor);
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        //Date label
+        // Create a wrapper panel that uses BoxLayout for better vertical alignment
+        JPanel headerContentPanel = new JPanel();
+        headerContentPanel.setLayout(new BoxLayout(headerContentPanel, BoxLayout.X_AXIS));
+        headerContentPanel.setOpaque(false);
+        headerContentPanel.setAlignmentY(Component.CENTER_ALIGNMENT);
+
+        // ---------- LEFT SECTION (Date) ----------
+        datePanel = new JPanel();
+        datePanel.setLayout(new BoxLayout(datePanel, BoxLayout.X_AXIS));
+        datePanel.setOpaque(false);
+        datePanel.setAlignmentY(Component.CENTER_ALIGNMENT);
+        datePanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
+        datePanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(textColor, 2, true),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+        // Date label
         dateLabel = new JLabel();
-        dateLabel.setForeground(AppConstant.TEXT_COLOR);
+        dateLabel.setForeground(textColor);
+        dateLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        dateLabel.setAlignmentY(Component.CENTER_ALIGNMENT);
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         Timer dateTimer = new Timer(1000, e -> {
             String currentDate = LocalDate.now().format(dateFormatter);
             dateLabel.setText(currentDate);
+            dateLabel.setFont(FontUtil.getJetBrainsMonoFont(Font.PLAIN, 20));
         });
         dateTimer.start();
 
-        // Create wrapper with GridBagLayout
-        JPanel dateTimeWrapper = new JPanel(new GridBagLayout());
-        dateTimeWrapper.setOpaque(false);
+        // Add vertical glue for centering
+        datePanel.add(Box.createVerticalGlue());
+        datePanel.add(dateLabel);
+        datePanel.add(Box.createVerticalGlue());
 
-        // Create inner panel for date/time
-        JPanel dateTimePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        dateTimePanel.setOpaque(false);
-        dateTimePanel.add(dateLabel);
+        // ---------- CENTER SECTION (Search bar & Home icon) ----------
+        JPanel centerPanel = new JPanel();
+        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.X_AXIS));
+        centerPanel.setOpaque(false);
+        centerPanel.setAlignmentY(Component.CENTER_ALIGNMENT);
 
-        // Setup GridBagConstraints
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.weightx = 1.0;
-        gbc.weighty = 1.0;
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.insets = new Insets(0, 15, 0, 15);
+        // Home icon with vertical centering
+        homeIcon = GuiUtil.changeButtonIconColor(AppConstant.HOME_ICON_PATH, textColor, 20, 20);
+        homeIcon.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        homeIcon.setOpaque(false);
+        homeIcon.setFocusPainted(false);
+        homeIcon.setAlignmentY(Component.CENTER_ALIGNMENT);
 
-        dateTimeWrapper.add(dateTimePanel, gbc);
-        headerPanel.add(dateTimeWrapper, BorderLayout.WEST);
+        // Add padding around home icon
+        JPanel homeIconWrapper = new JPanel();
+        homeIconWrapper.setLayout(new BoxLayout(homeIconWrapper, BoxLayout.Y_AXIS));
+        homeIconWrapper.setOpaque(false);
+        homeIconWrapper.add(Box.createVerticalGlue());
+        homeIconWrapper.add(homeIcon);
+        homeIconWrapper.add(Box.createVerticalGlue());
+        homeIconWrapper.setAlignmentY(Component.CENTER_ALIGNMENT);
 
-        // Create user info panel for the top right
-        userInfoPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.RIGHT), AppConstant.HEADER_BACKGROUND_COLOR);
-        userInfoPanel.setOpaque(false);
+        // Add horizontal spacing
+        centerPanel.add(homeIconWrapper);
+        centerPanel.add(Box.createHorizontalStrut(10));
 
-        // Determine user role
-        String userRole = determineUserRole(
-                getCurrentUser().getRoles()
-        );
+        // Search bar with vertical centering
+        searchBarWrapper = new JPanel(new BorderLayout());
+        searchBarWrapper.setOpaque(false);
+        searchBarWrapper.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(textColor, 2, true),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+        searchBarWrapper.setPreferredSize(new Dimension(getWidth(), 40));
+        searchBarWrapper.setMaximumSize(new Dimension(getWidth(), 40));
+        searchBarWrapper.setMinimumSize(new Dimension(200, 40));
+        searchBarWrapper.setAlignmentY(Component.CENTER_ALIGNMENT);
+
+        // Add lookup icon on the left
+        lookupIcon = GuiUtil.changeButtonIconColor(AppConstant.LOOKUP_ICON_PATH, textColor, 20, 20);
+        lookupIcon.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
+        lookupIcon.setOpaque(false);
+        lookupIcon.setFocusPainted(false);
+        lookupIcon.setAlignmentY(Component.CENTER_ALIGNMENT);
+        searchBarWrapper.add(lookupIcon, BorderLayout.WEST);
+
+        // Add text field
+        searchField = GuiUtil.createLineInputField("What do you want to muse?...", 20);
+        searchField.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
+        searchField.setOpaque(false);
+        searchField.setForeground(GuiUtil.darkenColor(textColor, 0.3f));
+        searchField.setCaretColor(textColor);
+        searchField.setAlignmentY(Component.CENTER_ALIGNMENT);
+
+        // Add focus listeners
+        searchField.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                if (searchField.getText().equals("What do you want to muse?...")) {
+                    searchField.setText("");
+                    searchField.setForeground(textColor);
+                }
+            }
+
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                if (searchField.getText().isEmpty() || searchField.getText().trim().isEmpty()) {
+                    searchField.setText("What do you want to muse?...");
+                    searchField.setForeground(GuiUtil.darkenColor(textColor, 0.3f));
+                }
+            }
+        });
+
+        searchBarWrapper.add(searchField, BorderLayout.CENTER);
+        centerPanel.add(searchBarWrapper);
+
+        // ---------- RIGHT SECTION (User info) ----------
+        rightPanel = new JPanel();
+        rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.X_AXIS));
+        rightPanel.setOpaque(false);
+        rightPanel.setAlignmentY(Component.CENTER_ALIGNMENT);
+        rightPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(textColor, 2, true),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+        // Create help panel with border and title - fixed height to match search bar
+        helpPanel = new JPanel();
+        helpPanel.setLayout(new BoxLayout(helpPanel, BoxLayout.Y_AXIS));
+        helpPanel.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(textColor, 2, true),
+                "Help",
+                javax.swing.border.TitledBorder.CENTER,
+                javax.swing.border.TitledBorder.TOP,
+                FontUtil.getSpotifyFont(Font.BOLD, 12),
+                textColor
+        ));
+        helpPanel.setOpaque(false);
+        helpPanel.setAlignmentY(Component.CENTER_ALIGNMENT);
+        helpPanel.setPreferredSize(new Dimension(80, 43));
+        helpPanel.setMaximumSize(new Dimension(80, 43));
+
+        helpLabel = GuiUtil.createLabel("Type ?", Font.BOLD, 12);
+        helpLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // Add vertical centering
+        helpPanel.add(Box.createVerticalGlue());
+        helpPanel.add(helpLabel);
+        helpPanel.add(Box.createVerticalGlue());
+
+        // Create user info components
+        String userRole = determineUserRole(getCurrentUser().getRoles());
 
         // Create and add username label
         if (getCurrentUser().getFullName() == null) {
@@ -196,16 +319,35 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         } else {
             fullNameLabel = GuiUtil.createLabel(getCurrentUser().getFullName() + " - " + userRole);
         }
-        fullNameLabel.setForeground(AppConstant.TEXT_COLOR);
-
-        userInfoPanel.add(fullNameLabel);
+        fullNameLabel.setForeground(textColor);
+        fullNameLabel.setAlignmentY(Component.CENTER_ALIGNMENT);
 
         // Create and add avatar label
         avatarLabel = createUserAvatar();
-        userInfoPanel.add(avatarLabel);
+        avatarLabel.setAlignmentY(Component.CENTER_ALIGNMENT);
 
-        headerPanel.add(userInfoPanel, BorderLayout.EAST);
-        headerPanel.setOpaque(true);
+        // Add components to right panel with proper spacing
+        rightPanel.add(helpPanel);
+        rightPanel.add(Box.createHorizontalStrut(10));
+        rightPanel.add(fullNameLabel);
+        rightPanel.add(Box.createHorizontalStrut(10));
+        rightPanel.add(avatarLabel);
+
+        // Add all sections to header content panel with proper spacing
+        headerContentPanel.add(datePanel);
+        headerContentPanel.add(Box.createHorizontalGlue()); // Flexible space
+        headerContentPanel.add(centerPanel);
+        headerContentPanel.add(Box.createHorizontalGlue()); // Flexible space
+        headerContentPanel.add(rightPanel);
+
+        // Add the content panel to the header panel
+        headerPanel.add(headerContentPanel, BorderLayout.CENTER);
+
+        headerPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(textColor, 2, true),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+
         return headerPanel;
     }
 
@@ -359,7 +501,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         // Play button
         playButton = GuiUtil.changeButtonIconColor(AppConstant.PLAY_ICON_PATH, AppConstant.TEXT_COLOR, 20, 20);
-        playButton.setBorderPainted(false);
         playButton.addActionListener(e -> {
             if (playerFacade.isHavingAd()) {
                 return;
@@ -369,7 +510,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         // Pause button
         pauseButton = GuiUtil.changeButtonIconColor(AppConstant.PAUSE_ICON_PATH, AppConstant.TEXT_COLOR, 20, 20);
-        pauseButton.setBorderPainted(false);
         pauseButton.setVisible(false);
         pauseButton.addActionListener(e -> {
             if (playerFacade.isHavingAd()) return;
@@ -598,11 +738,11 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         if (roles.contains(AppConstant.ADMIN_ROLE)) {
             return "Admin";
         } else if (roles.contains(AppConstant.PREMIUM_ROLE)) {
-            return "Premium user";
+            return "Premium User";
         } else if (roles.contains(AppConstant.ARTIST_ROLE)) {
             return "Artist";
         } else {
-            return "Free user";
+            return "Free User";
         }
     }
 
@@ -621,7 +761,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         JPanel libraryNav = new JPanel();
         libraryNav.setLayout(new BoxLayout(libraryNav, BoxLayout.Y_AXIS));
         libraryNav.setBackground(AppConstant.BACKGROUND_COLOR);
-        libraryNav.setPreferredSize(new Dimension(300, getHeight()));
+        libraryNav.setPreferredSize(new Dimension(100, getHeight()));
         return libraryNav;
     }
 
@@ -796,6 +936,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         dateLabel.setForeground(textColor);
         fullNameLabel.setForeground(textColor);
 
+
         playMusicButton.setBackground(backgroundColor);
         playMusicButton.setForeground(textColor);
 
@@ -811,12 +952,43 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             userInfoPanel.revalidate();
             userInfoPanel.repaint();
         }
+        GuiUtil.changeButtonIconColor(homeIcon, textColor);
+        GuiUtil.changeButtonIconColor(lookupIcon, textColor);
+        searchBarWrapper.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(textColor, 2, true),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+
+        searchField.setForeground(textColor);
+        helpPanel.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(textColor, 2, true),
+                "Help",
+                javax.swing.border.TitledBorder.CENTER,
+                javax.swing.border.TitledBorder.TOP,
+                FontUtil.getSpotifyFont(Font.BOLD, 12),
+                textColor
+        ));
+        helpLabel.setForeground(textColor);
+        topPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(textColor, 2, true),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+
+        rightPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(textColor, 2, true),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+
+        datePanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(textColor, 2, true),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+
         //Apply again the mainPanel
         GuiUtil.setGradientBackground(mainPanel,
                 GuiUtil.lightenColor(backgroundColor, 0.1f),
                 GuiUtil.darkenColor(backgroundColor, 0.1f),
                 0.5f, 0.5f, 0.8f);
-
 
         welcomeLabel.setForeground(textColor);
     }

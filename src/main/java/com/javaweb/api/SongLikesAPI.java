@@ -36,5 +36,16 @@ public class SongLikesAPI {
         }
     }
 
+    @DeleteMapping("/delete/{songId}")
+    public ResponseEntity<Boolean> deleteSongLikes(@PathVariable("songId") Long songId) {
+        try {
+            Boolean res = songLikesService.deleteSongLikes(songId);
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.notFound().build();
+        }
+    }
+
 
 }

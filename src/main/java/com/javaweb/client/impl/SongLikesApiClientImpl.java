@@ -41,4 +41,16 @@ public class SongLikesApiClientImpl implements SongLikesApiClient {
             return false;
         }
     }
+
+    @Override
+    public Boolean deleteSongLikes(Long songId) {
+        try {
+            var url = apiConfig.buildSongLikesUrl("/delete/") + songId;
+            var responseEntity = apiClient.delete(url);
+            return responseParser.parseObject(responseEntity, Boolean.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

@@ -78,7 +78,7 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
     private SongSelectionPanel songSelectionPanel;
     private PlaylistSelectionPanel playlistPanel;
     private PlaylistPanel songPanel;
-
+    private JButton outLineHeartButton;
     private final MusicPlayerFacade playerFacade;
 
 
@@ -223,11 +223,15 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
         playbackSliderPanel.setOpaque(false);
         playbackSliderPanel.setPreferredSize(new Dimension(400, 50));
 
-        heartButton = GuiUtil.changeButtonIconColor(AppConstant.HEART_OUTLINE_ICON, AppConstant.TEXT_COLOR, 30, 30);
-        heartButton.addActionListener(e -> toggleHeartButton(playerFacade.getCurrentSong()));
-
+        heartButton = GuiUtil.changeButtonIconColor(AppConstant.HEART_ICON, AppConstant.TEXT_COLOR, 25, 25);
+        heartButton.addActionListener(e -> toggleHeartButton());
+        heartButton.setVisible(false);
         heartButton.setBounds(370, 0, 30, 30);
 
+        outLineHeartButton = GuiUtil.changeButtonIconColor(AppConstant.HEART_OUTLINE_ICON, AppConstant.TEXT_COLOR, 25, 25);
+        outLineHeartButton.addActionListener(e -> toggleOutlineHeartButton());
+        outLineHeartButton.setBounds(370, 0, 30, 30);
+        outLineHeartButton.setVisible(false);
         repeatButton = GuiUtil.changeButtonIconColor(AppConstant.REPEAT_ICON_PATH, AppConstant.TEXT_COLOR, 20, 20);
         repeatButton.setBounds(10, 0, 20, 20);
         repeatButton.addActionListener(e -> {
@@ -241,6 +245,7 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
         });
 
         playbackSliderPanel.add(heartButton);
+        playbackSliderPanel.add(outLineHeartButton);
         playbackSliderPanel.add(repeatButton);
         playbackSliderPanel.add(playbackSlider);
         playbackSliderPanel.add(Box.createVerticalStrut(1));
@@ -338,7 +343,6 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
                     songDialog.dispose();
                     // Load the selected song into the music player
                     playerFacade.loadSong(selectedSong);
-
                 });
 
                 songSelectionPanel.addPropertyChangeListener("cancel", evt -> songDialog.dispose());
@@ -411,7 +415,6 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
         // Replay 5 Seconds button
         replayButton = GuiUtil.changeButtonIconColor(AppConstant.REPLAY_ICON_PATH, AppConstant.MUSIC_PLAYER_TEXT_COLOR, 25,
                 25);
-        replayButton.setBorderPainted(false);
         replayButton.setBounds(40, 0, 40, 40);
         replayButton.addActionListener(e -> {
             //Replay 5s
@@ -423,7 +426,6 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
         // Previous button
         prevButton = GuiUtil.changeButtonIconColor(AppConstant.PREVIOUS_ICON_PATH, AppConstant.MUSIC_PLAYER_TEXT_COLOR, 30,
                 30);
-        prevButton.setBorderPainted(false);
         prevButton.setBounds(120, 0, 40, 40); // Set position and size
         prevButton.addActionListener(e ->
                 //Prev song
@@ -432,7 +434,6 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
 
         // Play button
         playButton = GuiUtil.changeButtonIconColor(AppConstant.PLAY_ICON_PATH, AppConstant.MUSIC_PLAYER_TEXT_COLOR, 30, 30);
-        playButton.setBorderPainted(false);
         playButton.setBounds(190, 0, 40, 40); // Set position and size
         playButton.addActionListener(e -> {
             if (playerFacade.isHavingAd()) return;
@@ -442,7 +443,6 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
 
         // Pause button
         pauseButton = GuiUtil.changeButtonIconColor(AppConstant.PAUSE_ICON_PATH, AppConstant.MUSIC_PLAYER_TEXT_COLOR, 30, 30);
-        pauseButton.setBorderPainted(false);
         pauseButton.setVisible(false);
         pauseButton.setBounds(190, 0, 40, 40); // Set position and size
         pauseButton.addActionListener(e -> {
@@ -454,7 +454,6 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
 
         // Next button
         nextButton = GuiUtil.changeButtonIconColor(AppConstant.NEXT_ICON_PATH, AppConstant.MUSIC_PLAYER_TEXT_COLOR, 30, 30);
-        nextButton.setBorderPainted(false);
         nextButton.setBounds(260, 0, 40, 40); // Set position and size
         nextButton.addActionListener(e -> {
             playerFacade.nextSong();
@@ -464,7 +463,6 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
         // Shuffle button
         shuffleButton = GuiUtil.changeButtonIconColor(AppConstant.SHUFFLE_ICON_PATH, AppConstant.MUSIC_PLAYER_TEXT_COLOR, 25,
                 25);
-        shuffleButton.setBorderPainted(false);
         shuffleButton.setBounds(340, 0, 40, 40); // Set position and size
         shuffleButton.addActionListener(e -> {
             playerFacade.shufflePlaylist();
@@ -517,14 +515,25 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
         labelBeginning.setText(formattedTime);
     }
 
-    private void toggleHeartButton(SongDTO song) {
-        boolean liked = CommonApiUtil.createSongLikes(song.getId());
-        if (!liked) {
-            heartButton.setIcon(GuiUtil.createImageIcon(AppConstant.HEART_ICON, 25, 25));
+    private void toggleHeartButton() {
+        if (CommonApiUtil.deleteSongLikes(playerFacade.getCurrentSong().getId())) {
+            outLineHeartButton.setVisible(true);
+            heartButton.setVisible(false);
             GuiUtil.changeButtonIconColor(heartButton, textColor);
         } else {
-            heartButton.setIcon(GuiUtil.createImageIcon(AppConstant.HEART_OUTLINE_ICON, 25, 25));
+            GuiUtil.showErrorMessageDialog(this, "An error has occurred when removed : " + playerFacade.getCurrentSong().getSongTitle() + "from liked songs!");
+        }
+
+
+    }
+
+    private void toggleOutlineHeartButton() {
+        if (CommonApiUtil.createSongLikes(playerFacade.getCurrentSong().getId())) {
+            outLineHeartButton.setVisible(false);
+            heartButton.setVisible(true);
             GuiUtil.changeButtonIconColor(heartButton, textColor);
+        } else {
+            GuiUtil.showErrorMessageDialog(this, "An error has occurred when added : " + playerFacade.getCurrentSong().getSongTitle() + "to liked songs!");
         }
     }
 
@@ -532,18 +541,21 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
     private void updateHeartButtonIcon(SongDTO song) {
         boolean liked = CommonApiUtil.checkSongLiked(song.getId());
         if (liked) {
-            heartButton.setIcon(GuiUtil.createImageIcon(AppConstant.HEART_ICON, 25, 25));
-            GuiUtil.changeButtonIconColor(heartButton, textColor);
+            outLineHeartButton.setVisible(false);
+            heartButton.setVisible(true);
         } else {
-            heartButton.setIcon(GuiUtil.createImageIcon(AppConstant.HEART_OUTLINE_ICON, 25, 25));
-            GuiUtil.changeButtonIconColor(heartButton, textColor);
+            outLineHeartButton.setVisible(true);
+            heartButton.setVisible(false);
         }
+        GuiUtil.changeButtonIconColor(heartButton, textColor);
     }
 
     public void updateSongDetails(SongDTO song) {
         updateSongTitleAndArtist(song);
         updateSongImage(song);
-        updateHeartButtonIcon(song);
+        if (!playerFacade.isHavingAd()) {
+            updateHeartButtonIcon(song);
+        }
     }
 
     // Method to update the song image

@@ -41,7 +41,27 @@ public class SongLikesServiceImpl implements SongLikesService {
     }
 
     @Override
+    public boolean deleteSongLikes(Long songId) {
+
+        Long userId = Objects.requireNonNull(SecurityUtils.getPrincipal()).getId();
+        UserEntity currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User Not Found!"));
+        SongEntity songEntity = songRepository.
+                findById(songId)
+                .orElseThrow(() -> new EntityNotFoundException("Song not found!"));
+        SongLikesEntity songLikesEntity = songLikesRepository.findSongLikesEntitiesBySongAndUser(songEntity, currentUser);
+
+        if (songLikesEntity != null) {
+            songLikesRepository.delete(songLikesEntity);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
     public boolean createSongLikes(Long songId) {
+
         Long userId = Objects.requireNonNull(SecurityUtils.getPrincipal()).getId();
         UserEntity currentUser = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User Not Found!"));
@@ -52,18 +72,14 @@ public class SongLikesServiceImpl implements SongLikesService {
                 .orElseThrow(() -> new EntityNotFoundException("Song not found!"));
 
 
-        SongLikesEntity songLikesEntity = songLikesRepository.findSongLikesEntitiesBySongAndUser(songEntity, currentUser);
-        boolean liked = true;
-        if (songLikesEntity == null) {
-            SongLikesEntity newSongLikes = new SongLikesEntity(currentUser, songEntity);
-            songLikesRepository.save(newSongLikes);
-            liked = false;
-        } else {
-            songLikesRepository.delete(songLikesEntity);
+        var songLikesEntity = new SongLikesEntity(currentUser, songEntity);
+
+        try {
+            songLikesRepository.save(songLikesEntity);
+            return true;
+        } catch (Exception e) {
+            return false;
         }
-
-        return liked;
-
 
     }
 }

@@ -11,4 +11,5 @@ public interface SongLikesRepository extends JpaRepository<SongLikesEntity, Long
 
     SongLikesEntity findSongLikesEntitiesBySongAndUser(SongEntity song, UserEntity user);
 
+    SongLikesEntity song(SongEntity song);
 }

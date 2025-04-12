@@ -193,6 +193,10 @@ public class GuiUtil {
         return textField;
     }
 
+    public static JTextField createLineInputField(String text, int columns) {
+        return new JTextField(text, columns);
+    }
+
     public static JTextField createLineInputField(int columns, Dimension textFieldDimension) {
         JTextField textField = createLineInputField(columns);
         textField.setPreferredSize(textFieldDimension);
@@ -259,6 +263,7 @@ public class GuiUtil {
 
         return titledBorder;
     }
+
 
     public static TitledBorder createTitleBorder(String content, int style, int size) {
         TitledBorder titledBorder = createTitleBorder(content);
@@ -401,34 +406,45 @@ public class GuiUtil {
         return button;
     }
 
-    public static JButton changeButtonIconColor(String iconPath, Color color, int width, int height) throws IOException {
+    public static JButton changeButtonIconColor(String iconPath, Color color, int width, int height) {
         if (color == null) {
             throw new IllegalArgumentException("Icon path or color cannot be null");
         }
+
+        // Load the original icon
         ImageIcon originalIcon = createImageIcon(iconPath, width, height);
-        BufferedImage img = new BufferedImage(originalIcon.getIconWidth(), originalIcon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g = img.createGraphics();
+
+        // Create a copy of the original image to preserve its structure
+        BufferedImage originalImg = new BufferedImage(
+                originalIcon.getIconWidth(),
+                originalIcon.getIconHeight(),
+                BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = originalImg.createGraphics();
         originalIcon.paintIcon(null, g, 0, 0);
         g.dispose();
 
-        for (int y = 0; y < img.getHeight(); y++) {
-            for (int x = 0; x < img.getWidth(); x++) {
-                int rgba = img.getRGB(x, y);
-                Color originalColor = new Color(rgba, true);
-                if (originalColor.getAlpha() != 0) {
-                    Color newColor = new Color(color.getRed(), color.getGreen(), color.getBlue(), originalColor.getAlpha());
-                    img.setRGB(x, y, newColor.getRGB());
-                }
-            }
+        Color hoverColor = lightenColor(color, 0.3);
+        // Create colored versions
+        BufferedImage normalColoredImg = applyColorToImage(originalImg, color);
+        BufferedImage hoverColoredImg = applyColorToImage(originalImg, hoverColor);
+
+        try {
+            ImageIcon normalIcon = new ImageIcon(Thumbnails.of(normalColoredImg).size(width, height).asBufferedImage());
+            ImageIcon hoverIcon = new ImageIcon(Thumbnails.of(hoverColoredImg).size(width, height).asBufferedImage());
+
+            JButton newButton = new JButton();
+            newButton.setIcon(normalIcon);
+            newButton.setRolloverIcon(hoverIcon);
+            newButton.setBorderPainted(false);
+            newButton.setContentAreaFilled(false);
+            newButton.setFocusPainted(false);
+            newButton.setOpaque(false);
+
+            return newButton;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new JButton();
         }
-        ImageIcon newImageIcon = new ImageIcon(Thumbnails.of(img).size(width, height).asBufferedImage());
-        JButton newButton = new JButton();
-        newButton.setIcon(newImageIcon);
-        newButton.setBorderPainted(false);
-        newButton.setContentAreaFilled(false);
-        newButton.setFocusPainted(false);
-        newButton.setOpaque(false);
-        return newButton;
     }
 
     public static void rotateButtonIcon(JButton button, double angleDegrees) {
@@ -511,24 +527,48 @@ public class GuiUtil {
         }
     }
 
+    private static BufferedImage applyColorToImage(BufferedImage original, Color color) {
+        BufferedImage tinted = new BufferedImage(original.getWidth(), original.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = tinted.createGraphics();
+
+        // Set rendering hints for better quality
+        configureGraphicsForHighQuality(g);
+        g.drawImage(original, 0, 0, null);
+        g.setComposite(AlphaComposite.SrcAtop);
+        g.setColor(color);
+        g.fillRect(0, 0, original.getWidth(), original.getHeight());
+        g.dispose();
+
+        return tinted;
+    }
+
     public static void changeButtonIconColor(JButton button, Color color) {
-        Icon icon = button.getIcon();
-        if (icon instanceof ImageIcon imageIcon) {
-            Image image = imageIcon.getImage();
+        Icon baseIcon = button.getIcon();
+        Icon rolloverBaseIcon = button.getRolloverIcon();
 
-            BufferedImage bufferedImage = new BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_ARGB);
-
-            Graphics2D g2d = bufferedImage.createGraphics();
-            g2d.drawImage(image, 0, 0, null);
-
-            // Apply the color overlay
-            g2d.setComposite(AlphaComposite.SrcAtop);
-            g2d.setColor(color);
-            g2d.fillRect(0, 0, bufferedImage.getWidth(), bufferedImage.getHeight());
-            g2d.dispose();
-
-            button.setIcon(new ImageIcon(bufferedImage));
+        if (baseIcon instanceof ImageIcon baseImageIcon) {
+            Image baseImage = baseImageIcon.getImage();
+            BufferedImage colored = recolorImage(baseImage, color);
+            button.setIcon(new ImageIcon(colored));
         }
+
+        if (rolloverBaseIcon instanceof ImageIcon rolloverImageIcon) {
+            Image rolloverImage = rolloverImageIcon.getImage();
+            Color hoverColor = lightenColor(color, 0.3f);
+            BufferedImage recoloredHover = recolorImage(rolloverImage, hoverColor);
+            button.setRolloverIcon(new ImageIcon(recoloredHover));
+        }
+    }
+
+    private static BufferedImage recolorImage(Image image, Color color) {
+        BufferedImage buffered = new BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = buffered.createGraphics();
+        g2d.drawImage(image, 0, 0, null);
+        g2d.setComposite(AlphaComposite.SrcAtop);
+        g2d.setColor(color);
+        g2d.fillRect(0, 0, buffered.getWidth(), buffered.getHeight());
+        g2d.dispose();
+        return buffered;
     }
 
     public static void changeLabelIconColor(JLabel label, Color color) {
@@ -769,10 +809,10 @@ public class GuiUtil {
     }
 
     public static Color lightenColor(Color color, double fraction) {
-        int red = (int) Math.min(255, color.getRed() + 255 * fraction);
-        int green = (int) Math.min(255, color.getGreen() + 255 * fraction);
-        int blue = (int) Math.min(255, color.getBlue() + 255 * fraction);
-        return new Color(red, green, blue);
+        int red = (int) (color.getRed() + (255 - color.getRed()) * fraction);
+        int green = (int) (color.getGreen() + (255 - color.getGreen()) * fraction);
+        int blue = (int) (color.getBlue() + (255 - color.getBlue()) * fraction);
+        return new Color(Math.min(red, 255), Math.min(green, 255), Math.min(blue, 255));
     }
 
     public static Color darkenColor(Color color, double fraction) {

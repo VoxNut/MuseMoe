@@ -31,44 +31,40 @@ public class AppConstant {
     public static final String PREMIUM_ROLE = "ROLE_PREMIUM";
     public static final String ARTIST_ROLE = "ROLE_ARTIST";
 
+
+    //HOMEPAGE
+    public static final String HOME_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/home-icon.png";
+
+
     //SALE PAGE
-    public static final String CREATE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/create-icon.png";
-    public static final String DELETE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/delete-icon.png";
-    public static final String DESELECT_ICON_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/deselected-icon.png";
-    public static final String LOOKUP_ICON_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/lookup-icon.png";
-    public static final String CREATE_HOVER_ICON_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/create-hover-icon.png";
-    public static final String DELETE_HOVER_ICON_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/delete-hover-icon.png";
-    public static final String DESELECT_HOVER_ICON_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/deselected-hover-icon.png";
-    public static final String LOOKUP_HOVER_ICON_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/lookup-hover-icon.png";
+    public static final String CREATE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/create-icon.png";
+    public static final String DELETE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/delete-icon.png";
+    public static final String DESELECT_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/deselected-icon.png";
+    public static final String LOOKUP_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/lookup-icon.png";
 
     //DISCOUNT PAGE
-    public static final String DISCOUNT_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/discount-img.png";
-    public static final String CALENDAR_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/calendar-icon.png";
+    public static final String DISCOUNT_PATH = "src/main/java/com/javaweb/view/imgs/icon/discount-img.png";
+    public static final String CALENDAR_PATH = "src/main/java/com/javaweb/view/imgs/icon/calendar-icon.png";
 
     //MUSIC PLAYER
-    public static final String PLAY_ICON_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/play-icon.png";
-    public static final String PLAY_HOVER_ICON_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/play-hover-icon.png";
-    public static final String PAUSE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/pause-icon.png";
-    public static final String PAUSE_HOVER_ICON_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/pause-hover-icon.png";
-    public static final String NEXT_ICON_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/next-icon.png";
-    public static final String NEXT_HOVER_ICON_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/next-hover-icon.png";
-    public static final String SPEAKER_ICON = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/speaker-icon.png";
-    public static final String SPEAKER_0_ICON = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/0v-speaker-icon.png";
-    public static final String SPEAKER_25_ICON = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/25v-speaker-icon.png";
-    public static final String SPEAKER_75_ICON = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/75v-speaker-icon.png";
-    public static final String PREVIOUS_ICON_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/previous-icon.png";
-    public static final String PREVIOUS_HOVER_ICON_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/previous-hover-icon.png";
+    public static final String PLAY_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/play-icon.png";
+    public static final String PAUSE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/pause-icon.png";
+    public static final String NEXT_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/next-icon.png";
+    public static final String SPEAKER_ICON = "src/main/java/com/javaweb/view/imgs/icon/speaker-icon.png";
+    public static final String SPEAKER_0_ICON = "src/main/java/com/javaweb/view/imgs/icon/0v-speaker-icon.png";
+    public static final String SPEAKER_25_ICON = "src/main/java/com/javaweb/view/imgs/icon/25v-speaker-icon.png";
+    public static final String SPEAKER_75_ICON = "src/main/java/com/javaweb/view/imgs/icon/75v-speaker-icon.png";
+    public static final String PREVIOUS_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/previous-icon.png";
 
     public static final String DEFAULT_COVER_PATH = "src/main/java/com/javaweb/view/mini_musicplayer/album_cover/record2.png";
-    public static final String SHUFFLE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/shuffle-icon.png";
-    public static final String REPLAY_ICON_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/replay-icon.png";
-    public static final String HEART_ICON = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/heart-icon.png";
-    public static final String HEART_OUTLINE_ICON = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/heart-outline.png";
-    public static final String LIKED_SONG_PATH = "src/main/java/com/javaweb/view/mini_musicplayer/playlist/liked_songs.txt";
-    public static final String REPEAT_ICON_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/repeat-icon.png";
-    public static final String ON_REPEAT_ICON_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/on-repeat-icon.png";
-    public static final String REPEAT_1_ICON_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/repeat-1-icon.png";
-    public static final String LYRICS_ICON_PATH = "src/main/java/com/javaweb/view/imgs/miscellaneous/music_player/lyrics-icon.png";
+    public static final String SHUFFLE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/shuffle-icon.png";
+    public static final String REPLAY_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/replay-icon.png";
+    public static final String HEART_ICON = "src/main/java/com/javaweb/view/imgs/icon/heart-icon.png";
+    public static final String HEART_OUTLINE_ICON = "src/main/java/com/javaweb/view/imgs/icon/heart-outline.png";
+    public static final String REPEAT_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/repeat-icon.png";
+    public static final String ON_REPEAT_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/on-repeat-icon.png";
+    public static final String REPEAT_1_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/repeat-1-icon.png";
+    public static final String LYRICS_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/lyrics-icon.png";
     public static final Color MUSIC_PLAYER_TEXT_COLOR = Color.decode("#FFFFFF");
 
     //LOGO
@@ -96,7 +92,7 @@ public class AppConstant {
     public static final String DEFAULT_PASSWORD = "123321";
     public static final String DEFAULT_USER_AVT_PATH = "src/main/java/com/javaweb/view/imgs/avatars/anonymous.png";
     public static final String GIF_PATH = "src/main/java/com/javaweb/view/imgs/back_ground/LatteLiteratureBackGround.gif";
-    public static final int SONGS_BEFORE_AD = 3;
+    public static final int SONGS_BEFORE_AD = 10;
 
 
     //ADS

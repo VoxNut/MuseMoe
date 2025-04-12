@@ -131,6 +131,10 @@ public class CommonApiUtil {
         return getSongLikesApiClient().createNewSongLikes(songId);
     }
 
+    public static boolean deleteSongLikes(Long songId) {
+        return getSongLikesApiClient().deleteSongLikes(songId);
+    }
+
     public static boolean checkSongLiked(Long songId) {
         return getSongLikesApiClient().checkSongLiked(songId);
     }

@@ -1004,6 +1004,14 @@ public class GuiUtil {
         JOptionPane.showMessageDialog(parentComponent, message, title, messageType);
     }
 
+    public static void showNetworkErrorDialog(Component parentComponent, String message) {
+        Color errorColor = new Color(231, 76, 60);
+        showCustomMessageDialog(parentComponent,
+                "Network Error: " + message + "\nPlease check your internet connection and try again."
+                , "Error", JOptionPane.ERROR_MESSAGE,
+                AppConstant.BACKGROUND_COLOR, AppConstant.TEXT_COLOR, errorColor);
+    }
+
     public static void showErrorMessageDialog(Component parentComponent, String message) {
         Color errorColor = new Color(231, 76, 60); // A more refined red
         showCustomMessageDialog(parentComponent, message, "Error", JOptionPane.ERROR_MESSAGE,
@@ -1306,21 +1314,12 @@ public class GuiUtil {
         messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
         // Create icon based on message type
-        String iconPath;
-        switch (messageType) {
-            case JOptionPane.ERROR_MESSAGE:
-                iconPath = AppConstant.ERROR_ICON_PATH;
-                break;
-            case JOptionPane.WARNING_MESSAGE:
-                iconPath = AppConstant.WARNING_ICON_PATH;
-                break;
-            case JOptionPane.INFORMATION_MESSAGE:
-                iconPath = AppConstant.INFORMATION_ICON_PATH;
-                break;
-            default:
-                iconPath = AppConstant.SUCCESS_ICON_PATH;
-                break;
-        }
+        String iconPath = switch (messageType) {
+            case JOptionPane.ERROR_MESSAGE -> AppConstant.ERROR_ICON_PATH;
+            case JOptionPane.WARNING_MESSAGE -> AppConstant.WARNING_ICON_PATH;
+            case JOptionPane.INFORMATION_MESSAGE -> AppConstant.INFORMATION_ICON_PATH;
+            default -> AppConstant.SUCCESS_ICON_PATH;
+        };
 
         Icon icon = createColoredDialogIcon(iconPath, 40, accentColor);
         JLabel iconLabel = new JLabel(icon);

@@ -29,6 +29,7 @@ public class PlayHistoryServiceImpl implements PlayHistoryService {
         try {
             SongEntity song = songRepository.findById(songId)
                     .orElseThrow(() -> new EntityNotFoundException("Song with id: " + songId + " not found"));
+            song.incrementPlayCount();
             UserEntity user = userRepository.findById(
                             Objects.requireNonNull(SecurityUtils.getPrincipal()).getId())
                     .orElseThrow(() -> new EntityNotFoundException("User not found!"));

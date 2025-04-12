@@ -4,15 +4,30 @@ import com.javaweb.App;
 import com.javaweb.client.client_service.*;
 import com.javaweb.client.impl.ApiServiceFactory;
 import com.javaweb.enums.RoleType;
+import com.javaweb.exception.NetworkUnavailableException;
 import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.model.dto.UserDTO;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 //Facade Design Pattern
 public class CommonApiUtil {
+
+    public static boolean checkNetworkConnectivity() throws NetworkUnavailableException {
+
+        if (!NetworkChecker.isNetworkAvailable()) {
+            throw new NetworkUnavailableException("Internet connection is unavailable");
+        }
+
+        if (!NetworkChecker.isApiServerAvailable()) {
+            throw new NetworkUnavailableException("Cannot connect to MuseMoe server");
+        }
+
+        return true;
+    }
 
     private static UserApiClient getUserApiClient() {
         return App.getBean(ApiServiceFactory.class).createUserApiClient();
@@ -77,11 +92,25 @@ public class CommonApiUtil {
 
     // Song
     public static SongDTO fetchSongByTitle(String title) {
-        return getSongApiClient().fetchSongByTitle(title);
+        try {
+            checkNetworkConnectivity();
+            return getSongApiClient().fetchSongByTitle(title);
+        } catch (NetworkUnavailableException e) {
+            // Log the error
+            System.err.println("Network error: " + e.getMessage());
+            return null;
+        }
     }
 
+
     public static List<SongDTO> findSongsLike(String title) {
-        return getSongApiClient().findSongsLike(title);
+        try {
+            checkNetworkConnectivity();
+            return getSongApiClient().findSongsLike(title);
+        } catch (NetworkUnavailableException e) {
+            System.err.println("Network error: " + e.getMessage());
+            return Collections.emptyList();
+        }
     }
 
     public static SongDTO fetchSongByUrl(String songUrl) {
@@ -116,7 +145,6 @@ public class CommonApiUtil {
     }
 
     // Play_History
-
     public static boolean logPlayHistory(Long songId) {
         return getPlayHistoryApiClient().createNewPlayHistory(songId);
     }

@@ -65,5 +65,10 @@ public class SongEntity extends BaseEntity {
     @Column(name = "average_rating")
     private Double averageRating;
 
-    
+
+    public void incrementPlayCount() {
+        this.playCount++;
+    }
+
+
 }

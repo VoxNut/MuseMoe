@@ -918,6 +918,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
                 }
                 case AD_ON -> {
                     heartButton.setVisible(false);
+                    outLineHeartButton.setVisible(false);
                     shuffleButton.setVisible(false);
                     repeatButton.setVisible(false);
                     replayButton.setVisible(false);

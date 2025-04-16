@@ -125,6 +125,14 @@ public class CommonApiUtil {
         return getUserDownloadApiClient().findUserDownloadedSongs();
     }
 
+    public static List<SongDTO> fetchRecentPlayHistory(int limit) {
+        return getPlayHistoryApiClient().findRecentPlayHistory(limit);
+    }
+
+    public static List<SongDTO> searchSongs(String query) {
+        return findSongsLike(query);
+    }
+
     //SongLikes
 
     public static boolean createSongLikes(Long songId) {

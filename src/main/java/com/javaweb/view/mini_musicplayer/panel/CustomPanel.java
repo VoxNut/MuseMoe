@@ -1,14 +1,14 @@
 // Template for custom components with theme support
-package com.javaweb.view.components;
+package com.javaweb.view.mini_musicplayer.panel;
 
 import com.javaweb.utils.GuiUtil;
+import com.javaweb.view.theme.ThemeChangeListener;
 import com.javaweb.view.theme.ThemeManager;
-import com.javaweb.view.theme.Themeable;
 
 import javax.swing.*;
 import java.awt.*;
 
-public class CustomPanel extends JPanel implements Themeable {
+public class CustomPanel extends JPanel implements ThemeChangeListener {
     private Color backgroundColor;
     private Color textColor;
     private Color accentColor;
@@ -20,11 +20,11 @@ public class CustomPanel extends JPanel implements Themeable {
         accentColor = ThemeManager.getInstance().getAccentColor();
 
         // Apply initial theme
-        applyTheme(backgroundColor, textColor, accentColor);
+        onThemeChanged(backgroundColor, textColor, accentColor);
     }
 
     @Override
-    public void applyTheme(Color backgroundColor, Color textColor, Color accentColor) {
+    public void onThemeChanged(Color backgroundColor, Color textColor, Color accentColor) {
         this.backgroundColor = backgroundColor;
         this.textColor = textColor;
         this.accentColor = accentColor;
@@ -33,8 +33,8 @@ public class CustomPanel extends JPanel implements Themeable {
 
         // Apply to all child components
         for (Component component : getComponents()) {
-            if (component instanceof Themeable) {
-                ((Themeable) component).applyTheme(backgroundColor, textColor, accentColor);
+            if (component instanceof ThemeChangeListener) {
+                ((ThemeChangeListener) component).onThemeChanged(backgroundColor, textColor, accentColor);
             } else {
                 applyThemeToComponent(component, backgroundColor, textColor, accentColor);
             }
@@ -51,12 +51,10 @@ public class CustomPanel extends JPanel implements Themeable {
 
         if (component instanceof JLabel) {
             component.setForeground(text);
-        } else if (component instanceof JButton) {
-            JButton button = (JButton) component;
+        } else if (component instanceof JButton button) {
             button.setForeground(text);
             GuiUtil.changeButtonIconColor(button, text);
-        } else if (component instanceof JSlider) {
-            JSlider slider = (JSlider) component;
+        } else if (component instanceof JSlider slider) {
             slider.setForeground(accent);
         }
         // Add more component types as needed

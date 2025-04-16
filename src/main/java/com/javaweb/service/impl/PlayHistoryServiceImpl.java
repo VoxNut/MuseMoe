@@ -1,18 +1,23 @@
 package com.javaweb.service.impl;
 
+import com.javaweb.converter.SongConverter;
 import com.javaweb.entity.PlayHistoryEntity;
 import com.javaweb.entity.SongEntity;
 import com.javaweb.entity.UserEntity;
+import com.javaweb.model.dto.SongDTO;
 import com.javaweb.repository.PlayHistoryRepository;
 import com.javaweb.repository.SongRepository;
 import com.javaweb.repository.UserRepository;
 import com.javaweb.service.PlayHistoryService;
 import com.javaweb.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.actuate.cache.CachesEndpoint;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityNotFoundException;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 @Service
@@ -23,6 +28,8 @@ public class PlayHistoryServiceImpl implements PlayHistoryService {
     private final PlayHistoryRepository playHistoryRepository;
     private final SongRepository songRepository;
     private final UserRepository userRepository;
+    private final CachesEndpoint cachesEndpoint;
+    private final SongConverter songConverter;
 
     @Override
     public boolean createNewPlayHistory(Long songId) {
@@ -41,5 +48,20 @@ public class PlayHistoryServiceImpl implements PlayHistoryService {
             return false;
         }
 
+    }
+
+    @Override
+    public List<SongDTO> fetchRecentPlayHistory(Integer limit) {
+        Long userId = Objects.requireNonNull(SecurityUtils.getPrincipal()).getId();
+        try {
+            List<SongDTO> recentSongs = playHistoryRepository.fetchRecentPlayHistory(userId, limit)
+                    .stream()
+                    .map(PlayHistoryEntity::getSong)
+                    .map(songConverter::toDTO)
+                    .toList();
+            return recentSongs;
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
     }
 }

@@ -3,24 +3,30 @@ package com.javaweb.view.mini_musicplayer.panel;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
+import com.javaweb.view.theme.ThemeChangeListener;
+import com.javaweb.view.theme.ThemeManager;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.util.List;
 
-public class SongSelectionPanel extends JPanel implements ThemeablePanel {
+public class SongSelectionPanel extends JPanel implements ThemeChangeListener {
     private final JList<SongDTO> songList;
     private final DefaultListModel<SongDTO> listModel;
     private final JLabel titleLabel;
     private final JButton selectButton;
     private final JButton cancelButton;
     private final JPanel buttonPanel;
+
     private Color backgroundColor;
     private Color textColor;
     private Color accentColor;
 
     public SongSelectionPanel(List<SongDTO> songs) {
+        this.textColor = ThemeManager.getInstance().getTextColor();
+        this.backgroundColor = ThemeManager.getInstance().getBackgroundColor();
+        this.accentColor = ThemeManager.getInstance().getAccentColor();
         setLayout(new BorderLayout());
         setPreferredSize(new Dimension(400, 300));
 
@@ -60,10 +66,12 @@ public class SongSelectionPanel extends JPanel implements ThemeablePanel {
         buttonPanel.add(selectButton);
         buttonPanel.add(cancelButton);
         add(buttonPanel, BorderLayout.SOUTH);
+        ThemeManager.getInstance().addThemeChangeListener(this);
+        onThemeChanged(backgroundColor, textColor, accentColor);
     }
 
     @Override
-    public void applyTheme(Color backgroundColor, Color textColor, Color accentColor) {
+    public void onThemeChanged(Color backgroundColor, Color textColor, Color accentColor) {
         this.backgroundColor = backgroundColor;
         this.textColor = textColor;
         this.accentColor = accentColor;
@@ -79,8 +87,7 @@ public class SongSelectionPanel extends JPanel implements ThemeablePanel {
         songList.setSelectionForeground(GuiUtil.calculateContrast(accentColor, textColor) > 4.5 ? textColor : backgroundColor);
         // Style the scroll pane
         Component scrollPane = getComponent(1); // assuming scroll pane is the second component
-        if (scrollPane instanceof JScrollPane) {
-            JScrollPane sp = (JScrollPane) scrollPane;
+        if (scrollPane instanceof JScrollPane sp) {
             sp.setBorder(BorderFactory.createEmptyBorder());
             sp.getViewport().setBackground(backgroundColor);
 
@@ -97,21 +104,6 @@ public class SongSelectionPanel extends JPanel implements ThemeablePanel {
         GuiUtil.styleButton(cancelButton, backgroundColor, textColor, accentColor);
     }
 
-
-    @Override
-    public JDialog createStyledDialog(Frame owner, String title) {
-        JDialog dialog = new JDialog(owner, title, true);
-        dialog.setContentPane(this);
-
-        // Style the dialog
-        GuiUtil.styleDialog(dialog, backgroundColor, textColor);
-
-        // Size and position
-        dialog.pack();
-        dialog.setLocationRelativeTo(owner);
-
-        return dialog;
-    }
 
     // Custom renderer for song list
     private class SongListCellRenderer extends DefaultListCellRenderer {
@@ -146,5 +138,9 @@ public class SongSelectionPanel extends JPanel implements ThemeablePanel {
 
             return label;
         }
+    }
+
+    public void cleanup() {
+        ThemeManager.getInstance().removeThemeChangeListener(this);
     }
 }

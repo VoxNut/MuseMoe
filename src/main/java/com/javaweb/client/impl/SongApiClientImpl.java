@@ -43,7 +43,7 @@ class SongApiClientImpl implements SongApiClient {
 
             return responseParser.parseReference(
                     responseBody,
-                    new TypeReference<List<SongDTO>>() {
+                    new TypeReference<>() {
                     }
             );
         } catch (Exception e) {
@@ -88,6 +88,11 @@ class SongApiClientImpl implements SongApiClient {
             e.printStackTrace();
             return null;
         }
+    }
+
+    @Override
+    public List<SongDTO> searchSongs(String query) {
+        return List.of();
     }
 
 

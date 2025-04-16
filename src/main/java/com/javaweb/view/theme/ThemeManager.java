@@ -1,7 +1,6 @@
 package com.javaweb.view.theme;
 
 import com.javaweb.constant.AppConstant;
-import com.javaweb.view.mini_musicplayer.event.MusicPlayerMediator;
 import lombok.Getter;
 
 import java.awt.*;
@@ -19,7 +18,7 @@ public class ThemeManager implements ThemeSubject {
     private final List<ThemeChangeListener> listeners = new ArrayList<>();
 
     private ThemeManager() {
-        // Private constructor to enforce singleton pattern
+
     }
 
     public static synchronized ThemeManager getInstance() {
@@ -40,9 +39,6 @@ public class ThemeManager implements ThemeSubject {
 
         // Notify all listeners about the theme change
         notifyListeners();
-
-        // Also notify through the existing mediator for backward compatibility
-        MusicPlayerMediator.getInstance().notifyColorsChanged(backgroundColor, textColor, accentColor);
     }
 
     public void addThemeChangeListener(ThemeChangeListener listener) {

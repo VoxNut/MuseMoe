@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PlayerEventPublisher implements PlayerEventSubject {
+    
     private final List<PlayerEventListener> listeners = new ArrayList<>();
 
     @Override

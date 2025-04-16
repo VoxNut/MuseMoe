@@ -4,6 +4,7 @@ import com.javaweb.constant.AppConstant;
 import com.javaweb.view.custom.spinner.DateLabelFormatter;
 import com.javaweb.view.custom.table.BorderedHeaderRenderer;
 import com.javaweb.view.custom.table.BorderedTableCellRenderer;
+import de.androidpit.colorthief.ColorThief;
 import net.coobird.thumbnailator.Thumbnails;
 import net.coobird.thumbnailator.geometry.Positions;
 import net.coobird.thumbnailator.resizers.configurations.Antialiasing;
@@ -29,6 +30,7 @@ import org.jfree.data.general.DefaultPieDataset;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.border.CompoundBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.JTableHeader;
@@ -195,6 +197,12 @@ public class GuiUtil {
 
     public static JTextField createLineInputField(String text, int columns) {
         return new JTextField(text, columns);
+    }
+
+    public static CompoundBorder createCompoundBorder(Color textColor, int thicc) {
+        return BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(textColor, thicc, true),
+                BorderFactory.createEmptyBorder(5, 0, 5, 0));
     }
 
     public static JTextField createLineInputField(int columns, Dimension textFieldDimension) {
@@ -628,33 +636,62 @@ public class GuiUtil {
         int width = image.getWidth();
         int height = image.getHeight();
 
-        // Create a new image with transparency (ARGB)
+        // Create output image with transparency
         BufferedImage output = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-
-        // Prepare the Graphics2D object
         Graphics2D g2 = output.createGraphics();
         configureGraphicsForHighQuality(g2);
 
-        // Draw the original image
+        // Clip with rounded rectangle
+        int safeRadius = Math.min(cornerRadius, Math.min(width, height) / 2);
+        RoundRectangle2D roundedClip = new RoundRectangle2D.Float(0, 0, width, height, safeRadius, safeRadius);
+        g2.setClip(roundedClip);
+
+        // Draw the original image within the clipped area
         g2.drawImage(image, 0, 0, null);
-
-        // Create the rounded rectangle mask
-        BufferedImage mask = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2dMask = mask.createGraphics();
-        g2dMask.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2dMask.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-        g2dMask.setColor(Color.WHITE);
-        g2dMask.fill(new RoundRectangle2D.Float(0, 0, width, height, cornerRadius, cornerRadius));
-        g2dMask.dispose();
-
-        // Apply the mask to the image
-        g2.setComposite(AlphaComposite.DstIn);
-        g2.drawImage(mask, 0, 0, null);
-
         g2.dispose();
 
         return new ImageIcon(output);
     }
+
+    public static ImageIcon createRoundedCornerImageIcon(BufferedImage image, int cornerRadius, int width, int height) {
+        // Create output image with transparency
+        BufferedImage output = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2 = output.createGraphics();
+        configureGraphicsForHighQuality(g2); // See helper below
+
+        // Create clipping path with rounded corners
+        int safeRadius = Math.min(cornerRadius, Math.min(width, height) / 2);
+        RoundRectangle2D clip = new RoundRectangle2D.Float(0, 0, width, height, safeRadius, safeRadius);
+        g2.setClip(clip);
+
+        // Scale image to fit while maintaining aspect ratio
+        double scale = Math.min((double) width / image.getWidth(), (double) height / image.getHeight());
+        int scaledWidth = (int) (image.getWidth() * scale);
+        int scaledHeight = (int) (image.getHeight() * scale);
+        int x = (width - scaledWidth) / 2;
+        int y = (height - scaledHeight) / 2;
+
+        g2.drawImage(image, x, y, scaledWidth, scaledHeight, null);
+        g2.dispose();
+
+        return new ImageIcon(output);
+    }
+
+    public static JDialog createStyledDialog(Frame owner, String title, JPanel contentPanel,
+                                             Color backgroundColor, Color textColor) {
+        JDialog dialog = new JDialog(owner, title, true);
+        dialog.setContentPane(contentPanel);
+
+        // Style the dialog
+        styleDialog(dialog, backgroundColor, textColor);
+
+        // Size and position
+        dialog.pack();
+        dialog.setLocationRelativeTo(owner);
+
+        return dialog;
+    }
+
 
     public static ImageIcon createImageIcon(String path, int width, int height) {
         ImageIcon imageIcon = new ImageIcon(path);
@@ -1184,9 +1221,10 @@ public class GuiUtil {
     public static void configureGraphicsForHighQuality(Graphics2D g2) {
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         g2.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
         g2.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
+        g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
     }
 
     public static BufferedImage createSmoothCircularAvatar(BufferedImage sourceImage, int diameter) {
@@ -1509,6 +1547,106 @@ public class GuiUtil {
             case AppConstant.INFORMATION_ICON_PATH -> JOptionPane.INFORMATION_MESSAGE;
             default -> JOptionPane.PLAIN_MESSAGE;
         };
+    }
+
+
+    public static Color[] extractThemeColors(BufferedImage image) {
+        if (image == null) {
+            // Return default colors if no image is provided
+            return new Color[]{
+                    AppConstant.BACKGROUND_COLOR,
+                    AppConstant.TEXT_COLOR,
+                    GuiUtil.darkenColor(AppConstant.BACKGROUND_COLOR, 0.1f)
+            };
+        }
+
+        try {
+            // Extract dominant colors using ColorThief
+            int[][] dominantColors = ColorThief.getPalette(image, 5, 1, false);
+
+            if (dominantColors != null && dominantColors.length >= 3) {
+                Color primaryColor = new Color(dominantColors[0][0], dominantColors[0][1], dominantColors[0][2]);
+                Color secondaryColor = new Color(dominantColors[1][0], dominantColors[1][1], dominantColors[1][2]);
+                Color extractedAccentColor = new Color(dominantColors[2][0], dominantColors[2][1], dominantColors[2][2]);
+
+                // Enhance primary color for better visual appeal
+                primaryColor = enhanceColor(primaryColor);
+
+                // Use primary color as background
+                Color extractedBgColor = primaryColor;
+
+                // Determine text color based on contrast ratio with background
+                Color extractedTextColor;
+                double contrastRatio = calculateContrast(primaryColor, secondaryColor);
+
+                if (contrastRatio < 4.5) { // W3C AA standard for contrast
+                    extractedTextColor = createHighContrastTextColor(primaryColor);
+                } else {
+                    extractedTextColor = secondaryColor;
+                }
+
+                // Ensure accent color has good contrast with background
+                if (calculateContrast(extractedBgColor, extractedAccentColor) < 3.0) {
+                    // If accent doesn't have enough contrast, adjust it
+                    extractedAccentColor = enhanceColor(extractedAccentColor);
+
+                    // If still not enough contrast, create a more vibrant accent
+                    if (calculateContrast(extractedBgColor, extractedAccentColor) < 3.0) {
+                        float[] hsb = Color.RGBtoHSB(
+                                extractedAccentColor.getRed(),
+                                extractedAccentColor.getGreen(),
+                                extractedAccentColor.getBlue(),
+                                null);
+
+                        // Increase saturation and adjust brightness for better visibility
+                        hsb[1] = Math.min(1.0f, hsb[1] * 1.5f);  // Increase saturation
+                        hsb[2] = Math.min(Math.max(0.6f, hsb[2]), 0.9f);  // Ensure good brightness
+
+                        extractedAccentColor = Color.getHSBColor(hsb[0], hsb[1], hsb[2]);
+                    }
+                }
+
+                return new Color[]{extractedBgColor, extractedTextColor, extractedAccentColor};
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // Return default colors if extraction fails
+        return new Color[]{
+                AppConstant.BACKGROUND_COLOR,
+                AppConstant.TEXT_COLOR,
+                GuiUtil.darkenColor(AppConstant.BACKGROUND_COLOR, 0.1f)
+        };
+    }
+
+    private static Color enhanceColor(Color color) {
+        float[] hsb = Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), null);
+
+        // Slightly increase saturation for more vibrant colors
+        hsb[1] = Math.min(1.0f, hsb[1] * 1.1f);
+
+        // Adjust brightness to ensure it's not too dark or too light
+        if (hsb[2] < 0.2f) {
+            hsb[2] = 0.2f; // Ensure dark colors are visible
+        } else if (hsb[2] > 0.9f) {
+            hsb[2] = 0.9f; // Prevent colors that are too bright
+        }
+
+        return Color.getHSBColor(hsb[0], hsb[1], hsb[2]);
+    }
+
+
+    private static Color createHighContrastTextColor(Color backgroundColor) {
+        float[] hsb = Color.RGBtoHSB(backgroundColor.getRed(), backgroundColor.getGreen(), backgroundColor.getBlue(), null);
+
+        // For darker backgrounds, use lighter text
+        if (hsb[2] < 0.5) {
+            return new Color(245, 245, 245); // Almost white
+        } else {
+            // For lighter backgrounds, use darker text
+            return new Color(25, 25, 25); // Almost black
+        }
     }
 
 }

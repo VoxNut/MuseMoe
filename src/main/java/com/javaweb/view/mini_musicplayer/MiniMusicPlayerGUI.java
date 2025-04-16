@@ -14,24 +14,24 @@ import com.javaweb.view.mini_musicplayer.event.PlayerEventListener;
 import com.javaweb.view.mini_musicplayer.panel.PlaylistPanel;
 import com.javaweb.view.mini_musicplayer.panel.PlaylistSelectionPanel;
 import com.javaweb.view.mini_musicplayer.panel.SongSelectionPanel;
+import com.javaweb.view.theme.ThemeChangeListener;
 import com.javaweb.view.theme.ThemeManager;
-import de.androidpit.colorthief.ColorThief;
 import lombok.Getter;
 import lombok.Setter;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionAdapter;
+import java.awt.event.*;
 import java.io.IOException;
 import java.util.List;
 
-public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
+public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, ThemeChangeListener {
     @Setter
-    public static MusicPlayerGUI instance;
+    public static MiniMusicPlayerGUI instance;
     private JLabel songTitle, songArtist, songImageLabel;
     private JPanel playbackBtns;
+
+
     @Getter
     private JSlider playbackSlider;
     private JSlider volumeSlider;
@@ -61,6 +61,7 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
     private Color backgroundColor = AppConstant.BACKGROUND_COLOR;
     @Getter
     private Color accentColor = backgroundColor.darker();
+
     @Getter
     private JButton replayButton;
     @Getter
@@ -81,15 +82,18 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
     private JButton outLineHeartButton;
     private final MusicPlayerFacade playerFacade;
 
+    private JDialog songDialog;
+    private JDialog playlistDialog;
+    private JDialog songPlaylistDialog;
 
-    private MusicPlayerGUI() {
-        super("MuseMoe MiniPlayer");
+    private MiniMusicPlayerGUI() {
+        super("MuseMoe Miniplayer");
         GuiUtil.styleTitleBar(this, GuiUtil.lightenColor(backgroundColor, 0.12), textColor);
 
 
         // Set the size and default close operation
         setSize(420, 680);
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
         // Center the frame on the screen and prevent resizing
         setLocationRelativeTo(null);
@@ -118,15 +122,29 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
         //Command and factory design pattern.
         playerFacade = MusicPlayerFacade.getInstance();
         MusicPlayerMediator.getInstance().subscribeToPlayerEvents(this);
+        ThemeManager.getInstance().addThemeChangeListener(this);
 
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                setVisible(false);
+            }
+        });
 
     }
 
-    public static synchronized MusicPlayerGUI getInstance() throws IOException {
+    public static synchronized MiniMusicPlayerGUI getInstance() throws IOException {
         if (instance == null) {
-            instance = new MusicPlayerGUI();
+            instance = new MiniMusicPlayerGUI();
         }
         return instance;
+    }
+
+    public static void cleanupInstance() {
+        if (instance != null) {
+            instance.dispose();
+            instance = null;
+        }
     }
 
 
@@ -330,9 +348,8 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
 
                 // Create and display the SongSelectionPanel
                 songSelectionPanel = new SongSelectionPanel(songs);
-                songSelectionPanel.applyTheme(backgroundColor, textColor, accentColor);
 
-                JDialog songDialog = songSelectionPanel.createStyledDialog(this, "Select Song");
+                songDialog = GuiUtil.createStyledDialog(this, "Select Song", songSelectionPanel, backgroundColor, textColor);
                 songDialog.setContentPane(songSelectionPanel);
                 songDialog.pack();
                 songDialog.setLocationRelativeTo(this);
@@ -345,7 +362,12 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
                     playerFacade.loadSong(selectedSong);
                 });
 
-                songSelectionPanel.addPropertyChangeListener("cancel", evt -> songDialog.dispose());
+                songSelectionPanel.addPropertyChangeListener("cancel",
+                        evt -> {
+                            songDialog.dispose();
+                            songSelectionPanel.cleanup();
+
+                        });
                 songDialog.setVisible(true);
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -379,9 +401,8 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
 
                 // Create and display the PlaylistSelectionPanel
                 playlistPanel = new PlaylistSelectionPanel(playlists);
-                playlistPanel.applyTheme(backgroundColor, textColor, accentColor);
 
-                JDialog playlistDialog = playlistPanel.createStyledDialog(this, "Select Playlist");
+                playlistDialog = GuiUtil.createStyledDialog(this, "Select Playlist", playlistPanel, backgroundColor, textColor);
 
 
                 // Add listeners for playlist selection and cancellation
@@ -393,7 +414,10 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
                     showSongSelectionDialog(selectedPlaylist);
                 });
 
-                playlistPanel.addPropertyChangeListener("cancel", evt -> playlistDialog.dispose());
+                playlistPanel.addPropertyChangeListener("cancel", evt -> {
+                    playlistDialog.dispose();
+                    playlistPanel.cleanup();
+                });
 
                 playlistDialog.setVisible(true);
             } catch (Exception ex) {
@@ -519,7 +543,7 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
         if (CommonApiUtil.deleteSongLikes(playerFacade.getCurrentSong().getId())) {
             outLineHeartButton.setVisible(true);
             heartButton.setVisible(false);
-            GuiUtil.changeButtonIconColor(heartButton, textColor);
+            GuiUtil.changeButtonIconColor(outLineHeartButton, textColor);
         } else {
             GuiUtil.showErrorMessageDialog(this, "An error has occurred when removed : " + playerFacade.getCurrentSong().getSongTitle() + "from liked songs!");
         }
@@ -561,44 +585,31 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
     // Method to update the song image
     public void updateSongImage(SongDTO song) {
         if (song.getSongImage() != null) {
-            // Apply rounded corners for a modern look
+
             songImageLabel.setIcon(GuiUtil.createRoundedCornerImageIcon(song.getSongImage(), 30));
 
-            // Extract colors from the image for a cohesive color theme
-            int[][] dominantColors = ColorThief.getPalette(song.getSongImage(), 5, 1, false);
-            if (dominantColors != null && dominantColors.length >= 3) {
-                // Get primary, secondary, and tertiary colors from the image
-                Color primaryColor = new Color(dominantColors[0][0], dominantColors[0][1], dominantColors[0][2]);
-                Color secondaryColor = new Color(dominantColors[1][0], dominantColors[1][1], dominantColors[1][2]);
-                accentColor = new Color(dominantColors[2][0], dominantColors[2][1], dominantColors[2][2]);
+            Color[] themeColors = GuiUtil.extractThemeColors(song.getSongImage());
 
-                // Enhance colors for better UI appearance
-                primaryColor = enhanceColor(primaryColor);
+            this.backgroundColor = themeColors[0];
+            this.textColor = themeColors[1];
+            this.accentColor = themeColors[2];
 
-                // Calculate contrast for text readability
-                double contrastRatio = GuiUtil.calculateContrast(primaryColor, secondaryColor);
-                backgroundColor = primaryColor;
-
-                // Ensure text is readable against the background
-                if (contrastRatio < 4.5) {
-                    textColor = createHighContrastTextColor(primaryColor);
-                } else {
-                    textColor = secondaryColor;
-                }
-
-                // Apply the new color theme
-                adjustColor();
-            }
+            // Apply the extracted colors to the UI
+            ThemeManager.getInstance().setThemeColors(
+                    backgroundColor, // backgroundColor
+                    textColor, // textColor
+                    accentColor  // accentColor
+            );
         } else {
             // Default styling when no image is available
             ImageIcon defaultIcon = GuiUtil.createImageIcon(AppConstant.DEFAULT_COVER_PATH, 300, 300);
             songImageLabel.setIcon(defaultIcon);
 
             // Use default colors
-            backgroundColor = AppConstant.BACKGROUND_COLOR;
-            textColor = AppConstant.TEXT_COLOR;
-
-            adjustColor();
+            ThemeManager.getInstance().setThemeColors(
+                    AppConstant.BACKGROUND_COLOR,
+                    AppConstant.TEXT_COLOR,
+                    GuiUtil.darkenColor(AppConstant.BACKGROUND_COLOR, 0.1f));
         }
     }
 
@@ -631,76 +642,9 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
     }
 
     public void adjustColor() {
-
-        ThemeManager.getInstance().setThemeColors(backgroundColor, textColor, accentColor);
-
-
-        GuiUtil.styleTitleBar(this, backgroundColor, textColor);
-
-
-        Color menuBackground = GuiUtil.darkenColor(backgroundColor, 0.1f);
-        Color menuForeground = textColor;
-
-        GuiUtil.styleMenuItem(loadSong, menuBackground, menuForeground);
-        GuiUtil.styleMenuItem(loadPlaylist, menuBackground, menuForeground);
-
-
-        float centerX = 0.5f;
-        float centerY = 0.5f;
-        float radius = 0.8f;
-        Color gradientCenter = GuiUtil.lightenColor(backgroundColor, 0.1f);
-        Color gradientOuter = GuiUtil.darkenColor(backgroundColor, 0.1f);
-
-        GuiUtil.setGradientBackground(mainPanel, gradientCenter, gradientOuter, centerX, centerY, radius);
-
-
-        applyConsistentButtonColors(textColor);
-
-        // Set slider colors with better contrast
-        playbackSlider.setBackground(GuiUtil.lightenColor(backgroundColor, 0.1f));
-        playbackSlider.setForeground(accentColor);
-
-        volumeSlider.setBackground(GuiUtil.lightenColor(backgroundColor, 0.05f));
-        volumeSlider.setForeground(accentColor);
-
-        // Style menu components
-        toolBar.setForeground(menuForeground);
-        toolBar.setBackground(menuBackground);
-        menuBar.setBackground(menuBackground);
-        menuBar.setForeground(menuForeground);
-        songMenu.setBackground(menuBackground);
-        songMenu.setForeground(menuForeground);
-        playlistMenu.setBackground(menuBackground);
-        playlistMenu.setForeground(menuForeground);
-
-
-        songMenu.getPopupMenu().setBorder(null);
-
-        playlistMenu.getPopupMenu().setBorder(null);
-
-        loadSong.setMargin(new Insets(0, 0, 0, 0));
-        loadSong.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
-
-        loadPlaylist.setMargin(new Insets(0, 0, 0, 0));
-        loadPlaylist.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
-
-        loadSong.setBackground(menuBackground);
-        loadSong.setForeground(menuForeground);
-
-        loadPlaylist.setBackground(menuBackground);
-        loadPlaylist.setForeground(menuForeground);
-
-
-        // Make text elements more visible with consistent colors
-        applyConsistentTextColors(textColor);
-
-
-        // Update icon colors
-        GuiUtil.changeIconColor(miniMuseMoeIcon, textColor);
-        setIconImage(miniMuseMoeIcon.getImage());
+        // Apply colors to this component's UI elements
 
         // Update panel themes
-        updatePanelThemes();
     }
 
     // New helper method to apply consistent coloring to all buttons
@@ -727,17 +671,6 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
         }
     }
 
-    private void updatePanelThemes() {
-        if (songSelectionPanel != null) {
-            songSelectionPanel.applyTheme(backgroundColor, textColor, accentColor);
-        }
-        if (songPanel != null) {
-            songPanel.applyTheme(backgroundColor, textColor, accentColor);
-        }
-        if (playlistPanel != null) {
-            playlistPanel.applyTheme(backgroundColor, textColor, accentColor);
-        }
-    }
 
     // Methods to toggle play and pause buttons
     public void enablePauseButtonDisablePlayButton() {
@@ -905,18 +838,20 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
     private void showSongSelectionDialog(PlaylistDTO playlist) {
         try {
             songPanel = new PlaylistPanel(playlist.getSongs());
-            songPanel.applyTheme(backgroundColor, textColor, accentColor);
-            JDialog songDialog = songPanel.createStyledDialog(this, "Select Song");
+            songPlaylistDialog = GuiUtil.createStyledDialog(this, "Select Song", songPanel, backgroundColor, textColor);
 
             songPanel.addPropertyChangeListener("songSelected", evt -> {
                 SongDTO selectedSong = (SongDTO) evt.getNewValue();
-                songDialog.dispose();
+                songPlaylistDialog.dispose();
                 playerFacade.loadSong(selectedSong);
             });
 
-            songPanel.addPropertyChangeListener("cancel", evt -> songDialog.dispose());
+            songPanel.addPropertyChangeListener("cancel", evt -> {
+                playlistPanel.cleanup();
+                songPlaylistDialog.dispose();
+            });
 
-            songDialog.setVisible(true);
+            songPlaylistDialog.setVisible(true);
         } catch (Exception ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(this, "Failed to load songs!", "Error", JOptionPane.ERROR_MESSAGE);
@@ -927,9 +862,9 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
     @Override
     public void onPlayerEvent(PlayerEvent event) {
         SwingUtilities.invokeLater(() -> {
-            switch (event.getType()) {
+            switch (event.type()) {
                 case SONG_LOADED -> {
-                    SongDTO song = (SongDTO) event.getData();
+                    SongDTO song = (SongDTO) event.data();
                     updateSongDetails(song);
                     updatePlaybackSlider(song);
                     setPlaybackSliderValue(0);
@@ -947,7 +882,7 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
                 case PLAYBACK_PAUSED -> enablePlayButtonDisablePauseButton();
 
                 case PLAYBACK_PROGRESS -> {
-                    int[] data = (int[]) event.getData();
+                    int[] data = (int[]) event.data();
                     if (!playbackSlider.getValueIsAdjusting()) {
                         setPlaybackSliderValue(data[0]);
                         updateSongTimeLabel(data[1]);
@@ -956,14 +891,14 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
 
                 case REPEAT_MODE_CHANGED -> {
                     try {
-                        updateRepeatButtonIcon((RepeatMode) event.getData());
+                        updateRepeatButtonIcon((RepeatMode) event.data());
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }
 
                 case PLAYLIST_LOADED -> {
-                    PlaylistDTO playlist = (PlaylistDTO) event.getData();
+                    PlaylistDTO playlist = (PlaylistDTO) event.data();
                     if (playlist != null) {
                         playlistNameLabel.setText(playlist.getName());
                         playlistNameLabel.setVisible(true);
@@ -994,10 +929,10 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
                     replayButton.setVisible(true);
                 }
 
-                case SLIDER_CHANGED -> setPlaybackSliderValue((int) event.getData());
+                case SLIDER_CHANGED -> setPlaybackSliderValue((int) event.data());
 
                 case SLIDER_DRAGGING -> {
-                    int[] data = (int[]) event.getData();
+                    int[] data = (int[]) event.data();
                     if (playbackSlider.getValueIsAdjusting()) {
                         return;
                     }
@@ -1008,4 +943,67 @@ public class MusicPlayerGUI extends JFrame implements PlayerEventListener {
             }
         });
     }
+
+    @Override
+    public void onThemeChanged(Color backgroundColor, Color textColor, Color accentColor) {
+
+        GuiUtil.styleTitleBar(this, backgroundColor, textColor);
+
+        Color menuBackground = GuiUtil.darkenColor(backgroundColor, 0.1f);
+
+        GuiUtil.styleMenuItem(loadSong, menuBackground, textColor);
+        GuiUtil.styleMenuItem(loadPlaylist, menuBackground, textColor);
+
+        float centerX = 0.5f;
+        float centerY = 0.5f;
+        float radius = 0.8f;
+        Color gradientCenter = GuiUtil.lightenColor(backgroundColor, 0.1f);
+        Color gradientOuter = GuiUtil.darkenColor(backgroundColor, 0.1f);
+
+        GuiUtil.setGradientBackground(mainPanel, gradientCenter, gradientOuter, centerX, centerY, radius);
+
+        applyConsistentButtonColors(textColor);
+
+        // Set slider colors with better contrast
+        playbackSlider.setBackground(GuiUtil.lightenColor(backgroundColor, 0.1f));
+        playbackSlider.setForeground(accentColor);
+
+        volumeSlider.setBackground(GuiUtil.lightenColor(backgroundColor, 0.05f));
+        volumeSlider.setForeground(accentColor);
+
+        // Style menu components
+        toolBar.setForeground(textColor);
+        toolBar.setBackground(menuBackground);
+        menuBar.setBackground(menuBackground);
+        menuBar.setForeground(textColor);
+        songMenu.setBackground(menuBackground);
+        songMenu.setForeground(textColor);
+        playlistMenu.setBackground(menuBackground);
+        playlistMenu.setForeground(textColor);
+
+        songMenu.getPopupMenu().setBorder(null);
+        playlistMenu.getPopupMenu().setBorder(null);
+
+        loadSong.setMargin(new Insets(0, 0, 0, 0));
+        loadSong.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
+
+        loadPlaylist.setMargin(new Insets(0, 0, 0, 0));
+        loadPlaylist.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
+
+        loadSong.setBackground(menuBackground);
+        loadSong.setForeground(textColor);
+
+        loadPlaylist.setBackground(menuBackground);
+        loadPlaylist.setForeground(textColor);
+
+        // Make text elements more visible with consistent colors
+        applyConsistentTextColors(textColor);
+
+        // Update icon colors
+        GuiUtil.changeIconColor(miniMuseMoeIcon, textColor);
+        setIconImage(miniMuseMoeIcon.getImage());
+
+    }
+
+
 }

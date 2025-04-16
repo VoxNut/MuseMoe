@@ -34,7 +34,7 @@ public class AppConstant {
 
     //HOMEPAGE
     public static final String HOME_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/home-icon.png";
-
+    public static final String MINIPLAYER_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/miniplayer-icon.png";
 
     //SALE PAGE
     public static final String CREATE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/create-icon.png";
@@ -44,7 +44,7 @@ public class AppConstant {
 
     //DISCOUNT PAGE
     public static final String DISCOUNT_PATH = "src/main/java/com/javaweb/view/imgs/icon/discount-img.png";
-    public static final String CALENDAR_PATH = "src/main/java/com/javaweb/view/imgs/icon/calendar-icon.png";
+    public static final String CALENDAR_PATH = "src/main/java/com/javeaweb/view/imgs/icon/calendar-icon.png";
 
     //MUSIC PLAYER
     public static final String PLAY_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/play-icon.png";
@@ -93,7 +93,7 @@ public class AppConstant {
     public static final String DEFAULT_USER_AVT_PATH = "src/main/java/com/javaweb/view/imgs/avatars/anonymous.png";
     public static final String GIF_PATH = "src/main/java/com/javaweb/view/imgs/back_ground/LatteLiteratureBackGround.gif";
     public static final int SONGS_BEFORE_AD = 10;
-
+    public static final int RECENT_SEARCHED_SONG_LIMIT = 10;
 
     //ADS
     public static final String MUSE_MOE_AD = "src/main/java/com/javaweb/view/mini_musicplayer/advertisement/museMoe.mp3";

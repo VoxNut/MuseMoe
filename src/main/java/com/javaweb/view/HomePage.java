@@ -3,13 +3,15 @@ package com.javaweb.view;
 import com.javaweb.constant.AppConstant;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.model.dto.UserDTO;
+import com.javaweb.utils.CommonApiUtil;
 import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
-import com.javaweb.view.mini_musicplayer.MusicPlayerGUI;
+import com.javaweb.view.mini_musicplayer.MiniMusicPlayerGUI;
 import com.javaweb.view.mini_musicplayer.event.MusicPlayerFacade;
 import com.javaweb.view.mini_musicplayer.event.MusicPlayerMediator;
 import com.javaweb.view.mini_musicplayer.event.PlayerEvent;
 import com.javaweb.view.mini_musicplayer.event.PlayerEventListener;
+import com.javaweb.view.mini_musicplayer.panel.RecentSearchDropdown;
 import com.javaweb.view.theme.ThemeChangeListener;
 import com.javaweb.view.theme.ThemeManager;
 import com.javaweb.view.user.UserSessionManager;
@@ -18,9 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionAdapter;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -35,7 +35,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private JPanel centerPanel;
     private JLabel avatarLabel;
     private JLabel fullNameLabel;
-    private MusicPlayerGUI musicPlayerGUI;
+    private MiniMusicPlayerGUI miniMusicPlayerGUI;
     private JLabel spinningDisc;
     private JPanel controlButtonsPanel;
     private Color backgroundColor = AppConstant.BACKGROUND_COLOR;
@@ -47,7 +47,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private JButton pauseButton;
     private JButton nextButton;
     private JPanel userInfoPanel;
-    private JButton playMusicButton;
     private Timer spinTimer;
     private JLabel labelBeginning;
     private JLabel labelEnd;
@@ -77,6 +76,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private JPanel helpPanel;
     private JPanel rightPanel;
     private JPanel datePanel;
+    private RecentSearchDropdown recentSearchDropdown;
+    private JButton miniplayerButton;
 
     public HomePage() throws IOException {
         initializeFrame();
@@ -190,13 +191,11 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         dateLabel.setForeground(textColor);
         dateLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         dateLabel.setAlignmentY(Component.CENTER_ALIGNMENT);
+        
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        Timer dateTimer = new Timer(1000, e -> {
-            String currentDate = LocalDate.now().format(dateFormatter);
-            dateLabel.setText(currentDate);
-            dateLabel.setFont(FontUtil.getJetBrainsMonoFont(Font.PLAIN, 20));
-        });
-        dateTimer.start();
+        String currentDate = LocalDate.now().format(dateFormatter);
+        dateLabel.setText(currentDate);
+
 
         // Add vertical glue for centering
         datePanel.add(Box.createVerticalGlue());
@@ -264,6 +263,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                     searchField.setText("");
                     searchField.setForeground(textColor);
                 }
+
+                // Load and show recent searches
+                loadRecentSearches();
             }
 
             public void focusLost(java.awt.event.FocusEvent evt) {
@@ -271,6 +273,38 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                     searchField.setText("What do you want to muse?...");
                     searchField.setForeground(GuiUtil.darkenColor(textColor, 0.3f));
                 }
+            }
+        });
+
+        searchField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ESCAPE && recentSearchDropdown != null) {
+                    recentSearchDropdown.hidePopup();
+                } else if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    // Perform search with the input text
+                    if (!searchField.getText().isEmpty() &&
+                            !searchField.getText().equals("What do you want to muse?...")) {
+                        performSearch(searchField.getText());
+                    }
+                }
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+                // Hide the dropdown if the user is actively typing
+                if (recentSearchDropdown != null &&
+                        !searchField.getText().isEmpty() &&
+                        !searchField.getText().equals("What do you want to muse?...")) {
+                    recentSearchDropdown.hidePopup();
+                }
+            }
+        });
+
+        lookupIcon.addActionListener(e -> {
+            if (!searchField.getText().isEmpty() &&
+                    !searchField.getText().equals("What do you want to muse?...")) {
+                performSearch(searchField.getText());
             }
         });
 
@@ -286,6 +320,17 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 BorderFactory.createLineBorder(textColor, 2, true),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)
         ));
+
+        miniplayerButton = GuiUtil.changeButtonIconColor(AppConstant.MINIPLAYER_ICON_PATH, textColor, 24, 24);
+        miniplayerButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        miniplayerButton.setOpaque(false);
+        miniplayerButton.setFocusPainted(false);
+        miniplayerButton.setAlignmentY(Component.CENTER_ALIGNMENT);
+        miniplayerButton.setBorder(BorderFactory.createEmptyBorder());
+        miniplayerButton.setToolTipText("Open Music Player");
+        miniplayerButton.addActionListener(e -> openMiniplayer());
+
+
         // Create help panel with border and title - fixed height to match search bar
         helpPanel = new JPanel();
         helpPanel.setLayout(new BoxLayout(helpPanel, BoxLayout.Y_AXIS));
@@ -326,7 +371,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         avatarLabel = createUserAvatar();
         avatarLabel.setAlignmentY(Component.CENTER_ALIGNMENT);
 
-        // Add components to right panel with proper spacing
+        // Add to the right panel
+        rightPanel.add(miniplayerButton);
+        rightPanel.add(Box.createHorizontalStrut(10));
         rightPanel.add(helpPanel);
         rightPanel.add(Box.createHorizontalStrut(10));
         rightPanel.add(fullNameLabel);
@@ -528,40 +575,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         controlButtonsPanel.add(pauseButton);
         controlButtonsPanel.add(nextButton);
 
-        // "Play Music!" button
-        playMusicButton = new JButton("Play music!");
-        playMusicButton.setFont(FontUtil.getJetBrainsMonoFont(Font.BOLD, 14));
-        playMusicButton.setBorderPainted(false);
-        playMusicButton.setContentAreaFilled(true);
-        playMusicButton.setBackground(AppConstant.BACKGROUND_COLOR);
-        playMusicButton.setForeground(AppConstant.TEXT_COLOR);
-
-        playMusicButton.addActionListener(e -> {
-            if (playMusicButton.getText().equals("Stop music!")) {
-                playerFacade.pauseSong();
-                musicPlayerGUI.dispose();
-
-
-                spinningDisc.setVisible(false);
-                controlButtonsPanel.setVisible(false);
-                playbackSlider.setVisible(false);
-                labelEnd.setVisible(false);
-                labelBeginning.setVisible(false);
-                stopDiscSpinning();
-                stopTextScrolling();
-                scrollPosition = 0;
-                playbackSlider.setValue(0);
-                scrollingLabel.setVisible(false);
-                playMusicButton.setText("Play music!");
-
-                // Return to original color
-                onThemeChanged(AppConstant.BACKGROUND_COLOR, AppConstant.TEXT_COLOR, AppConstant.TEXTFIELD_BACKGROUND_COLOR);
-                dateLabel.setForeground(AppConstant.TEXT_COLOR);
-                fullNameLabel.setForeground(AppConstant.TEXT_COLOR);
-            } else {
-                openMusicPlayer();
-            }
-        });
 
         // Create layout for player elements
         JPanel spinAndTextPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
@@ -578,7 +591,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         controlsWrapper.add(spinAndTextPanel);
         controlsWrapper.add(sliderPanel);
         controlsWrapper.add(playerControlsPanel);
-        controlsWrapper.add(playMusicButton);
 
         // Add padding to the panel
         miniMusicPlayerPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
@@ -587,31 +599,128 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         return miniMusicPlayerPanel;
     }
 
-    private void openMusicPlayer() {
+    private void openMiniplayer() {
         try {
-            if (musicPlayerGUI != null) {
-                if (playerFacade.getCurrentSong() != null) {
-                    showPlaybackSlider();
-                    onThemeChanged(musicPlayerGUI.getBackgroundColor(), musicPlayerGUI.getTextColor(), musicPlayerGUI.getAccentColor());
-                    enablePlayButtonDisablePauseButton();
-                    updatePlaybackSlider(playerFacade.getCurrentSong());
-                    updateSpinningDisc(playerFacade.getCurrentSong());
-                    updateScrollingText(playerFacade.getCurrentSong());
-                    setPlaybackSliderValue(playerFacade.getCalculatedFrame());
+            if (miniMusicPlayerGUI == null) {
+                // Initialize the miniMusicPlayerGUI if it doesn't exist
+                miniMusicPlayerGUI = MiniMusicPlayerGUI.getInstance();
+
+                // Modify the window listener to hide instead of dispose
+                for (WindowListener listener : miniMusicPlayerGUI.getWindowListeners()) {
+                    miniMusicPlayerGUI.removeWindowListener(listener);
                 }
-            }
-            musicPlayerGUI = MusicPlayerGUI.getInstance();
-            if (musicPlayerGUI.isVisible()) {
-                musicPlayerGUI.toFront();
-                musicPlayerGUI.requestFocus();
-            } else {
-                musicPlayerGUI.setVisible(true);
+
+                miniMusicPlayerGUI.addWindowListener(new WindowAdapter() {
+                    @Override
+                    public void windowClosing(WindowEvent e) {
+                        // Hide the window instead of disposing it
+                        miniMusicPlayerGUI.setVisible(false);
+                    }
+                });
             }
 
+            // Update UI if there's a current song
+            if (playerFacade.getCurrentSong() != null) {
+                showPlaybackSlider();
+                onThemeChanged(miniMusicPlayerGUI.getBackgroundColor(), miniMusicPlayerGUI.getTextColor(), miniMusicPlayerGUI.getAccentColor());
 
+                // Check if player is paused or playing
+                if (playerFacade.isPaused()) {
+                    enablePlayButtonDisablePauseButton();
+                } else {
+                    enablePauseButtonDisablePlayButton();
+
+                }
+
+                updatePlaybackSlider(playerFacade.getCurrentSong());
+                updateSpinningDisc(playerFacade.getCurrentSong());
+                updateScrollingText(playerFacade.getCurrentSong());
+                setPlaybackSliderValue(playerFacade.getCalculatedFrame());
+            }
+
+            // Show the player if it's not already visible
+            if (!miniMusicPlayerGUI.isVisible()) {
+                miniMusicPlayerGUI.setVisible(true);
+            }
+
+            // Bring to front and give focus
+            miniMusicPlayerGUI.toFront();
+            miniMusicPlayerGUI.requestFocus();
         } catch (IOException ex) {
-            GuiUtil.showErrorMessageDialog(this, "Cannot open MiniMusic Player.");
+            GuiUtil.showErrorMessageDialog(this, "Cannot open MiniMusic Player: " + ex.getMessage());
+            log.error("Failed to open mini music player", ex);
         }
+    }
+
+    private void loadRecentSearches() {
+        try {
+            // Fetch the 10 most recent played songs
+            java.util.List<SongDTO> recentSongs = CommonApiUtil.fetchRecentPlayHistory(AppConstant.RECENT_SEARCHED_SONG_LIMIT);
+
+            if (!recentSongs.isEmpty()) {
+                if (recentSearchDropdown == null) {
+                    // Create the dropdown if it doesn't exist
+                    recentSearchDropdown = new RecentSearchDropdown(
+                            searchField,
+                            recentSongs,
+                            this::handleRecentSongSelected
+                    );
+                } else {
+                    // Update the songs if the dropdown exists
+                    recentSearchDropdown.updateSongs(recentSongs);
+                }
+
+                // Show the dropdown
+                recentSearchDropdown.showPopup(searchField);
+            }
+        } catch (Exception e) {
+            // Log the error but don't crash the application
+            log.error("Error loading recent searches", e);
+
+            // If there's an existing dropdown, ensure it's hidden
+            if (recentSearchDropdown != null) {
+                recentSearchDropdown.hidePopup();
+            }
+        }
+    }
+
+    private void handleRecentSongSelected(SongDTO song) {
+        // Play the selected song
+        playerFacade.loadSong(song);
+        /*
+         * getBufferedImage from the chosen song and extract colors from it.
+         *
+         * */
+        searchField.setText(song.getSongTitle() + " - " + song.getSongArtist());
+
+        Color[] themeColors = GuiUtil.extractThemeColors(song.getSongImage());
+
+        // Apply the extracted colors to the UI
+        ThemeManager.getInstance().setThemeColors(
+                themeColors[0], // backgroundColor
+                themeColors[1], // textColor
+                themeColors[2]  // accentColor
+        );
+    }
+
+    private void performSearch(String query) {
+        // You can implement search functionality here
+        // For example, search for songs matching the query and display them
+        java.util.List<SongDTO> searchResults = CommonApiUtil.searchSongs(query);
+
+        if (searchResults != null && !searchResults.isEmpty()) {
+            // Show search results in a popup or another part of the UI
+            showSearchResults(searchResults);
+        } else {
+            GuiUtil.showInfoMessageDialog(this, "No songs found matching your search.");
+        }
+    }
+
+    private void showSearchResults(java.util.List<SongDTO> searchResults) {
+        // Implement this to show search results
+        // Could be a new panel in the main area, or a popup similar to recent searches
+        // For now, just play the first result as an example
+        playerFacade.loadSong(searchResults.getFirst());
     }
 
     private JPanel createLabelsPanel() {
@@ -754,7 +863,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         labelEnd.setVisible(true);
         startTextScrolling();
         startDiscSpinning();
-        playMusicButton.setText("Stop music!");
     }
 
     private JPanel createLibraryPanel() {
@@ -865,10 +973,13 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 loginPage.setVisible(true);
             });
 
-            if (musicPlayerGUI != null) {
+            if (miniMusicPlayerGUI != null) {
                 playerFacade.stopSong();
+                // Just hide it instead of nullifying the static instance
+                miniMusicPlayerGUI.setVisible(false);
             }
-            MusicPlayerGUI.instance = null;
+            // Clean up the static instance only on actual logout
+            MiniMusicPlayerGUI.cleanupInstance();
         }
     }
 
@@ -924,6 +1035,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         GuiUtil.changeButtonIconColor(prevButton, textColor);
         GuiUtil.changeButtonIconColor(playButton, textColor);
         GuiUtil.changeButtonIconColor(pauseButton, textColor);
+        GuiUtil.changeButtonIconColor(miniplayerButton, textColor);
+
 
         playbackSlider.setBackground(GuiUtil.lightenColor(backgroundColor, 0.2f));
         playbackSlider.setForeground(accentColor);
@@ -935,10 +1048,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         // Update text colors
         dateLabel.setForeground(textColor);
         fullNameLabel.setForeground(textColor);
-
-
-        playMusicButton.setBackground(backgroundColor);
-        playMusicButton.setForeground(textColor);
 
         scrollingLabel.setForeground(textColor);
         labelBeginning.setForeground(textColor);
@@ -1023,9 +1132,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     @Override
     public void onPlayerEvent(PlayerEvent event) {
         SwingUtilities.invokeLater(() -> {
-            switch (event.getType()) {
+            switch (event.type()) {
                 case SONG_LOADED -> {
-                    SongDTO song = (SongDTO) event.getData();
+                    SongDTO song = (SongDTO) event.data();
                     updatePlaybackSlider(song);
                     setPlaybackSliderValue(0);
                     updateSpinningDisc(song);
@@ -1042,7 +1151,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
 
                 case PLAYBACK_PROGRESS -> {
-                    int[] data = (int[]) event.getData();
+                    int[] data = (int[]) event.data();
                     if (!playbackSlider.getValueIsAdjusting()) {
                         setPlaybackSliderValue(data[0]);
                         updateSongTimeLabel(data[1]);
@@ -1051,10 +1160,10 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 // Starting to show the playback slider in the Home Page.
                 case HOME_PAGE_SLIDER_CHANGED -> showPlaybackSlider();
 
-                case SLIDER_CHANGED -> setPlaybackSliderValue((int) event.getData());
+                case SLIDER_CHANGED -> setPlaybackSliderValue((int) event.data());
 
                 case SLIDER_DRAGGING -> {
-                    int[] data = (int[]) event.getData();
+                    int[] data = (int[]) event.data();
                     if (playbackSlider.getValueIsAdjusting()) {
                         return;
                     }

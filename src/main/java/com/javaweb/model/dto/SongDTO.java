@@ -36,12 +36,6 @@ public class SongDTO extends AbstractDTO<SongDTO> {
         SongDTO that = (SongDTO) o;
 
         return this.songTitle.equals(that.songTitle)
-                && this.songArtist.equals(that.songArtist)
-                && this.album.equals(that.album)
-                && this.songLength.equals(that.songLength)
-                && this.genre.equals(that.genre)
-                && this.releaseDate.equals(that.releaseDate)
-                && this.frameRatePerMilliseconds == that.frameRatePerMilliseconds
                 && this.audioFilePath.equals(that.audioFilePath);
     }
 

@@ -1,9 +1,7 @@
 package com.javaweb.view.mini_musicplayer.event;
 
-import lombok.Getter;
 
-@Getter
-public class PlayerEvent {
+public record PlayerEvent(EventType type, Object data) {
     public enum EventType {
         SONG_LOADED,
         PLAYBACK_STARTED,
@@ -17,19 +15,9 @@ public class PlayerEvent {
         HEART_CHANGED,
         AD_ON,
         AD_OFF,
-        COLORS_CHANGED,
         SLIDER_CHANGED,
         HOME_PAGE_SLIDER_CHANGED,
-        SLIDER_DRAGGING
-    }
-
-    private final EventType type;
-
-    private final Object data;
-
-    public PlayerEvent(EventType type, Object data) {
-        this.type = type;
-        this.data = data;
+        SLIDER_DRAGGING,
     }
 
 }

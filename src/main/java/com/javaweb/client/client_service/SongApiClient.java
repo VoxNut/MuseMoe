@@ -16,4 +16,8 @@ public interface SongApiClient {
 
     List<SongDTO> findAllSongs();
 
+
+    List<SongDTO> searchSongs(String query);
+
+
 }

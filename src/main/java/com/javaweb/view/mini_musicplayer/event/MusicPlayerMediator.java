@@ -5,7 +5,6 @@ import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
 
 import javax.swing.*;
-import java.awt.*;
 
 // Mediator design pattern
 public class MusicPlayerMediator {
@@ -81,11 +80,6 @@ public class MusicPlayerMediator {
 
     public void notifyAdOff() {
         publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.AD_OFF, null));
-    }
-
-    public void notifyColorsChanged(Color backgroundColor, Color textColor, Color accentColor) {
-        Color[] colors = new Color[]{backgroundColor, textColor, accentColor};
-        publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.COLORS_CHANGED, colors));
     }
 
     public void notifyPlaybackSlider(int currentFrame) {

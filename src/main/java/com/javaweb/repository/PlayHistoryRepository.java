@@ -11,6 +11,19 @@ import java.util.List;
 @Repository
 public interface PlayHistoryRepository extends JpaRepository<PlayHistoryEntity, Long> {
 
-    @Query(value = "SELECT ph.* FROM play_history ph WHERE ph.user_id = :userId ORDER BY ph.played_at DESC LIMIT :limit", nativeQuery = true)
+    @Query(value = """
+             WITH ranked_plays AS (
+               SELECT *,
+                      ROW_NUMBER() OVER (PARTITION BY song_id ORDER BY played_at DESC) AS rn
+               FROM play_history
+               WHERE user_id = :userId
+             )
+             SELECT *\s
+             FROM ranked_plays
+             WHERE rn = 1
+             ORDER BY played_at DESC
+             LIMIT :limit
+            \s""", nativeQuery = true)
     List<PlayHistoryEntity> fetchRecentPlayHistory(@Param("userId") Long userId, @Param("limit") Integer limit);
+
 }

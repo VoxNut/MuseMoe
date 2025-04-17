@@ -645,6 +645,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     }
 
     private void handleRecentSongSelected(SongDTO song) {
+        MiniMusicPlayerGUI.getInstance();
         // Play the selected song
         playerFacade.loadSong(song);
         /*
@@ -653,7 +654,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         searchField.setText(song.getSongTitle() + " - " + song.getSongArtist());
 
         Color[] themeColors = GuiUtil.extractThemeColors(song.getSongImage());
-
         // Apply the extracted colors to the UI
         ThemeManager.getInstance().setThemeColors(
                 themeColors[0], // backgroundColor
@@ -1133,8 +1133,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                     setPlaybackSliderValue(data[0]);
                     updateSongTimeLabel(data[1]);
                 }
-
-
             }
         });
     }

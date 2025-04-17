@@ -1044,6 +1044,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
 
         // Update icon colors
         GuiUtil.changeIconColor(miniMuseMoeIcon, textColor);
+
         setIconImage(miniMuseMoeIcon.getImage());
 
     }

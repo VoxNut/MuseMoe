@@ -1160,6 +1160,17 @@ public class GuiUtil {
         JOptionPane.showMessageDialog(parentComponent, message, title, messageType);
     }
 
+    public static ImageIcon createColoredIcon(String path, Color color, int width, int height) {
+        try {
+            BufferedImage originalImage = ImageIO.read(new File(path));
+            BufferedImage coloredImage = applyColorToImage(originalImage, color);
+            return new ImageIcon(Thumbnails.of(coloredImage).size(width, height).asBufferedImage());
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new ImageIcon();
+        }
+    }
+
     public static void showNetworkErrorDialog(Component parentComponent, String message) {
         Color errorColor = new Color(231, 76, 60);
         showCustomMessageDialog(parentComponent,

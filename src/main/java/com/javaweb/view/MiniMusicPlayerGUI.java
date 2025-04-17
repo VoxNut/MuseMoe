@@ -844,17 +844,31 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
     }
 
     public void updateRepeatButtonIcon(RepeatMode repeatMode) throws IOException {
+        String iconPath;
         switch (repeatMode) {
             case NO_REPEAT:
-                repeatButton.setIcon(GuiUtil.changeButtonIconColor(AppConstant.REPEAT_ICON_PATH, textColor, 20, 20).getIcon());
+                iconPath = AppConstant.REPEAT_ICON_PATH;
                 break;
             case REPEAT_ALL:
-                repeatButton.setIcon(GuiUtil.changeButtonIconColor(AppConstant.ON_REPEAT_ICON_PATH, textColor, 20, 20).getIcon());
+                iconPath = AppConstant.ON_REPEAT_ICON_PATH;
                 break;
             case REPEAT_ONE:
-                repeatButton.setIcon(GuiUtil.changeButtonIconColor(AppConstant.REPEAT_1_ICON_PATH, textColor, 20, 20).getIcon());
+                iconPath = AppConstant.REPEAT_1_ICON_PATH;
                 break;
+            default:
+                iconPath = AppConstant.REPEAT_ICON_PATH;
         }
+
+        // Create colored icons for both normal and hover states
+        ImageIcon normalIcon = GuiUtil.createColoredIcon(iconPath, textColor, 20, 20);
+        ImageIcon hoverIcon = GuiUtil.createColoredIcon(iconPath, GuiUtil.lightenColor(textColor, 0.3f), 20, 20);
+
+        // Update both icons on the existing button
+        repeatButton.setIcon(normalIcon);
+        repeatButton.setRolloverIcon(hoverIcon);
+
+        // Force a repaint to show the new icon
+        repeatButton.repaint();
     }
 
 

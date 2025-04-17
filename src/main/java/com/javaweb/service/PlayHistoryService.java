@@ -8,4 +8,9 @@ public interface PlayHistoryService {
     boolean createNewPlayHistory(Long songId);
 
     List<SongDTO> fetchRecentPlayHistory(Integer limit);
+
+    boolean clearPlayHistoryBySongs(List<Long> songIds);
+    
+    boolean clearAllPlayHistory();
+
 }

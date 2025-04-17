@@ -2,6 +2,7 @@ package com.javaweb.view.panel;
 
 import com.javaweb.constant.AppConstant;
 import com.javaweb.model.dto.SongDTO;
+import com.javaweb.utils.CommonApiUtil;
 import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
 import com.javaweb.view.theme.ThemeManager;
@@ -10,6 +11,7 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -150,8 +152,35 @@ public class RecentSearchDropdown extends ListThemeablePanel {
 
         // Add clear action
         clearButton.addActionListener(e -> {
-            listModel.clear();
-            hidePopup();
+            if (listModel.getSize() > 0) {
+                List<Long> songIds = extractSongIdsFromListModel();
+
+                // Show a confirmation dialog
+                int response = GuiUtil.showConfirmMessageDialog(
+                        SwingUtilities.getWindowAncestor(this),
+                        "Are you sure you want to clear your search history?",
+                        "Clear History"
+                );
+
+                if (response == JOptionPane.YES_OPTION) {
+                    // Clear from database
+                    boolean success = CommonApiUtil.clearPlayHistoryBySongs(songIds);
+
+                    if (success) {
+                        listModel.clear();
+                        hidePopup();
+                    } else {
+                        GuiUtil.showMessageDialog(
+                                SwingUtilities.getWindowAncestor(this),
+                                "Failed to clear history. Please try again.",
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE
+                        );
+                    }
+                }
+            } else {
+                hidePopup();
+            }
         });
 
         footerPanel.add(clearButton);
@@ -181,6 +210,16 @@ public class RecentSearchDropdown extends ListThemeablePanel {
         ThemeManager.getInstance().addThemeChangeListener(this);
         onThemeChanged(backgroundColor, textColor, accentColor);
     }
+
+    private List<Long> extractSongIdsFromListModel() {
+        List<Long> songIds = new ArrayList<>();
+        for (int i = 0; i < listModel.getSize(); i++) {
+            SongDTO song = listModel.getElementAt(i);
+            songIds.add(song.getId());
+        }
+        return songIds;
+    }
+
 
     public void showPopup(JTextField textField) {
         if (listModel.isEmpty()) {

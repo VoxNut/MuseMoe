@@ -40,9 +40,6 @@ public class PlayHistoryApiClientImpl implements PlayHistoryApiClient {
             List<SongDTO> recentSongs = responseParser.parseReference(responseBody,
                     new TypeReference<>() {
                     });
-            recentSongs = recentSongs.stream()
-                    .distinct()
-                    .toList();
 
             recentSongs.forEach(mp3Util::enrichSongDTO);
 
@@ -51,6 +48,32 @@ public class PlayHistoryApiClientImpl implements PlayHistoryApiClient {
         } catch (Exception e) {
             e.printStackTrace();
             return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public Boolean clearPlayHistoryBySongs(List<Long> songIds) {
+        try {
+            String url = apiConfig.buildPlayHistoryUrl("/clear-songs");
+            String jsonBody = responseParser.writeValueAsString(songIds);
+
+            String responseBody = apiClient.deleteWithBody(url, jsonBody);
+            return responseParser.parseObject(responseBody, Boolean.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
+    public Boolean clearAllPlayHistory() {
+        try {
+            String url = apiConfig.buildPlayHistoryUrl("/clear-all");
+            String responseBody = apiClient.delete(url);
+            return responseParser.parseObject(responseBody, Boolean.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
         }
     }
 }

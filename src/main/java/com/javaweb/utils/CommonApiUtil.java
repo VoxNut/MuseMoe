@@ -161,5 +161,11 @@ public class CommonApiUtil {
         return getPlayHistoryApiClient().createNewPlayHistory(songId);
     }
 
+    public static boolean clearPlayHistoryBySongs(List<Long> songIds) {
+        return getPlayHistoryApiClient().clearPlayHistoryBySongs(songIds);
+    }
 
+    public static boolean clearAllPlayHistory() {
+        return getPlayHistoryApiClient().clearAllPlayHistory();
+    }
 }

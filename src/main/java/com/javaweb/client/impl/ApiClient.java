@@ -109,9 +109,9 @@ class HttpApiClient implements ApiClient {
                 if (!first) {
                     urlWithParams.append("&");
                 }
-                urlWithParams.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8.name()));
+                urlWithParams.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8));
                 urlWithParams.append("=");
-                urlWithParams.append(URLEncoder.encode(String.valueOf(entry.getValue()), StandardCharsets.UTF_8.name()));
+                urlWithParams.append(URLEncoder.encode(String.valueOf(entry.getValue()), StandardCharsets.UTF_8));
                 first = false;
             }
         }
@@ -188,7 +188,6 @@ class HttpApiClient implements ApiClient {
     public String deleteWithBody(String url, String jsonBody) throws IOException {
         //Custom HttpDeleteWithBody
 
-
         HttpDeleteWithBody httpDelete = new HttpDeleteWithBody(url);
         httpDelete.setHeader("Content-Type", "application/json");
         httpDelete.setHeader("Accept", "application/json");
@@ -226,4 +225,6 @@ class HttpApiClient implements ApiClient {
             }
         }
     }
+
+
 }

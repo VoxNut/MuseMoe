@@ -64,4 +64,28 @@ public class PlayHistoryServiceImpl implements PlayHistoryService {
             return Collections.emptyList();
         }
     }
+
+    @Override
+    public boolean clearPlayHistoryBySongs(List<Long> songIds) {
+        try {
+            Long userId = Objects.requireNonNull(SecurityUtils.getPrincipal()).getId();
+            int deletedCount = playHistoryRepository.deletePlayHistoryBySongIds(userId, songIds);
+            return deletedCount > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
+    public boolean clearAllPlayHistory() {
+        try {
+            Long userId = Objects.requireNonNull(SecurityUtils.getPrincipal()).getId();
+            int deletedCount = playHistoryRepository.deleteAllPlayHistoryByUserId(userId);
+            return deletedCount > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

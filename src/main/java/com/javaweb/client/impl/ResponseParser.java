@@ -12,6 +12,7 @@ public interface ResponseParser {
 
     <T> T parseReference(String json, TypeReference<T> typeReference) throws JsonProcessingException;
 
+    String writeValueAsString(Object o) throws JsonProcessingException;
 }
 
 
@@ -30,5 +31,10 @@ class JsonResponseParser implements ResponseParser {
     @Override
     public <T> T parseReference(String json, TypeReference<T> typeReference) throws JsonProcessingException {
         return objectMapper.readValue(json, typeReference);
+    }
+
+    @Override
+    public String writeValueAsString(Object o) throws JsonProcessingException {
+        return objectMapper.writeValueAsString(o);
     }
 }

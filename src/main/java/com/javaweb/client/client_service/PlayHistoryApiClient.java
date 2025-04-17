@@ -8,4 +8,9 @@ public interface PlayHistoryApiClient {
     Boolean createNewPlayHistory(Long songId);
 
     List<SongDTO> findRecentPlayHistory(int limit);
+
+    Boolean clearPlayHistoryBySongs(List<Long> songIds);
+
+    Boolean clearAllPlayHistory();
+
 }

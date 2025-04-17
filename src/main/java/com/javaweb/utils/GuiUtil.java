@@ -112,6 +112,7 @@ public class GuiUtil {
     public static JButton createButton(String text) {
         JButton button = new JButton(text);
         button.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         return button;
     }
 
@@ -200,9 +201,13 @@ public class GuiUtil {
     }
 
     public static CompoundBorder createCompoundBorder(Color textColor, int thicc) {
+        return createCompoundBorder(textColor, thicc, 5, 0, 5, 0);
+    }
+
+    public static CompoundBorder createCompoundBorder(Color textColor, int thicc, int top, int left, int bottom, int right) {
         return BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(textColor, thicc, true),
-                BorderFactory.createEmptyBorder(5, 0, 5, 0));
+                BorderFactory.createEmptyBorder(top, left, bottom, right));
     }
 
     public static JTextField createLineInputField(int columns, Dimension textFieldDimension) {
@@ -305,6 +310,20 @@ public class GuiUtil {
         menuItem.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         return menuItem;
     }
+
+    public static void applyModernScrollBar(Component component, Color backgroundColor, Color accentColor) {
+        if (component instanceof JScrollPane sp) {
+            sp.setBorder(BorderFactory.createEmptyBorder());
+            sp.getViewport().setBackground(backgroundColor);
+
+            // Style scrollbars
+            sp.getVerticalScrollBar().setBackground(backgroundColor);
+            sp.getVerticalScrollBar().setForeground(accentColor);
+            sp.getHorizontalScrollBar().setBackground(backgroundColor);
+            sp.getHorizontalScrollBar().setForeground(accentColor);
+        }
+    }
+
 
     public static JMenu createMenu(String text) {
         JMenu menu = new JMenu(text);
@@ -447,7 +466,7 @@ public class GuiUtil {
             newButton.setContentAreaFilled(false);
             newButton.setFocusPainted(false);
             newButton.setOpaque(false);
-
+            newButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             return newButton;
         } catch (IOException e) {
             e.printStackTrace();
@@ -633,49 +652,108 @@ public class GuiUtil {
 
 
     public static ImageIcon createRoundedCornerImageIcon(BufferedImage image, int cornerRadius) {
-        int width = image.getWidth();
-        int height = image.getHeight();
+        try {
+            int width = image.getWidth();
+            int height = image.getHeight();
 
-        // Create output image with transparency
-        BufferedImage output = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2 = output.createGraphics();
-        configureGraphicsForHighQuality(g2);
+            // Create output image with transparency
+            BufferedImage output = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2 = output.createGraphics();
+            configureGraphicsForHighQuality(g2);
 
-        // Clip with rounded rectangle
-        int safeRadius = Math.min(cornerRadius, Math.min(width, height) / 2);
-        RoundRectangle2D roundedClip = new RoundRectangle2D.Float(0, 0, width, height, safeRadius, safeRadius);
-        g2.setClip(roundedClip);
+            // Clip with rounded rectangle
+            int safeRadius = Math.min(cornerRadius, Math.min(width, height) / 2);
+            RoundRectangle2D roundedClip = new RoundRectangle2D.Float(0, 0, width, height, safeRadius, safeRadius);
+            g2.setClip(roundedClip);
 
-        // Draw the original image within the clipped area
-        g2.drawImage(image, 0, 0, null);
-        g2.dispose();
+            // Draw the original image within the clipped area
+            g2.drawImage(image, 0, 0, null);
 
-        return new ImageIcon(output);
+            // Add a subtle shadow/border for better definition
+            g2.setClip(null);
+            g2.setColor(new Color(0, 0, 0, 30));
+            g2.setStroke(new BasicStroke(1.0f));
+            g2.draw(roundedClip);
+
+            g2.dispose();
+
+            return new ImageIcon(output);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ImageIcon(image);
+        }
     }
 
     public static ImageIcon createRoundedCornerImageIcon(BufferedImage image, int cornerRadius, int width, int height) {
-        // Create output image with transparency
-        BufferedImage output = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2 = output.createGraphics();
-        configureGraphicsForHighQuality(g2); // See helper below
+        try {
+            // First, use Thumbnailator for high-quality resizing
+            BufferedImage resized = Thumbnails.of(image)
+                    .size(width, height)
+                    .keepAspectRatio(true)
+                    .crop(Positions.CENTER)
+                    .antialiasing(Antialiasing.ON)
+                    .outputQuality(1.0f)
+                    .asBufferedImage();
 
-        // Create clipping path with rounded corners
-        int safeRadius = Math.min(cornerRadius, Math.min(width, height) / 2);
-        RoundRectangle2D clip = new RoundRectangle2D.Float(0, 0, width, height, safeRadius, safeRadius);
-        g2.setClip(clip);
+            // Create an output image with transparency
+            BufferedImage output = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2 = output.createGraphics();
+            configureGraphicsForHighQuality(g2);
 
-        // Scale image to fit while maintaining aspect ratio
-        double scale = Math.min((double) width / image.getWidth(), (double) height / image.getHeight());
-        int scaledWidth = (int) (image.getWidth() * scale);
-        int scaledHeight = (int) (image.getHeight() * scale);
-        int x = (width - scaledWidth) / 2;
-        int y = (height - scaledHeight) / 2;
+            // Calculate safe corner radius
+            int safeRadius = Math.min(cornerRadius, Math.min(width, height) / 2);
 
-        g2.drawImage(image, x, y, scaledWidth, scaledHeight, null);
-        g2.dispose();
+            // Create rounded rectangle clip
+            RoundRectangle2D roundedRect = new RoundRectangle2D.Float(0, 0, width, height, safeRadius, safeRadius);
+            g2.setClip(roundedRect);
 
-        return new ImageIcon(output);
+            // Draw the resized image
+            g2.drawImage(resized, 0, 0, width, height, null);
+
+            // Add a subtle shadow/border for better definition
+            g2.setClip(null);
+            g2.setColor(new Color(0, 0, 0, 30));
+            g2.setStroke(new BasicStroke(1.0f));
+            g2.draw(roundedRect);
+
+            g2.dispose();
+
+            return new ImageIcon(output);
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            // Fallback to simple scaling if Thumbnailator fails
+            try {
+                BufferedImage output = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g2 = output.createGraphics();
+
+                configureGraphicsForHighQuality(g2);
+
+                int safeRadius = Math.min(cornerRadius, Math.min(width, height) / 2);
+                RoundRectangle2D clip = new RoundRectangle2D.Float(0, 0, width, height, safeRadius, safeRadius);
+                g2.setClip(clip);
+
+                g2.drawImage(image, 0, 0, width, height, null);
+                g2.dispose();
+
+                return new ImageIcon(output);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                return new ImageIcon(image);
+            }
+        }
     }
+
+    public static ImageIcon createRoundedCornerImageIcon(String path, int cornerRadius, int width, int height) {
+        try {
+            BufferedImage originalImage = ImageIO.read(new File(path));
+            return createRoundedCornerImageIcon(originalImage, cornerRadius, width, height);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new ImageIcon(path);
+        }
+    }
+
 
     public static JDialog createStyledDialog(Frame owner, String title, JPanel contentPanel,
                                              Color backgroundColor, Color textColor) {
@@ -790,6 +868,7 @@ public class GuiUtil {
 
     public static JPanel createPanel(LayoutManager layoutManager) {
         JPanel panel = createPanel();
+        panel.setOpaque(false);
         panel.setLayout(layoutManager);
         return panel;
     }
@@ -1221,7 +1300,7 @@ public class GuiUtil {
     public static void configureGraphicsForHighQuality(Graphics2D g2) {
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
         g2.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
         g2.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
         g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);

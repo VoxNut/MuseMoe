@@ -5,7 +5,6 @@ import com.github.weisj.darklaf.LafManager;
 import com.javaweb.constant.AppConstant;
 import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
-import com.javaweb.utils.LocaleUtil;
 import com.javaweb.view.LoginPage;
 import lombok.Getter;
 import org.springframework.boot.WebApplicationType;
@@ -18,7 +17,6 @@ import org.springframework.security.core.context.SecurityContextImpl;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.Locale;
 
 @SpringBootApplication
 public class App {
@@ -77,8 +75,7 @@ public class App {
 
         loginPage.setVisible(true);
 
-        // Set input locale for the entire application
-        LocaleUtil.setInputLocale(loginPage, new Locale("vi", "VN"));
+
     }
 
 

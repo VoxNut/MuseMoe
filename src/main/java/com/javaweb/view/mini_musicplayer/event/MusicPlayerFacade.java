@@ -3,7 +3,7 @@ package com.javaweb.view.mini_musicplayer.event;
 import com.javaweb.enums.RepeatMode;
 import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
-import com.javaweb.view.mini_musicplayer.MusicPlayer;
+import com.javaweb.view.MusicPlayer;
 
 import java.io.IOException;
 

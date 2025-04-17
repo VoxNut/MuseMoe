@@ -6,12 +6,11 @@ import com.javaweb.model.dto.UserDTO;
 import com.javaweb.utils.CommonApiUtil;
 import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
-import com.javaweb.view.mini_musicplayer.MiniMusicPlayerGUI;
 import com.javaweb.view.mini_musicplayer.event.MusicPlayerFacade;
 import com.javaweb.view.mini_musicplayer.event.MusicPlayerMediator;
 import com.javaweb.view.mini_musicplayer.event.PlayerEvent;
 import com.javaweb.view.mini_musicplayer.event.PlayerEventListener;
-import com.javaweb.view.mini_musicplayer.panel.RecentSearchDropdown;
+import com.javaweb.view.panel.RecentSearchDropdown;
 import com.javaweb.view.theme.ThemeChangeListener;
 import com.javaweb.view.theme.ThemeManager;
 import com.javaweb.view.user.UserSessionManager;
@@ -35,7 +34,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private JPanel centerPanel;
     private JLabel avatarLabel;
     private JLabel fullNameLabel;
-    private MiniMusicPlayerGUI miniMusicPlayerGUI;
     private JLabel spinningDisc;
     private JPanel controlButtonsPanel;
     private Color backgroundColor = AppConstant.BACKGROUND_COLOR;
@@ -124,8 +122,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     }
 
 
-    private JPanel createMainPanel() throws IOException {
-        JPanel mainPanel = new JPanel(new BorderLayout());
+    private JPanel createMainPanel() {
+        JPanel mainPanel = GuiUtil.createPanel(new BorderLayout());
 
         // Apply a radial gradient using the GuiUtil method instead of the linear gradient
         GuiUtil.setGradientBackground(mainPanel,
@@ -137,8 +135,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         topPanel.setOpaque(false);
         mainPanel.add(topPanel, BorderLayout.NORTH);
 
-        combinedCenterPanel = new JPanel(new BorderLayout());
-        combinedCenterPanel.setOpaque(false);
+        combinedCenterPanel = GuiUtil.createPanel(new BorderLayout());
 
         libraryPanel = createLibraryPanel();
         libraryPanel.setOpaque(false);
@@ -170,34 +167,30 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         headerPanel.setBackground(backgroundColor);
         headerPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Create a wrapper panel that uses BoxLayout for better vertical alignment
-        JPanel headerContentPanel = new JPanel();
-        headerContentPanel.setLayout(new BoxLayout(headerContentPanel, BoxLayout.X_AXIS));
+        // Use GridBagLayout for the header content panel
+        JPanel headerContentPanel = new JPanel(new GridBagLayout());
         headerContentPanel.setOpaque(false);
-        headerContentPanel.setAlignmentY(Component.CENTER_ALIGNMENT);
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.insets = new Insets(0, 10, 0, 10);
+        gbc.weighty = 1.0; // Căn giữa theo chiều dọc
 
         // ---------- LEFT SECTION (Date) ----------
         datePanel = new JPanel();
-        datePanel.setLayout(new BoxLayout(datePanel, BoxLayout.X_AXIS));
         datePanel.setOpaque(false);
         datePanel.setAlignmentY(Component.CENTER_ALIGNMENT);
-        datePanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
         datePanel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(textColor, 2, true),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)
         ));
-        // Date label
+
         dateLabel = new JLabel();
         dateLabel.setForeground(textColor);
-        dateLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        dateLabel.setAlignmentY(Component.CENTER_ALIGNMENT);
-        
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         String currentDate = LocalDate.now().format(dateFormatter);
         dateLabel.setText(currentDate);
 
-
-        // Add vertical glue for centering
         datePanel.add(Box.createVerticalGlue());
         datePanel.add(dateLabel);
         datePanel.add(Box.createVerticalGlue());
@@ -208,39 +201,32 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         centerPanel.setOpaque(false);
         centerPanel.setAlignmentY(Component.CENTER_ALIGNMENT);
 
+
         // Home icon with vertical centering
         homeIcon = GuiUtil.changeButtonIconColor(AppConstant.HOME_ICON_PATH, textColor, 20, 20);
-        homeIcon.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        homeIcon.setOpaque(false);
-        homeIcon.setFocusPainted(false);
         homeIcon.setAlignmentY(Component.CENTER_ALIGNMENT);
 
-        // Add padding around home icon
         JPanel homeIconWrapper = new JPanel();
         homeIconWrapper.setLayout(new BoxLayout(homeIconWrapper, BoxLayout.Y_AXIS));
         homeIconWrapper.setOpaque(false);
         homeIconWrapper.add(Box.createVerticalGlue());
         homeIconWrapper.add(homeIcon);
         homeIconWrapper.add(Box.createVerticalGlue());
-        homeIconWrapper.setAlignmentY(Component.CENTER_ALIGNMENT);
 
-        // Add horizontal spacing
         centerPanel.add(homeIconWrapper);
         centerPanel.add(Box.createHorizontalStrut(10));
 
         // Search bar with vertical centering
-        searchBarWrapper = new JPanel(new BorderLayout());
-        searchBarWrapper.setOpaque(false);
+        searchBarWrapper = GuiUtil.createPanel(new BorderLayout());
         searchBarWrapper.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(textColor, 2, true),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)
         ));
-        searchBarWrapper.setPreferredSize(new Dimension(getWidth(), 40));
-        searchBarWrapper.setMaximumSize(new Dimension(getWidth(), 40));
+        searchBarWrapper.setPreferredSize(new Dimension(600, 40));
+        searchBarWrapper.setMaximumSize(new Dimension(600, 40));
         searchBarWrapper.setMinimumSize(new Dimension(200, 40));
         searchBarWrapper.setAlignmentY(Component.CENTER_ALIGNMENT);
 
-        // Add lookup icon on the left
         lookupIcon = GuiUtil.changeButtonIconColor(AppConstant.LOOKUP_ICON_PATH, textColor, 20, 20);
         lookupIcon.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
         lookupIcon.setOpaque(false);
@@ -248,7 +234,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         lookupIcon.setAlignmentY(Component.CENTER_ALIGNMENT);
         searchBarWrapper.add(lookupIcon, BorderLayout.WEST);
 
-        // Add text field
         searchField = GuiUtil.createLineInputField("What do you want to muse?...", 20);
         searchField.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
         searchField.setOpaque(false);
@@ -256,16 +241,13 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         searchField.setCaretColor(textColor);
         searchField.setAlignmentY(Component.CENTER_ALIGNMENT);
 
-        // Add focus listeners
         searchField.addFocusListener(new java.awt.event.FocusAdapter() {
             public void focusGained(java.awt.event.FocusEvent evt) {
                 if (searchField.getText().equals("What do you want to muse?...")) {
                     searchField.setText("");
                     searchField.setForeground(textColor);
+                    loadRecentSearches();
                 }
-
-                // Load and show recent searches
-                loadRecentSearches();
             }
 
             public void focusLost(java.awt.event.FocusEvent evt) {
@@ -282,7 +264,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 if (e.getKeyCode() == KeyEvent.VK_ESCAPE && recentSearchDropdown != null) {
                     recentSearchDropdown.hidePopup();
                 } else if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    // Perform search with the input text
                     if (!searchField.getText().isEmpty() &&
                             !searchField.getText().equals("What do you want to muse?...")) {
                         performSearch(searchField.getText());
@@ -292,7 +273,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
             @Override
             public void keyReleased(KeyEvent e) {
-                // Hide the dropdown if the user is actively typing
                 if (recentSearchDropdown != null &&
                         !searchField.getText().isEmpty() &&
                         !searchField.getText().equals("What do you want to muse?...")) {
@@ -311,6 +291,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         searchBarWrapper.add(searchField, BorderLayout.CENTER);
         centerPanel.add(searchBarWrapper);
 
+        centerPanel.add(Box.createHorizontalGlue());
         // ---------- RIGHT SECTION (User info) ----------
         rightPanel = new JPanel();
         rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.X_AXIS));
@@ -322,16 +303,11 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         ));
 
         miniplayerButton = GuiUtil.changeButtonIconColor(AppConstant.MINIPLAYER_ICON_PATH, textColor, 24, 24);
-        miniplayerButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         miniplayerButton.setOpaque(false);
         miniplayerButton.setFocusPainted(false);
-        miniplayerButton.setAlignmentY(Component.CENTER_ALIGNMENT);
-        miniplayerButton.setBorder(BorderFactory.createEmptyBorder());
         miniplayerButton.setToolTipText("Open Music Player");
         miniplayerButton.addActionListener(e -> openMiniplayer());
 
-
-        // Create help panel with border and title - fixed height to match search bar
         helpPanel = new JPanel();
         helpPanel.setLayout(new BoxLayout(helpPanel, BoxLayout.Y_AXIS));
         helpPanel.setBorder(BorderFactory.createTitledBorder(
@@ -343,35 +319,24 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 textColor
         ));
         helpPanel.setOpaque(false);
-        helpPanel.setAlignmentY(Component.CENTER_ALIGNMENT);
         helpPanel.setPreferredSize(new Dimension(80, 43));
         helpPanel.setMaximumSize(new Dimension(80, 43));
 
         helpLabel = GuiUtil.createLabel("Type ?", Font.BOLD, 12);
         helpLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-        // Add vertical centering
         helpPanel.add(Box.createVerticalGlue());
         helpPanel.add(helpLabel);
         helpPanel.add(Box.createVerticalGlue());
 
-        // Create user info components
         String userRole = determineUserRole(getCurrentUser().getRoles());
-
-        // Create and add username label
-        if (getCurrentUser().getFullName() == null) {
-            fullNameLabel = GuiUtil.createLabel("???" + " - " + userRole);
-        } else {
-            fullNameLabel = GuiUtil.createLabel(getCurrentUser().getFullName() + " - " + userRole);
-        }
+        fullNameLabel = GuiUtil.createLabel(getCurrentUser().getFullName() != null ?
+                getCurrentUser().getFullName() + " - " + userRole : "??? - " + userRole);
         fullNameLabel.setForeground(textColor);
         fullNameLabel.setAlignmentY(Component.CENTER_ALIGNMENT);
 
-        // Create and add avatar label
         avatarLabel = createUserAvatar();
         avatarLabel.setAlignmentY(Component.CENTER_ALIGNMENT);
 
-        // Add to the right panel
         rightPanel.add(miniplayerButton);
         rightPanel.add(Box.createHorizontalStrut(10));
         rightPanel.add(helpPanel);
@@ -380,16 +345,23 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         rightPanel.add(Box.createHorizontalStrut(10));
         rightPanel.add(avatarLabel);
 
-        // Add all sections to header content panel with proper spacing
-        headerContentPanel.add(datePanel);
-        headerContentPanel.add(Box.createHorizontalGlue()); // Flexible space
-        headerContentPanel.add(centerPanel);
-        headerContentPanel.add(Box.createHorizontalGlue()); // Flexible space
-        headerContentPanel.add(rightPanel);
+        // Add components to GridBagLayout
+        gbc.gridx = 0;
+        gbc.weightx = 0.0;
+        headerContentPanel.add(datePanel, gbc);
+
+        gbc.gridx = 1;
+        gbc.weightx = 1.0;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.CENTER;
+        headerContentPanel.add(centerPanel, gbc);
+
+        gbc.gridx = 2;
+        gbc.weightx = 0.0; // Không co giãn cho rightPanel
+        headerContentPanel.add(rightPanel, gbc);
 
         // Add the content panel to the header panel
         headerPanel.add(headerContentPanel, BorderLayout.CENTER);
-
         headerPanel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(textColor, 2, true),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)
@@ -398,7 +370,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         return headerPanel;
     }
 
-    private JPanel createMiniMusicPlayerPanel() throws IOException {
+    private JPanel createMiniMusicPlayerPanel() {
         JPanel miniMusicPlayerPanel = new JPanel(new BorderLayout());
         miniMusicPlayerPanel.setOpaque(true);
 
@@ -600,56 +572,44 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     }
 
     private void openMiniplayer() {
-        try {
-            if (miniMusicPlayerGUI == null) {
-                // Initialize the miniMusicPlayerGUI if it doesn't exist
-                miniMusicPlayerGUI = MiniMusicPlayerGUI.getInstance();
 
-                // Modify the window listener to hide instead of dispose
-                for (WindowListener listener : miniMusicPlayerGUI.getWindowListeners()) {
-                    miniMusicPlayerGUI.removeWindowListener(listener);
-                }
-
-                miniMusicPlayerGUI.addWindowListener(new WindowAdapter() {
-                    @Override
-                    public void windowClosing(WindowEvent e) {
-                        // Hide the window instead of disposing it
-                        miniMusicPlayerGUI.setVisible(false);
-                    }
-                });
-            }
-
-            // Update UI if there's a current song
-            if (playerFacade.getCurrentSong() != null) {
-                showPlaybackSlider();
-                onThemeChanged(miniMusicPlayerGUI.getBackgroundColor(), miniMusicPlayerGUI.getTextColor(), miniMusicPlayerGUI.getAccentColor());
-
-                // Check if player is paused or playing
-                if (playerFacade.isPaused()) {
-                    enablePlayButtonDisablePauseButton();
-                } else {
-                    enablePauseButtonDisablePlayButton();
-
-                }
-
-                updatePlaybackSlider(playerFacade.getCurrentSong());
-                updateSpinningDisc(playerFacade.getCurrentSong());
-                updateScrollingText(playerFacade.getCurrentSong());
-                setPlaybackSliderValue(playerFacade.getCalculatedFrame());
-            }
-
-            // Show the player if it's not already visible
-            if (!miniMusicPlayerGUI.isVisible()) {
-                miniMusicPlayerGUI.setVisible(true);
-            }
-
-            // Bring to front and give focus
-            miniMusicPlayerGUI.toFront();
-            miniMusicPlayerGUI.requestFocus();
-        } catch (IOException ex) {
-            GuiUtil.showErrorMessageDialog(this, "Cannot open MiniMusic Player: " + ex.getMessage());
-            log.error("Failed to open mini music player", ex);
+        for (WindowListener listener : MiniMusicPlayerGUI.getInstance().getWindowListeners()) {
+            MiniMusicPlayerGUI.getInstance().removeWindowListener(listener);
         }
+
+        MiniMusicPlayerGUI.getInstance().addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                // Hide the window instead of disposing it
+                MiniMusicPlayerGUI.getInstance().setVisible(false);
+            }
+        });
+
+        // Update UI if there's a current song
+        if (playerFacade.getCurrentSong() != null) {
+            showPlaybackSlider();
+            ThemeManager.getInstance().setThemeColors(ThemeManager.getInstance().getBackgroundColor(), ThemeManager.getInstance().getTextColor(), ThemeManager.getInstance().getAccentColor());
+            // Check if player is paused or playing
+            if (playerFacade.isPaused()) {
+                enablePlayButtonDisablePauseButton();
+            } else {
+                enablePauseButtonDisablePlayButton();
+            }
+
+            updatePlaybackSlider(playerFacade.getCurrentSong());
+            updateSpinningDisc(playerFacade.getCurrentSong());
+            updateScrollingText(playerFacade.getCurrentSong());
+            setPlaybackSliderValue(playerFacade.getCalculatedFrame());
+        }
+
+        // Show the player if it's not already visible
+        if (!MiniMusicPlayerGUI.getInstance().isVisible()) {
+            MiniMusicPlayerGUI.getInstance().setVisible(true);
+        }
+
+        // Bring to front and give focus
+        MiniMusicPlayerGUI.getInstance().toFront();
+        MiniMusicPlayerGUI.getInstance().requestFocus();
     }
 
     private void loadRecentSearches() {
@@ -689,8 +649,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         playerFacade.loadSong(song);
         /*
          * getBufferedImage from the chosen song and extract colors from it.
-         *
-         * */
+         */
         searchField.setText(song.getSongTitle() + " - " + song.getSongArtist());
 
         Color[] themeColors = GuiUtil.extractThemeColors(song.getSongImage());
@@ -865,6 +824,16 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         startDiscSpinning();
     }
 
+    public void hidePlaybackSlider() {
+        spinningDisc.setVisible(false);
+        playbackSlider.setVisible(false);
+        controlButtonsPanel.setVisible(false);
+        labelBeginning.setVisible(false);
+        labelEnd.setVisible(false);
+        stopTextScrolling();
+        stopDiscSpinning();
+    }
+
     private JPanel createLibraryPanel() {
         JPanel libraryNav = new JPanel();
         libraryNav.setLayout(new BoxLayout(libraryNav, BoxLayout.Y_AXIS));
@@ -941,11 +910,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         popupMenu.add(logoutItem);
 
         logoutItem.addActionListener(e -> {
-            try {
-                logout();
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
+            logout();
         });
         profileItem.addActionListener(e -> {
 //            navigateTo("profile");
@@ -961,11 +926,12 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         return avatarLabel;
     }
 
-    private void logout() throws IOException {
+    private void logout() {
         int option = GuiUtil.showConfirmMessageDialog(this, "Do you really want to log out MuseMoe? We'll miss you :(", "Logout confirm");
         if (option == JOptionPane.YES_OPTION) {
             this.dispose();
             SwingUtilities.invokeLater(() -> {
+                hidePlaybackSlider();
                 LoginPage loginPage = new LoginPage();
                 UIManager.put("TitlePane.iconSize", new Dimension(24, 24));
                 loginPage.getUsernameField().setText(getCurrentUser().getUsername());
@@ -973,10 +939,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 loginPage.setVisible(true);
             });
 
-            if (miniMusicPlayerGUI != null) {
-                playerFacade.stopSong();
-                // Just hide it instead of nullifying the static instance
-                miniMusicPlayerGUI.setVisible(false);
+            if (MiniMusicPlayerGUI.getInstance() != null) {
+                playerFacade.pauseSong();
+                MiniMusicPlayerGUI.getInstance().setVisible(false);
             }
             // Clean up the static instance only on actual logout
             MiniMusicPlayerGUI.cleanupInstance();

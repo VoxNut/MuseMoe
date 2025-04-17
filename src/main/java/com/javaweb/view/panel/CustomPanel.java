@@ -1,5 +1,5 @@
 // Template for custom components with theme support
-package com.javaweb.view.mini_musicplayer.panel;
+package com.javaweb.view.panel;
 
 import com.javaweb.utils.GuiUtil;
 import com.javaweb.view.theme.ThemeChangeListener;

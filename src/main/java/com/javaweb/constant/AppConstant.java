@@ -35,13 +35,14 @@ public class AppConstant {
     //HOMEPAGE
     public static final String HOME_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/home-icon.png";
     public static final String MINIPLAYER_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/miniplayer-icon.png";
+    public static final String HISTORY_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/history-icon.jpg";
+    public static final String MUSIC_NOTE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/music-note-icon.png";
 
     //SALE PAGE
     public static final String CREATE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/create-icon.png";
     public static final String DELETE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/delete-icon.png";
     public static final String DESELECT_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/deselected-icon.png";
     public static final String LOOKUP_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/lookup-icon.png";
-
     //DISCOUNT PAGE
     public static final String DISCOUNT_PATH = "src/main/java/com/javaweb/view/imgs/icon/discount-img.png";
     public static final String CALENDAR_PATH = "src/main/java/com/javeaweb/view/imgs/icon/calendar-icon.png";

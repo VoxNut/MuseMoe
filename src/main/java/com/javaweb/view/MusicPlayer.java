@@ -1,4 +1,4 @@
-package com.javaweb.view.mini_musicplayer;
+package com.javaweb.view;
 
 import com.javaweb.enums.RepeatMode;
 import com.javaweb.model.dto.PlaylistDTO;

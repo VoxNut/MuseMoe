@@ -1,9 +1,8 @@
-package com.javaweb.view.mini_musicplayer.panel;
+package com.javaweb.view.panel;
 
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
-import com.javaweb.view.theme.ThemeChangeListener;
 import com.javaweb.view.theme.ThemeManager;
 
 import javax.swing.*;
@@ -11,16 +10,13 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.util.List;
 
-public class PlaylistPanel extends JPanel implements ThemeChangeListener {
+public class PlaylistPanel extends ListThemeablePanel {
     private final JList<SongDTO> songList;
     private final DefaultListModel<SongDTO> listModel;
     private final JLabel titleLabel;
     private final JButton selectButton;
     private final JButton cancelButton;
     private final JPanel buttonPanel;
-    private Color backgroundColor;
-    private Color textColor;
-    private Color accentColor;
 
 
     public PlaylistPanel(List<SongDTO> songs) {
@@ -46,6 +42,9 @@ public class PlaylistPanel extends JPanel implements ThemeChangeListener {
         songList.setCellRenderer(new SongListCellRenderer());
         songList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         JScrollPane scrollPane = new JScrollPane(songList);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        GuiUtil.applyModernScrollBar(scrollPane, backgroundColor, accentColor);
         add(scrollPane, BorderLayout.CENTER);
 
         // Buttons
@@ -74,37 +73,9 @@ public class PlaylistPanel extends JPanel implements ThemeChangeListener {
 
     @Override
     public void onThemeChanged(Color backgroundColor, Color textColor, Color accentColor) {
-        this.textColor = textColor;
-        this.backgroundColor = backgroundColor;
-        this.accentColor = accentColor;
-
-        // Set panel colors
-        setBackground(backgroundColor);
+        super.onThemeChanged(backgroundColor, textColor, accentColor);
         titleLabel.setForeground(textColor);
-
-        // Style the list
-        songList.setBackground(backgroundColor);
-        songList.setForeground(textColor);
-        songList.setSelectionBackground(accentColor);
-        songList.setSelectionForeground(GuiUtil.calculateContrast(accentColor, textColor) > 4.5 ? textColor : backgroundColor);
-
-
-        Component scrollPane = getComponent(1); // assuming scroll pane is the second component
-        if (scrollPane instanceof JScrollPane sp) {
-            sp.setBorder(BorderFactory.createEmptyBorder());
-            sp.getViewport().setBackground(backgroundColor);
-
-            // Style scrollbars
-            sp.getVerticalScrollBar().setBackground(backgroundColor);
-            sp.getVerticalScrollBar().setForeground(accentColor);
-            sp.getHorizontalScrollBar().setBackground(backgroundColor);
-            sp.getHorizontalScrollBar().setForeground(accentColor);
-        }
-
-        // Style the buttons
         buttonPanel.setBackground(backgroundColor);
-        GuiUtil.styleButton(selectButton, backgroundColor, textColor, accentColor);
-        GuiUtil.styleButton(cancelButton, backgroundColor, textColor, accentColor);
     }
 
 

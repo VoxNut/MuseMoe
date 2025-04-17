@@ -943,8 +943,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 playerFacade.pauseSong();
                 MiniMusicPlayerGUI.getInstance().setVisible(false);
             }
-            // Clean up the static instance only on actual logout
-            MiniMusicPlayerGUI.cleanupInstance();
         }
     }
 

@@ -5,6 +5,7 @@ import com.javaweb.service.SongService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.repository.query.Param;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,8 +44,8 @@ public class SongAPI {
         }
     }
 
-    @GetMapping("/songs_like/{title}")
-    public ResponseEntity<List<SongDTO>> findAllSongsLike(@PathVariable String title) {
+    @GetMapping("/songs_like")
+    public ResponseEntity<List<SongDTO>> findAllSongsLike(@Param("title") String title) {
         logger.info("Find songs like: {}", title);
         try {
             List<SongDTO> songDTOSet = songService.findAllSongsLike(title);

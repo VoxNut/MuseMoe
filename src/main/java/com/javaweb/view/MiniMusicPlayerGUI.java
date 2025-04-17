@@ -33,7 +33,6 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
 
     private final JLabel initialMessageLabel;
 
-
     @Getter
     private JSlider playbackSlider;
     private JSlider volumeSlider;
@@ -56,12 +55,6 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
     private JMenuItem loadSong;
     private JMenuItem loadPlaylist;
 
-    @Getter
-    private Color textColor = AppConstant.TEXT_COLOR;
-    @Getter
-    private Color backgroundColor = AppConstant.BACKGROUND_COLOR;
-    @Getter
-    private Color accentColor = backgroundColor.darker();
 
     @Getter
     private JButton replayButton;
@@ -89,7 +82,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
 
     private MiniMusicPlayerGUI() {
         super("MuseMoe Miniplayer");
-        GuiUtil.styleTitleBar(this, GuiUtil.lightenColor(backgroundColor, 0.12), textColor);
+        GuiUtil.styleTitleBar(this, GuiUtil.lightenColor(AppConstant.BACKGROUND_COLOR, 0.12), AppConstant.TEXT_COLOR);
 
         // Set the size and default close operation
         setSize(420, 680);
@@ -121,7 +114,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
                 "<html><div style=\"text-align: center;\">Please choose a song<br>or playlist!</div></html>",
                 FontUtil.getSpotifyFont(Font.BOLD, 35));
         initialMessageLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        initialMessageLabel.setForeground(textColor);
+        initialMessageLabel.setForeground(AppConstant.TEXT_COLOR);
         messagePanel.add(initialMessageLabel); // GridBagLayout will center it automatically
 
         // Create the main panel with song UI
@@ -139,7 +132,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
 
         // Mini muse icon setup
         miniMuseMoeIcon = GuiUtil.createImageIcon(AppConstant.MUSE_MOE_LOGO_PATH, 30, 30);
-        GuiUtil.changeIconColor(miniMuseMoeIcon, textColor);
+        GuiUtil.changeIconColor(miniMuseMoeIcon, AppConstant.TEXT_COLOR);
         setIconImage(miniMuseMoeIcon.getImage());
 
         // Command and factory design pattern
@@ -193,7 +186,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
 
         playlistNameLabel = new JLabel();
         playlistNameLabel.setFont(FontUtil.getSpotifyFont(Font.BOLD, 14));
-        playlistNameLabel.setForeground(textColor);
+        playlistNameLabel.setForeground(AppConstant.TEXT_COLOR);
         playlistNameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         playlistNameLabel.setHorizontalAlignment(SwingConstants.CENTER);
         playlistNameLabel.setVisible(false);
@@ -244,7 +237,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         // Add the song title label
         songTitle = new JLabel("Song Title");
         songTitle.setFont(FontUtil.getSpotifyFont(Font.BOLD, 24));
-        songTitle.setForeground(textColor);
+        songTitle.setForeground(AppConstant.TEXT_COLOR);
         songTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
         mainPanel.add(Box.createVerticalStrut(10));
         mainPanel.add(songTitle);
@@ -252,7 +245,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         // Add the song artist label
         songArtist = new JLabel("Artist");
         songArtist.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 24));
-        songArtist.setForeground(textColor);
+        songArtist.setForeground(AppConstant.TEXT_COLOR);
         songArtist.setAlignmentX(Component.CENTER_ALIGNMENT);
         mainPanel.add(Box.createVerticalStrut(10));
         mainPanel.add(songArtist);
@@ -320,10 +313,10 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         labelsPanel.setOpaque(false);
 
         labelBeginning = GuiUtil.createSpotifyFontLabel("00:00", Font.PLAIN, 18);
-        labelBeginning.setForeground(textColor);
+        labelBeginning.setForeground(AppConstant.TEXT_COLOR);
 
         labelEnd = GuiUtil.createSpotifyFontLabel("00:00", Font.PLAIN, 18);
-        labelEnd.setForeground(textColor);
+        labelEnd.setForeground(AppConstant.TEXT_COLOR);
 
         // Add labels to labelsPanel
         labelsPanel.add(labelBeginning, BorderLayout.WEST);
@@ -374,7 +367,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
                 // Create and display the SongSelectionPanel
                 songSelectionPanel = new SongSelectionPanel(songs);
 
-                songDialog = GuiUtil.createStyledDialog(this, "Select Song", songSelectionPanel, backgroundColor, textColor);
+                songDialog = GuiUtil.createStyledDialog(this, "Select Song", songSelectionPanel, ThemeManager.getInstance().getBackgroundColor(), ThemeManager.getInstance().getTextColor());
                 songDialog.setContentPane(songSelectionPanel);
                 songDialog.pack();
                 songDialog.setLocationRelativeTo(this);
@@ -426,7 +419,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
                 // Create and display the PlaylistSelectionPanel
                 playlistPanel = new PlaylistSelectionPanel(playlists);
 
-                playlistDialog = GuiUtil.createStyledDialog(this, "Select Playlist", playlistPanel, backgroundColor, textColor);
+                playlistDialog = GuiUtil.createStyledDialog(this, "Select Playlist", playlistPanel, ThemeManager.getInstance().getBackgroundColor(), ThemeManager.getInstance().getTextColor());
 
 
                 // Add listeners for playlist selection and cancellation
@@ -522,10 +515,10 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
     public void toggleShuffleButton(boolean enabled) throws IOException {
         if (!enabled) {
             shuffleButton.setIcon(GuiUtil.changeButtonIconColor(AppConstant.SHUFFLE_ICON_PATH,
-                    GuiUtil.darkenColor(textColor, 0.2f), 25, 25).getIcon());
+                    GuiUtil.darkenColor(ThemeManager.getInstance().getTextColor(), 0.2f), 25, 25).getIcon());
         } else {
             shuffleButton.setIcon(GuiUtil.changeButtonIconColor(AppConstant.SHUFFLE_ICON_PATH,
-                    textColor, 25, 25).getIcon());
+                    ThemeManager.getInstance().getTextColor(), 25, 25).getIcon());
         }
     }
 
@@ -565,7 +558,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         if (CommonApiUtil.deleteSongLikes(playerFacade.getCurrentSong().getId())) {
             outLineHeartButton.setVisible(true);
             heartButton.setVisible(false);
-            GuiUtil.changeButtonIconColor(outLineHeartButton, textColor);
+            GuiUtil.changeButtonIconColor(outLineHeartButton, AppConstant.TEXT_COLOR);
         } else {
             GuiUtil.showErrorMessageDialog(this, "An error has occurred when removed : " + playerFacade.getCurrentSong().getSongTitle() + "from liked songs!");
         }
@@ -577,7 +570,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         if (CommonApiUtil.createSongLikes(playerFacade.getCurrentSong().getId())) {
             outLineHeartButton.setVisible(false);
             heartButton.setVisible(true);
-            GuiUtil.changeButtonIconColor(heartButton, textColor);
+            GuiUtil.changeButtonIconColor(heartButton, ThemeManager.getInstance().getTextColor());
         } else {
             GuiUtil.showErrorMessageDialog(this, "An error has occurred when added : " + playerFacade.getCurrentSong().getSongTitle() + "to liked songs!");
         }
@@ -589,11 +582,11 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         if (liked) {
             outLineHeartButton.setVisible(false);
             heartButton.setVisible(true);
-            GuiUtil.changeButtonIconColor(heartButton, textColor);
+            GuiUtil.changeButtonIconColor(heartButton, ThemeManager.getInstance().getTextColor());
         } else {
             outLineHeartButton.setVisible(true);
             heartButton.setVisible(false);
-            GuiUtil.changeButtonIconColor(outLineHeartButton, textColor);
+            GuiUtil.changeButtonIconColor(outLineHeartButton, ThemeManager.getInstance().getTextColor());
         }
     }
 
@@ -608,66 +601,12 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
     // Method to update the song image
     public void updateSongImage(SongDTO song) {
         if (song.getSongImage() != null) {
-
             songImageLabel.setIcon(GuiUtil.createRoundedCornerImageIcon(song.getSongImage(), 30));
-
-            Color[] themeColors = GuiUtil.extractThemeColors(song.getSongImage());
-
-            this.backgroundColor = themeColors[0];
-            this.textColor = themeColors[1];
-            this.accentColor = themeColors[2];
-
-            // Apply the extracted colors to the UI
-            ThemeManager.getInstance().setThemeColors(
-                    backgroundColor, // backgroundColor
-                    textColor, // textColor
-                    accentColor  // accentColor
-            );
         } else {
             // Default styling when no image is available
             ImageIcon defaultIcon = GuiUtil.createImageIcon(AppConstant.DEFAULT_COVER_PATH, 300, 300);
             songImageLabel.setIcon(defaultIcon);
-
-            // Use default colors
-            ThemeManager.getInstance().setThemeColors(
-                    AppConstant.BACKGROUND_COLOR,
-                    AppConstant.TEXT_COLOR,
-                    GuiUtil.darkenColor(AppConstant.BACKGROUND_COLOR, 0.1f));
         }
-    }
-
-    // New helper method to enhance colors for better visual appeal
-    private Color enhanceColor(Color color) {
-        float[] hsb = Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), null);
-
-        // Slightly increase saturation for more vibrant colors
-        hsb[1] = Math.min(1.0f, hsb[1] * 1.1f);
-
-        // Adjust brightness to ensure it's not too dark or too light
-        if (hsb[2] < 0.2f) {
-            hsb[2] = 0.2f; // Ensure dark colors are visible
-        } else if (hsb[2] > 0.9f) {
-            hsb[2] = 0.9f; // Prevent colors that are too bright
-        }
-
-        return Color.getHSBColor(hsb[0], hsb[1], hsb[2]);
-    }
-
-    // New helper method to create high-contrast text color
-    private Color createHighContrastTextColor(Color backgroundColor) {
-        float[] hsb = Color.RGBtoHSB(backgroundColor.getRed(), backgroundColor.getGreen(), backgroundColor.getBlue(), null);
-
-        if (hsb[2] < 0.5) {
-            return GuiUtil.lightenColor(backgroundColor, 0.6f);
-        } else {
-            return GuiUtil.darkenColor(backgroundColor, 0.6f);
-        }
-    }
-
-    public void adjustColor() {
-        // Apply colors to this component's UI elements
-
-        // Update panel themes
     }
 
     // New helper method to apply consistent coloring to all buttons
@@ -724,7 +663,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         playbackSlider = new JSlider(JSlider.HORIZONTAL, 0, 100, 0);
         playbackSlider.setPreferredSize(new Dimension(500, 40));
         playbackSlider.setMaximumSize(new Dimension(Integer.MAX_VALUE, playbackSlider.getPreferredSize().height));
-        playbackSlider.setForeground(textColor);
+        playbackSlider.setForeground(AppConstant.TEXT_COLOR);
         playbackSlider.setFocusable(false);
         playbackSlider.setAlignmentX(Component.CENTER_ALIGNMENT);
 
@@ -835,7 +774,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
             }
 
             speakerLabel.setIcon(GuiUtil.createImageIcon(iconPath, 20, 20));
-            GuiUtil.changeLabelIconColor(speakerLabel, textColor);
+            GuiUtil.changeLabelIconColor(speakerLabel, AppConstant.TEXT_COLOR);
         });
     }
 
@@ -844,24 +783,15 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
     }
 
     public void updateRepeatButtonIcon(RepeatMode repeatMode) throws IOException {
-        String iconPath;
-        switch (repeatMode) {
-            case NO_REPEAT:
-                iconPath = AppConstant.REPEAT_ICON_PATH;
-                break;
-            case REPEAT_ALL:
-                iconPath = AppConstant.ON_REPEAT_ICON_PATH;
-                break;
-            case REPEAT_ONE:
-                iconPath = AppConstant.REPEAT_1_ICON_PATH;
-                break;
-            default:
-                iconPath = AppConstant.REPEAT_ICON_PATH;
-        }
+        String iconPath = switch (repeatMode) {
+            case NO_REPEAT -> AppConstant.REPEAT_ICON_PATH;
+            case REPEAT_ALL -> AppConstant.ON_REPEAT_ICON_PATH;
+            case REPEAT_ONE -> AppConstant.REPEAT_1_ICON_PATH;
+        };
 
         // Create colored icons for both normal and hover states
-        ImageIcon normalIcon = GuiUtil.createColoredIcon(iconPath, textColor, 20, 20);
-        ImageIcon hoverIcon = GuiUtil.createColoredIcon(iconPath, GuiUtil.lightenColor(textColor, 0.3f), 20, 20);
+        ImageIcon normalIcon = GuiUtil.createColoredIcon(iconPath, ThemeManager.getInstance().getTextColor(), 20, 20);
+        ImageIcon hoverIcon = GuiUtil.createColoredIcon(iconPath, GuiUtil.lightenColor(ThemeManager.getInstance().getTextColor(), 0.3f), 20, 20);
 
         // Update both icons on the existing button
         repeatButton.setIcon(normalIcon);
@@ -875,7 +805,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
     private void showSongSelectionDialog(PlaylistDTO playlist) {
         try {
             songPanel = new PlaylistPanel(playlist.getSongs());
-            songPlaylistDialog = GuiUtil.createStyledDialog(this, "Select Song", songPanel, backgroundColor, textColor);
+            songPlaylistDialog = GuiUtil.createStyledDialog(this, "Select Song", songPanel, ThemeManager.getInstance().getBackgroundColor(), ThemeManager.getInstance().getTextColor());
 
             songPanel.addPropertyChangeListener("songSelected", evt -> {
                 SongDTO selectedSong = (SongDTO) evt.getNewValue();
@@ -906,7 +836,6 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
                 case SONG_LOADED -> {
                     SongDTO song = (SongDTO) event.data();
                     cardLayout.show(contentPanel, "main");
-
                     updateSongDetails(song);
                     updatePlaybackSlider(song);
                     setPlaybackSliderValue(0);

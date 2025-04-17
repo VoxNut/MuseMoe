@@ -3,8 +3,12 @@ package com.javaweb.view.mini_musicplayer.event;
 import com.javaweb.enums.RepeatMode;
 import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
+import com.javaweb.utils.GuiUtil;
+import com.javaweb.view.MiniMusicPlayerGUI;
 import com.javaweb.view.MusicPlayer;
+import com.javaweb.view.theme.ThemeManager;
 
+import java.awt.*;
 import java.io.IOException;
 
 //Replay, pause, play current, cycle repeat, set column
@@ -27,9 +31,26 @@ public class MusicPlayerFacade {
         return instance;
     }
 
+    private void updateThemeFromSong(SongDTO song) {
+        if (song != null && song.getSongImage() != null) {
+            try {
+                MiniMusicPlayerGUI.getInstance();
+                Color[] themeColors = GuiUtil.extractThemeColors(song.getSongImage());
+                ThemeManager.getInstance().setThemeColors(
+                        themeColors[0],
+                        themeColors[1],
+                        themeColors[2]
+                );
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
 
     public void loadSong(SongDTO song) {
         try {
+            updateThemeFromSong(song);
             player.loadSong(song);
         } catch (IOException iOE) {
             iOE.printStackTrace();
@@ -62,6 +83,7 @@ public class MusicPlayerFacade {
     public void nextSong() {
         try {
             player.nextSong();
+            updateThemeFromSong(getCurrentSong());
         } catch (IOException ioException) {
             ioException.printStackTrace();
         }
@@ -70,6 +92,7 @@ public class MusicPlayerFacade {
     public void prevSong() {
         try {
             player.prevSong();
+            updateThemeFromSong(getCurrentSong());
         } catch (IOException ioException) {
             ioException.printStackTrace();
         }
@@ -87,6 +110,7 @@ public class MusicPlayerFacade {
     public void shufflePlaylist() {
         try {
             player.shufflePlaylist();
+            updateThemeFromSong(getCurrentSong());
         } catch (IOException ioException) {
             ioException.printStackTrace();
         }

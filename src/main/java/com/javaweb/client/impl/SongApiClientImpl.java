@@ -38,14 +38,17 @@ class SongApiClientImpl implements SongApiClient {
     public List<SongDTO> findSongsLike(String title) {
         try {
             String encodedTitle = urlEncoder.encode(title);
-            String url = apiConfig.buildSongUrl("/songs_like/" + encodedTitle);
+            String url = apiConfig.buildSongUrl("/songs_like?title=" + encodedTitle);
             String responseBody = apiClient.get(url);
 
-            return responseParser.parseReference(
+            List<SongDTO> songDTOS = responseParser.parseReference(
                     responseBody,
                     new TypeReference<>() {
                     }
             );
+            songDTOS.forEach(mp3Util::enrichSongDTO);
+
+            return songDTOS;
         } catch (Exception e) {
             e.printStackTrace();
             return Collections.emptyList();

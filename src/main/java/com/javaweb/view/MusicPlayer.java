@@ -6,6 +6,7 @@ import com.javaweb.model.dto.SongDTO;
 import com.javaweb.model.dto.UserDTO;
 import com.javaweb.utils.CommonApiUtil;
 import com.javaweb.view.mini_musicplayer.advertisement.AdvertisementManager;
+import com.javaweb.view.mini_musicplayer.event.MusicPlayerFacade;
 import com.javaweb.view.mini_musicplayer.event.MusicPlayerMediator;
 import com.javaweb.view.user.UserSessionManager;
 import javazoom.jl.player.AudioDevice;
@@ -484,7 +485,7 @@ public class MusicPlayer extends PlaybackListener {
     // Helper method for single song completion logic
     private void handleSingleSongCompletion() throws IOException {
         if (repeatMode == RepeatMode.REPEAT_ONE || repeatMode == RepeatMode.REPEAT_ALL) {
-            loadSong(currentSong);
+            MusicPlayerFacade.getInstance().loadSong(currentSong);
         } else {
             mediator.notifyPlaybackPaused();
             songFinished = true;
@@ -499,11 +500,11 @@ public class MusicPlayer extends PlaybackListener {
                 // Loop back to the beginning of the playlist
                 currentPlaylistIndex = 0;
                 currentSong = currentPlaylist.getSongAt(currentPlaylistIndex);
-                loadSong(currentSong);
+                MusicPlayerFacade.getInstance().loadSong(currentSong);
 
             } else if (repeatMode == RepeatMode.REPEAT_ONE) {
                 // Repeat the current song
-                loadSong(currentSong);
+                MusicPlayerFacade.getInstance().loadSong(currentSong);
 
             } else {
                 // End of playlist with no repeat
@@ -513,10 +514,10 @@ public class MusicPlayer extends PlaybackListener {
         } else {
             if (repeatMode == RepeatMode.REPEAT_ONE) {
                 // Repeat the current song
-                loadSong(currentSong);
+                MusicPlayerFacade.getInstance().loadSong(currentSong);
             } else {
                 try {
-                    nextSong();
+                    MusicPlayerFacade.getInstance().nextSong();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

@@ -645,21 +645,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     }
 
     private void handleRecentSongSelected(SongDTO song) {
-        MiniMusicPlayerGUI.getInstance();
-        // Play the selected song
         playerFacade.loadSong(song);
-        /*
-         * getBufferedImage from the chosen song and extract colors from it.
-         */
         searchField.setText(song.getSongTitle() + " - " + song.getSongArtist());
-
-        Color[] themeColors = GuiUtil.extractThemeColors(song.getSongImage());
-        // Apply the extracted colors to the UI
-        ThemeManager.getInstance().setThemeColors(
-                themeColors[0], // backgroundColor
-                themeColors[1], // textColor
-                themeColors[2]  // accentColor
-        );
     }
 
     private void performSearch(String query) {

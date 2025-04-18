@@ -22,6 +22,7 @@ public class SongDTO extends AbstractDTO<SongDTO> {
     private String audioFilePath;
     private double frameRatePerMilliseconds;
     private int playCount;
+    private Integer position;
 
     @JsonIgnore
     private Mp3File mp3File;

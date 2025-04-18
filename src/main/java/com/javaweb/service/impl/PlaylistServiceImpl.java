@@ -24,7 +24,7 @@ public class PlaylistServiceImpl implements PlaylistService {
 
     @Override
     public List<PlaylistDTO> findPlaylistsByUserId() {
-        List<PlaylistDTO> res = playlistRepository.findPlaylistsByUserId(
+        List<PlaylistDTO> res = playlistRepository.findPlaylistsByUserIdWithSongsOrdered(
                         Objects.requireNonNull(SecurityUtils.getPrincipal()).getId()
                 )
                 .stream()
@@ -41,4 +41,5 @@ public class PlaylistServiceImpl implements PlaylistService {
                 .collect(Collectors.toList());
         return res;
     }
+
 }

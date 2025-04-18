@@ -38,15 +38,24 @@ public class PlaylistDTO extends AbstractDTO<PlaylistDTO> {
         return (int) (Math.random() * size());
     }
 
-    @JsonIgnore
-    public Integer getIndexFromSong(SongDTO songDTO) {
+
+    public int getIndexFromSong(SongDTO song) {
+        if (song.getPosition() != null) {
+            for (int i = 0; i < songs.size(); i++) {
+                if (songs.get(i).getPosition() != null &&
+                    songs.get(i).getPosition().equals(song.getPosition())) {
+                    return i;
+                }
+            }
+        }
         for (int i = 0; i < songs.size(); i++) {
-            if (songs.get(i).equals(songDTO)) {
+            if (songs.get(i).equals(song)) {
                 return i;
             }
         }
         return -1;
     }
+
 
     @Override
     public boolean equals(Object o) {

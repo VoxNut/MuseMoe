@@ -53,6 +53,10 @@ public class CommonApiUtil {
         return App.getBean(ApiServiceFactory.class).createPlayHistoryApiClient();
     }
 
+    private static SearchHistoryApiClient getSearchHistoryApiClient() {
+        return App.getBean(ApiServiceFactory.class).createSearchHistoryApiClient();
+    }
+
     // USER
     public static Set<UserDTO> fetchAllUsersBaseOnRole(RoleType role) {
         return getUserApiClient().fetchAllUsersBaseOnRole(role);
@@ -167,5 +171,26 @@ public class CommonApiUtil {
 
     public static boolean clearAllPlayHistory() {
         return getPlayHistoryApiClient().clearAllPlayHistory();
+    }
+
+    //Search_History
+    public static boolean logSearchHistory(Long songId, String searchTerm) {
+        return getSearchHistoryApiClient().logSearchHistory(songId, searchTerm);
+    }
+
+    public static List<SongDTO> fetchRecentSearchHistory(int limit) {
+        return getSearchHistoryApiClient().findRecentSearchHistory(limit);
+    }
+
+    public static List<String> fetchRecentSearchTerms(int limit) {
+        return getSearchHistoryApiClient().findRecentSearchTerms(limit);
+    }
+
+    public static boolean clearSearchHistoryBySongs(List<Long> songIds) {
+        return getSearchHistoryApiClient().clearSearchHistoryBySongs(songIds);
+    }
+
+    public static boolean clearAllSearchHistory() {
+        return getSearchHistoryApiClient().clearAllSearchHistory();
     }
 }

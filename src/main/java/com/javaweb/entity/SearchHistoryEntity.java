@@ -9,20 +9,23 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "play_history")
+@Table(name = "search_history")
 @Getter
 @Setter
-public class PlayHistoryEntity implements Serializable {
+public class SearchHistoryEntity implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 7213600440729202783L;
-    
+    private static final long serialVersionUID = 1L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "played_at")
-    private LocalDateTime playedAt;
+    @Column(name = "search_term", nullable = false)
+    private String searchTerm;
+
+    @Column(name = "searched_at")
+    private LocalDateTime searchedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
@@ -32,12 +35,13 @@ public class PlayHistoryEntity implements Serializable {
     @JoinColumn(name = "song_id")
     private SongEntity song;
 
-    public PlayHistoryEntity() {
+    public SearchHistoryEntity() {
     }
 
-    public PlayHistoryEntity(UserEntity user, SongEntity song) {
+    public SearchHistoryEntity(UserEntity user, SongEntity song, String searchTerm) {
         this.user = user;
         this.song = song;
-        this.playedAt = LocalDateTime.now();
+        this.searchTerm = searchTerm;
+        this.searchedAt = LocalDateTime.now();
     }
 }

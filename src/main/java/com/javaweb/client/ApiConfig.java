@@ -29,6 +29,9 @@ public class ApiConfig {
     @Value("${api.play_history.endpoint:/api/play_history}")
     private String playHistoryEndpoint;
 
+    @Value("${api.search_history.endpoint:/api/search_history}")
+    private String searchHistoryEndpoint;
+
 
     public String buildUserUrl(String path) {
         return baseUrl + userEndpoint + path;
@@ -54,5 +57,9 @@ public class ApiConfig {
 
     public String buildPlayHistoryUrl(String path) {
         return baseUrl + playHistoryEndpoint + path;
+    }
+
+    public String buildSearchHistoryUrl(String path) {
+        return baseUrl + searchHistoryEndpoint + path;
     }
 }

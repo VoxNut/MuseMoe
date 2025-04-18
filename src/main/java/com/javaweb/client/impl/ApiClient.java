@@ -39,11 +39,42 @@ public interface ApiClient {
 
     String putWithFormParams(String url, Map<String, Object> params) throws IOException;
 
+    String postWithFormParams(String url, Map<String, Object> params) throws IOException;
+
+
 }
 
 
 class HttpApiClient implements ApiClient {
     private final CloseableHttpClient httpClient;
+
+    @Override
+    public String postWithFormParams(String url, Map<String, Object> params) throws IOException {
+        HttpPost httpPost = new HttpPost(url);
+        httpPost.setHeader("Accept", "application/json");
+        httpPost.setHeader("Content-Type", "application/x-www-form-urlencoded");
+
+        if (params != null && !params.isEmpty()) {
+            List<NameValuePair> nameValuePairs = new ArrayList<>(params.size());
+            for (Map.Entry<String, Object> entry : params.entrySet()) {
+                nameValuePairs.add(new BasicNameValuePair(entry.getKey(), String.valueOf(entry.getValue())));
+            }
+
+            httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs, StandardCharsets.UTF_8));
+        }
+
+        try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
+            int statusCode = response.getStatusLine().getStatusCode();
+            String responseBody = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+
+            if (statusCode >= 200 && statusCode < 300) {
+                return responseBody;
+            } else {
+                throw new IOException("HTTP Request failed with status: " + statusCode +
+                        ", response: " + responseBody);
+            }
+        }
+    }
 
     @Override
     public String putSimple(String url) throws IOException {

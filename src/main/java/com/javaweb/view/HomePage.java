@@ -77,7 +77,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private RecentSearchDropdown recentSearchDropdown;
     private JButton miniplayerButton;
 
-    public HomePage() throws IOException {
+    public HomePage() {
         initializeFrame();
         mainPanel = createMainPanel();
         add(mainPanel);
@@ -265,7 +265,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                     recentSearchDropdown.hidePopup();
                 } else if (e.getKeyCode() == KeyEvent.VK_ENTER) {
                     if (!searchField.getText().isEmpty() &&
-                            !searchField.getText().equals("What do you want to muse?...")) {
+                        !searchField.getText().equals("What do you want to muse?...")) {
                         performSearch(searchField.getText());
                     }
                 }
@@ -274,8 +274,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             @Override
             public void keyReleased(KeyEvent e) {
                 if (recentSearchDropdown != null &&
-                        !searchField.getText().isEmpty() &&
-                        !searchField.getText().equals("What do you want to muse?...")) {
+                    !searchField.getText().isEmpty() &&
+                    !searchField.getText().equals("What do you want to muse?...")) {
                     recentSearchDropdown.hidePopup();
                 }
             }
@@ -283,7 +283,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         lookupIcon.addActionListener(e -> {
             if (!searchField.getText().isEmpty() &&
-                    !searchField.getText().equals("What do you want to muse?...")) {
+                !searchField.getText().equals("What do you want to muse?...")) {
                 performSearch(searchField.getText());
             }
         });
@@ -467,7 +467,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 int sliderValue = playbackSlider.getValue();
 
                 int newTimeInMilli = (int) (sliderValue
-                        / playerFacade.getCurrentSong().getFrameRatePerMilliseconds());
+                                            / playerFacade.getCurrentSong().getFrameRatePerMilliseconds());
 
                 playerFacade.setCurrentTimeInMilli(newTimeInMilli);
                 playerFacade.setCurrentFrame(sliderValue);
@@ -615,7 +615,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private void loadRecentSearches() {
         try {
             // Fetch the 10 most recent played songs
-            java.util.List<SongDTO> recentSongs = CommonApiUtil.fetchRecentPlayHistory(AppConstant.RECENT_SEARCHED_SONG_LIMIT);
+            java.util.List<SongDTO> recentSongs = CommonApiUtil.fetchRecentSearchHistory((AppConstant.RECENT_SEARCHED_SONG_LIMIT));
 
             if (!recentSongs.isEmpty()) {
                 if (recentSearchDropdown == null) {
@@ -656,6 +656,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         if (searchResults != null && !searchResults.isEmpty()) {
             // Show search results in a popup or another part of the UI
+            CommonApiUtil.logSearchHistory(searchResults.getFirst().getId(), query);
+
             showSearchResults(searchResults);
         } else {
             GuiUtil.showInfoMessageDialog(this, "No songs found matching your search.");

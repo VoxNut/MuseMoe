@@ -129,8 +129,8 @@ public class Test {
                                 }
 
                                 // Print audio format information
-//                                System.out.println("Sample Rate: " + audioFile.getAudioHeader().getSampleRate() + " Hz");
-//                                System.out.println("Bit Rate: " + audioFile.getAudioHeader().getBitRate() + " kbps");
+                                System.out.println("Sample Rate: " + audioFile.getAudioHeader().getSampleRate() + " Hz");
+                                System.out.println("Bit Rate: " + audioFile.getAudioHeader().getBitRate() + " kbps");
 //                                System.out.println("Channels: " + audioFile.getAudioHeader().getChannels());
                                 System.out.println("Length: " + audioFile.getAudioHeader().getTrackLength());
 
@@ -155,8 +155,8 @@ public class Test {
     private static boolean isAudioFile(String fileName) {
         String extension = getFileExtension(fileName).toLowerCase();
         return extension.equals("mp3") || extension.equals("wav") ||
-                extension.equals("flac") || extension.equals("m4a") ||
-                extension.equals("aac") || extension.equals("ogg");
+               extension.equals("flac") || extension.equals("m4a") ||
+               extension.equals("aac") || extension.equals("ogg");
     }
 
     /**

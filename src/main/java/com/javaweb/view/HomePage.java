@@ -1,11 +1,13 @@
 package com.javaweb.view;
 
 import com.javaweb.constant.AppConstant;
+import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.model.dto.UserDTO;
 import com.javaweb.utils.CommonApiUtil;
 import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
+import com.javaweb.utils.NetworkChecker;
 import com.javaweb.view.mini_musicplayer.event.MusicPlayerFacade;
 import com.javaweb.view.mini_musicplayer.event.MusicPlayerMediator;
 import com.javaweb.view.mini_musicplayer.event.PlayerEvent;
@@ -25,6 +27,7 @@ import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 import java.util.Set;
 
 @Slf4j
@@ -242,11 +245,11 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         searchField.setAlignmentY(Component.CENTER_ALIGNMENT);
 
         searchField.addFocusListener(new java.awt.event.FocusAdapter() {
+
             public void focusGained(java.awt.event.FocusEvent evt) {
                 if (searchField.getText().equals("What do you want to muse?...")) {
                     searchField.setText("");
                     searchField.setForeground(textColor);
-                    loadRecentSearches();
                 }
             }
 
@@ -279,6 +282,21 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                     recentSearchDropdown.hidePopup();
                 }
             }
+        });
+
+        searchField.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (searchField.getText().equals("What do you want to muse?...") ||
+                    searchField.getText().isEmpty()) {
+                    if (NetworkChecker.isNetworkAvailable()) {
+                        loadRecentSearches();
+                    } else {
+                        GuiUtil.showNetworkErrorDialog(HomePage.this, "Internet connection is unavailable");
+                    }
+                }
+            }
+
         });
 
         lookupIcon.addActionListener(e -> {
@@ -642,26 +660,52 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 recentSearchDropdown.hidePopup();
             }
         }
+
+
     }
 
     private void handleRecentSongSelected(SongDTO song) {
+        java.util.List<PlaylistDTO> playlists = CommonApiUtil.fetchAllPlaylists();
+
+        Optional<PlaylistDTO> playlistWithSong = playlists.stream()
+                .filter(playlist -> playlist.getSongs().stream()
+                        .anyMatch(playlistSong -> playlistSong.getId().equals(song.getId())))
+                .findFirst();
+
+        playerFacade.setCurrentPlaylist(playlistWithSong.orElse(null));
         playerFacade.loadSong(song);
-        searchField.setText(song.getSongTitle() + " - " + song.getSongArtist());
+        searchField.setText(song.getSongTitle() + " - " + (song.getSongArtist() != null ? song.getSongArtist() : "Unknown"));
+
+
     }
 
     private void performSearch(String query) {
-        // You can implement search functionality here
-        // For example, search for songs matching the query and display them
-        java.util.List<SongDTO> searchResults = CommonApiUtil.searchSongs(query);
+        if (NetworkChecker.isNetworkAvailable()) {
+            // You can implement search functionality here
+            // For example, search for songs matching the query and display them
+            java.util.List<SongDTO> searchResults = CommonApiUtil.searchSongs(query);
 
-        if (searchResults != null && !searchResults.isEmpty()) {
-            // Show search results in a popup or another part of the UI
-            CommonApiUtil.logSearchHistory(searchResults.getFirst().getId(), query);
+            if (searchResults != null && !searchResults.isEmpty()) {
+                // Show search results in a popup or another part of the UI
+                SongDTO songDTO = searchResults.getFirst();
+                java.util.List<PlaylistDTO> playlists = CommonApiUtil.fetchAllPlaylists();
+                Optional<PlaylistDTO> playlistWithSong = playlists.stream()
+                        .filter(playlist -> playlist.getSongs().stream()
+                                .anyMatch(playlistSong -> playlistSong.getId().equals(songDTO.getId())))
+                        .findFirst();
 
-            showSearchResults(searchResults);
+                playerFacade.setCurrentPlaylist(playlistWithSong.orElse(null));
+
+                CommonApiUtil.logSearchHistory(songDTO.getId(), query);
+
+                showSearchResults(searchResults);
+            } else {
+                GuiUtil.showInfoMessageDialog(this, "No songs found matching your search.");
+            }
         } else {
-            GuiUtil.showInfoMessageDialog(this, "No songs found matching your search.");
+            GuiUtil.showNetworkErrorDialog(this, "Internet connection is unavailable");
         }
+
     }
 
     private void showSearchResults(java.util.List<SongDTO> searchResults) {

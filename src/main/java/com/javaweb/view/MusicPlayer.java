@@ -363,7 +363,7 @@ public class MusicPlayer extends PlaybackListener {
                 while (!Thread.currentThread().isInterrupted()) {
                     // Check if we should exit the loop
                     if (isPaused || songFinished || pressedNext || pressedPrev ||
-                            pressedShuffle || pressedReplay || advancedPlayer == null) {
+                        pressedShuffle || pressedReplay || advancedPlayer == null) {
                         break;
                     }
 
@@ -382,7 +382,7 @@ public class MusicPlayer extends PlaybackListener {
 
                     // Only notify mediator if the thread isn't interrupted and we're still playing
                     if (!Thread.currentThread().isInterrupted() && !isPaused &&
-                            !songFinished && advancedPlayer != null) {
+                        !songFinished && advancedPlayer != null) {
                         // Use invokeAndWait to ensure UI updates happen synchronously
                         mediator.notifyPlaybackProgress(calculatedFrame, currentTimeInMilli);
                     }

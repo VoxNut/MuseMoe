@@ -30,8 +30,6 @@ public class PlaylistServiceImpl implements PlaylistService {
                 .stream()
                 .map(playlistConverter::toDTO)
                 .collect(Collectors.toList());
-
-
         return res;
     }
 

@@ -1,5 +1,6 @@
 package com.javaweb.converter;
 
+import com.javaweb.entity.ArtistEntity;
 import com.javaweb.entity.SongEntity;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.model.request.SongRequestDTO;
@@ -30,7 +31,7 @@ public class SongConverter implements EntityConverter<SongEntity, SongRequestDTO
         }
         if (entity.getArtists() != null) {
             dto.setSongArtist(entity.getArtists().stream()
-                    .map(artist -> artist.getUser().getFullName())
+                    .map(ArtistEntity::getStageName)
                     .collect(Collectors.joining(", ")));
         }
 

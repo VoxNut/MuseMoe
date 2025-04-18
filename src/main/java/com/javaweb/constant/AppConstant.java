@@ -37,6 +37,7 @@ public class AppConstant {
     public static final String MINIPLAYER_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/miniplayer-icon.png";
     public static final String HISTORY_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/history-icon.jpg";
     public static final String MUSIC_NOTE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/music-note-icon.png";
+    public static final String CLOCK_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/clock-icon.png";
 
     //SALE PAGE
     public static final String CREATE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/create-icon.png";

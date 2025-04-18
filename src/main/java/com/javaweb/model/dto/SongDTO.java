@@ -21,6 +21,7 @@ public class SongDTO extends AbstractDTO<SongDTO> {
     private Date releaseDate;
     private String audioFilePath;
     private double frameRatePerMilliseconds;
+    private int playCount;
 
     @JsonIgnore
     private Mp3File mp3File;
@@ -36,7 +37,7 @@ public class SongDTO extends AbstractDTO<SongDTO> {
         SongDTO that = (SongDTO) o;
 
         return this.songTitle.equals(that.songTitle)
-                && this.audioFilePath.equals(that.audioFilePath);
+               && this.audioFilePath.equals(that.audioFilePath);
     }
 
     @Override

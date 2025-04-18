@@ -7,6 +7,7 @@ import com.javaweb.model.dto.SongDTO;
 import com.javaweb.utils.CommonApiUtil;
 import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
+import com.javaweb.utils.NetworkChecker;
 import com.javaweb.view.mini_musicplayer.event.MusicPlayerFacade;
 import com.javaweb.view.mini_musicplayer.event.MusicPlayerMediator;
 import com.javaweb.view.mini_musicplayer.event.PlayerEvent;
@@ -347,7 +348,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         menuBar.add(songMenu);
 
         // Add "Load Song" menu item
-        loadSong = GuiUtil.createMenuItem("Load Song");
+        loadSong = GuiUtil.createMenuItem("Load Downloaded Song");
         loadSong.addActionListener(e -> {
             try {
                 if (playerFacade.isHavingAd()) {
@@ -389,7 +390,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
                 songDialog.setVisible(true);
             } catch (Exception ex) {
                 ex.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Failed to load songs!", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Failed to load downloaded songs!", "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
         songMenu.add(loadSong);
@@ -402,13 +403,11 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         loadPlaylist = GuiUtil.createMenuItem("Load Playlist");
 
         loadPlaylist.addActionListener(e -> {
-            try {
+            if (NetworkChecker.isNetworkAvailable()) {
                 if (playerFacade.isHavingAd()) {
                     GuiUtil.showInfoMessageDialog(this, "Please patience finishing ads. That helps us a lot :)");
                     return;
                 }
-
-
                 List<PlaylistDTO> playlists = CommonApiUtil.fetchPlaylistByUserId();
 
                 if (playlists.isEmpty()) {
@@ -437,9 +436,9 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
                 });
 
                 playlistDialog.setVisible(true);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Failed to load playlists!", "Error", JOptionPane.ERROR_MESSAGE);
+
+            } else {
+                GuiUtil.showNetworkErrorDialog(this, "Internet connection is unavailable!");
             }
         });
         playlistMenu.add(loadPlaylist);
@@ -760,7 +759,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
             System.out.println("slider volume in GUI: " + value);
             playerFacade.setVolume(value);
             int percentage = (int) (((double) (value - volumeSlider.getMinimum()) /
-                    (volumeSlider.getMaximum() - volumeSlider.getMinimum())) * 100);
+                                     (volumeSlider.getMaximum() - volumeSlider.getMinimum())) * 100);
 
             String iconPath;
             if (percentage == 0) {

@@ -26,7 +26,6 @@ public class RecentSearchDropdown extends ListThemeablePanel {
     private final JLabel headerLabel;
     private final JLabel historyLabel;
     private int hoveredIndex = -1;
-    private CellRendererPane rendererPane;
     private JLabel noteIcon;
     private final JButton clearButton;
 
@@ -94,7 +93,7 @@ public class RecentSearchDropdown extends ListThemeablePanel {
         });
         songList.setCellRenderer(new ModernSongCellRenderer());
         songList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        songList.setFixedCellHeight(60); // Fixed height for each row
+        songList.setFixedCellHeight(100); // Fixed height for each row
 
         // Remove default selection border
         songList.setFocusable(false);
@@ -154,10 +153,10 @@ public class RecentSearchDropdown extends ListThemeablePanel {
         clearButton.addActionListener(e -> {
             if (listModel.getSize() > 0) {
                 List<Long> songIds = extractSongIdsFromListModel();
-
+                Window parentWindow = SwingUtilities.getWindowAncestor(parentTextField);
                 // Show a confirmation dialog
                 int response = GuiUtil.showConfirmMessageDialog(
-                        SwingUtilities.getWindowAncestor(this),
+                        parentWindow,
                         "Are you sure you want to clear your search history?",
                         "Clear History"
                 );
@@ -267,7 +266,7 @@ public class RecentSearchDropdown extends ListThemeablePanel {
 
                         // Check if click is outside both components
                         if ((popupBounds == null || !popupBounds.contains(p)) &&
-                                (textFieldBounds == null || !textFieldBounds.contains(p))) {
+                            (textFieldBounds == null || !textFieldBounds.contains(p))) {
                             hidePopup();
                         }
                     } catch (Exception e) {
@@ -329,7 +328,7 @@ public class RecentSearchDropdown extends ListThemeablePanel {
                                                       boolean isSelected, boolean cellHasFocus) {
             SongDTO song = (SongDTO) value;
 
-            // Create a panel for each cell with BorderLayout
+            // Create a panel for each cell with more complex layout
             JPanel cellPanel = new JPanel();
             cellPanel.setLayout(new BorderLayout(12, 0));
 
@@ -344,39 +343,45 @@ public class RecentSearchDropdown extends ListThemeablePanel {
                 cellPanel.setBackground(backgroundColor);
             }
 
-            // Add indicator panel on the left (music note for selected items)
+            // Add indicator panel on the right (music note for hovered items)
             JPanel indicatorPanel = new JPanel();
+            indicatorPanel.setLayout(new BoxLayout(indicatorPanel, BoxLayout.Y_AXIS));
             indicatorPanel.setOpaque(false);
             indicatorPanel.setPreferredSize(new Dimension(24, 24));
-
             if (isHovered) {
-                noteIcon = new JLabel(GuiUtil.createImageIcon(AppConstant.MUSIC_NOTE_ICON_PATH, 46, 46));
+                noteIcon = new JLabel(GuiUtil.createImageIcon(AppConstant.MUSIC_NOTE_ICON_PATH, 60, 60));
                 GuiUtil.changeLabelIconColor(noteIcon, textColor);
+                indicatorPanel.add(Box.createVerticalGlue());
                 indicatorPanel.add(noteIcon);
+                indicatorPanel.add(Box.createVerticalGlue());
             }
 
-            cellPanel.add(indicatorPanel, BorderLayout.WEST);
+            cellPanel.add(indicatorPanel, BorderLayout.EAST);
 
             // Song image
             JLabel imageLabel = new JLabel();
             if (song.getSongImage() != null) {
-                imageLabel.setIcon(GuiUtil.createRoundedCornerImageIcon(song.getSongImage(), 10, 46, 46));
+                imageLabel.setIcon(GuiUtil.createRoundedCornerImageIcon(song.getSongImage(), 10, 60, 60));
             } else {
-                imageLabel.setIcon(GuiUtil.createImageIcon(AppConstant.DEFAULT_COVER_PATH, 46, 46));
+                imageLabel.setIcon(GuiUtil.createImageIcon(AppConstant.DEFAULT_COVER_PATH, 60, 60));
             }
-
-
             imageLabel.setBorder(new EmptyBorder(5, 5, 5, 5));
-            cellPanel.add(imageLabel, BorderLayout.CENTER);
 
-            // Song info panel
-            JPanel infoPanel = new JPanel(new GridLayout(2, 1, 0, 2));
+            JPanel imagePanel = new JPanel(new BorderLayout());
+            imagePanel.setOpaque(false);
+            imagePanel.add(imageLabel, BorderLayout.CENTER);
+            cellPanel.add(imagePanel, BorderLayout.WEST);
+
+            // Create a panel for song information with better organization
+            JPanel infoPanel = new JPanel();
+            infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
             infoPanel.setOpaque(false);
 
             // Song title
             JLabel titleLabel = new JLabel(song.getSongTitle());
             titleLabel.setFont(FontUtil.getSpotifyFont(Font.BOLD, 14));
             titleLabel.setForeground(isSelected ? backgroundColor : textColor);
+            titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
             // Song artist
             JLabel artistLabel = new JLabel(song.getSongArtist());
@@ -384,18 +389,92 @@ public class RecentSearchDropdown extends ListThemeablePanel {
             artistLabel.setForeground(isSelected ?
                     GuiUtil.darkenColor(backgroundColor, 0.1f) :
                     GuiUtil.darkenColor(textColor, 0.2f));
+            artistLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
+            // Song album - NEW
+            String albumName = song.getAlbum() != null ? song.getAlbum() : "Unknown Album";
+            JLabel albumLabel = new JLabel(albumName);
+            albumLabel.setFont(FontUtil.getSpotifyFont(Font.ITALIC, 11));
+            albumLabel.setForeground(isSelected ?
+                    GuiUtil.darkenColor(backgroundColor, 0.15f) :
+                    GuiUtil.darkenColor(textColor, 0.3f));
+            albumLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+            // Add main info to panel
             infoPanel.add(titleLabel);
+            infoPanel.add(Box.createVerticalStrut(2));
             infoPanel.add(artistLabel);
-            cellPanel.add(infoPanel, BorderLayout.EAST);
+            infoPanel.add(Box.createVerticalStrut(1));
+            infoPanel.add(albumLabel);
 
-            // Add padding
+            // Add stats panel for song length and play count
+            JPanel statsPanel = new JPanel();
+            statsPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 8, 0));
+            statsPanel.setOpaque(false);
+            statsPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+            // Song length - NEW
+            String formattedLength = song.getSongLength();
+            JLabel lengthLabel = new JLabel(formattedLength);
+            lengthLabel.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 10));
+            lengthLabel.setForeground(isSelected ?
+                    GuiUtil.darkenColor(backgroundColor, 0.2f) :
+                    GuiUtil.darkenColor(textColor, 0.4f));
+
+            JPanel lengthPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
+            lengthPanel.setOpaque(false);
+            lengthPanel.add(lengthLabel);
+
+            // Play count - NEW
+            String playCount = formatPlayCount(song.getPlayCount());
+            JLabel playCountLabel = new JLabel(playCount);
+            playCountLabel.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 10));
+            playCountLabel.setForeground(isSelected ?
+                    GuiUtil.darkenColor(backgroundColor, 0.2f) :
+                    GuiUtil.darkenColor(textColor, 0.4f));
+
+
+            JPanel countPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
+            countPanel.setOpaque(false);
+            countPanel.add(playCountLabel);
+
+            // Add stats to panel
+            statsPanel.add(lengthPanel);
+            statsPanel.add(countPanel);
+
+            // Add some vertical spacing before stats
+            infoPanel.add(Box.createVerticalStrut(2));
+            infoPanel.add(statsPanel);
+
+            // Add some vertical padding
+            infoPanel.setBorder(new EmptyBorder(3, 0, 3, 0));
+
+            // Add info panel to cell
+            cellPanel.add(infoPanel, BorderLayout.CENTER);
+
+            // Add padding to whole cell
             cellPanel.setBorder(
                     GuiUtil.createCompoundBorder(isSelected ? accentColor :
                             isHovered ? GuiUtil.darkenColor(backgroundColor, 0.1f) :
                                     backgroundColor, 1, 5, 10, 5, 10)
             );
             return cellPanel;
+        }
+
+        private String formatPlayCount(Integer playCount) {
+            if (playCount == null || playCount <= 0) {
+                return "0 plays";
+            }
+
+            if (playCount >= 1000000) {
+                return String.format("%.1fM plays", playCount / 1000000.0);
+            } else if (playCount >= 1000) {
+                return String.format("%.1fK plays", playCount / 1000.0);
+            } else if (playCount == 1) {
+                return "1 play";
+            } else {
+                return playCount + " plays";
+            }
         }
     }
 

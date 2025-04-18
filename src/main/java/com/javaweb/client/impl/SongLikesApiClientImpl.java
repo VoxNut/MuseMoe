@@ -1,9 +1,14 @@
 package com.javaweb.client.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.javaweb.client.ApiConfig;
 import com.javaweb.client.client_service.SongLikesApiClient;
+import com.javaweb.model.dto.SongLikesDTO;
 import com.javaweb.utils.Mp3Util;
 import lombok.RequiredArgsConstructor;
+
+import java.util.Collections;
+import java.util.List;
 
 
 @RequiredArgsConstructor
@@ -51,6 +56,24 @@ public class SongLikesApiClientImpl implements SongLikesApiClient {
         } catch (Exception e) {
             e.printStackTrace();
             return false;
+        }
+    }
+
+    @Override
+    public List<SongLikesDTO> findAllSongLikesByUser() {
+        try {
+            var url = apiConfig.buildSongLikesUrl("/all");
+            var responseEntity = apiClient.get(url);
+            List<SongLikesDTO> songLikesDTOS = responseParser.parseReference(responseEntity, new TypeReference<>() {
+            });
+
+            songLikesDTOS.forEach(songLike -> {
+                mp3Util.enrichSongDTO(songLike.getSongDTO());
+            });
+            return songLikesDTOS;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Collections.emptyList();
         }
     }
 }

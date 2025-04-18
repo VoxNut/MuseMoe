@@ -6,6 +6,7 @@ import com.javaweb.client.impl.ApiServiceFactory;
 import com.javaweb.enums.RoleType;
 import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
+import com.javaweb.model.dto.SongLikesDTO;
 import com.javaweb.model.dto.UserDTO;
 
 import java.util.List;
@@ -118,6 +119,11 @@ public class CommonApiUtil {
 
     public static boolean checkSongLiked(Long songId) {
         return getSongLikesApiClient().checkSongLiked(songId);
+    }
+
+
+    public static List<SongLikesDTO> findAllSongLikes() {
+        return getSongLikesApiClient().findAllSongLikesByUser();
     }
 
     // Playlist

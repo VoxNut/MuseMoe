@@ -4,6 +4,7 @@ import com.javaweb.constant.AppConstant;
 import com.javaweb.enums.RepeatMode;
 import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
+import com.javaweb.model.dto.SongLikesDTO;
 import com.javaweb.utils.CommonApiUtil;
 import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
@@ -408,12 +409,17 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
                     GuiUtil.showInfoMessageDialog(this, "Please patience finishing ads. That helps us a lot :)");
                     return;
                 }
-                List<PlaylistDTO> playlists = CommonApiUtil.fetchPlaylistByUserId();
 
-                if (playlists.isEmpty()) {
-                    JOptionPane.showMessageDialog(this, "No playlists found!", "Info", JOptionPane.INFORMATION_MESSAGE);
-                    return;
-                }
+                List<SongLikesDTO> songLikesDTOS = CommonApiUtil.findAllSongLikes();
+                PlaylistDTO playlistDTO = new PlaylistDTO();
+                playlistDTO.setName("Liked Songs");
+                playlistDTO.setSongs(songLikesDTOS.stream()
+                        .map(SongLikesDTO::getSongDTO)
+                        .toList());
+
+
+                List<PlaylistDTO> playlists = CommonApiUtil.fetchPlaylistByUserId();
+                playlists.add(playlistDTO);
 
                 // Create and display the PlaylistSelectionPanel
                 playlistPanel = new PlaylistSelectionPanel(playlists);

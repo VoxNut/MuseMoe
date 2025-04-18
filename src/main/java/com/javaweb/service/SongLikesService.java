@@ -1,5 +1,9 @@
 package com.javaweb.service;
 
+import com.javaweb.model.dto.SongLikesDTO;
+
+import java.util.List;
+
 public interface SongLikesService {
 
 
@@ -9,4 +13,5 @@ public interface SongLikesService {
 
     boolean deleteSongLikes(Long songId);
 
+    List<SongLikesDTO> findAllByUser();
 }

@@ -1,10 +1,14 @@
 package com.javaweb.api;
 
 
+import com.javaweb.model.dto.SongLikesDTO;
 import com.javaweb.service.SongLikesService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/song_likes")
@@ -44,6 +48,16 @@ public class SongLikesAPI {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<SongLikesDTO>> findAll() {
+        try {
+            List<SongLikesDTO> songLikesDTOS = songLikesService.findAllByUser();
+            return ResponseEntity.ok(songLikesDTOS);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 

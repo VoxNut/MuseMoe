@@ -12,7 +12,6 @@ import java.util.Objects;
 @Setter
 public class PlaylistDTO extends AbstractDTO<PlaylistDTO> {
 
-    private String user;
     private String name;
     private String description;
     private String coverImage;

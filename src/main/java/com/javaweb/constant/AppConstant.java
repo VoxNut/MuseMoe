@@ -38,6 +38,12 @@ public class AppConstant {
     public static final String HISTORY_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/history-icon.jpg";
     public static final String MUSIC_NOTE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/music-note-icon.png";
     public static final String CLOCK_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/clock-icon.png";
+    public static final String DEFAULT_ARTIST_PROFILE_PATH = "src/main/java/com/javaweb/view/imgs/artist_profile/default-profile-without-text.png";
+    public static final String GO_BACK_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/go-back-icon.png";
+    public static final String GO_FORWARD_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/go-forward-icon.png";
+    public static final String PLAYLIST_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/playlist-icon.png";
+    public static final String ARTIST_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/music-artist.png";
+
 
     //SALE PAGE
     public static final String CREATE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/create-icon.png";
@@ -61,7 +67,7 @@ public class AppConstant {
     public static final String DEFAULT_COVER_PATH = "src/main/java/com/javaweb/view/mini_musicplayer/album_cover/record2.png";
     public static final String SHUFFLE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/shuffle-icon.png";
     public static final String REPLAY_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/replay-icon.png";
-    public static final String HEART_ICON = "src/main/java/com/javaweb/view/imgs/icon/heart-icon.png";
+    public static final String HEART_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/heart-icon.png";
     public static final String HEART_OUTLINE_ICON = "src/main/java/com/javaweb/view/imgs/icon/heart-outline.png";
     public static final String REPEAT_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/repeat-icon.png";
     public static final String ON_REPEAT_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/on-repeat-icon.png";

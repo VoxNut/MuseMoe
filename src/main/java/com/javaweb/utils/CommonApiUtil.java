@@ -4,10 +4,7 @@ import com.javaweb.App;
 import com.javaweb.client.client_service.*;
 import com.javaweb.client.impl.ApiServiceFactory;
 import com.javaweb.enums.RoleType;
-import com.javaweb.model.dto.PlaylistDTO;
-import com.javaweb.model.dto.SongDTO;
-import com.javaweb.model.dto.SongLikesDTO;
-import com.javaweb.model.dto.UserDTO;
+import com.javaweb.model.dto.*;
 
 import java.util.List;
 import java.util.Set;
@@ -42,6 +39,10 @@ public class CommonApiUtil {
 
     private static SearchHistoryApiClient getSearchHistoryApiClient() {
         return App.getBean(ApiServiceFactory.class).createSearchHistoryApiClient();
+    }
+
+    private static UserArtistFollowApiClient getUserArtistFollowClient() {
+        return App.getBean(ApiServiceFactory.class).createUserArtistFollowApiClient();
     }
 
     // USER
@@ -167,5 +168,10 @@ public class CommonApiUtil {
 
     public static boolean clearAllSearchHistory() {
         return getSearchHistoryApiClient().clearAllSearchHistory();
+    }
+
+
+    public static List<ArtistDTO> fetchFollowedArtists() {
+        return getUserArtistFollowClient().findFollowedArtists();
     }
 }

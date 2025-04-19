@@ -32,6 +32,9 @@ public class ApiConfig {
     @Value("${api.search_history.endpoint:/api/search_history}")
     private String searchHistoryEndpoint;
 
+    @Value("${api.follows.endpoint:/api/follows}")
+    private String followsEndpoint;
+
 
     public String buildUserUrl(String path) {
         return baseUrl + userEndpoint + path;
@@ -61,5 +64,9 @@ public class ApiConfig {
 
     public String buildSearchHistoryUrl(String path) {
         return baseUrl + searchHistoryEndpoint + path;
+    }
+
+    public String buildFollowsUrl(String path) {
+        return baseUrl + followsEndpoint + path;
     }
 }

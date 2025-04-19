@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
 @Setter
 public abstract class BaseEntity implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 7213600440729202783L;
 
     @Id

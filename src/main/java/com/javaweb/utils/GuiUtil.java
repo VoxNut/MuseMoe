@@ -1,9 +1,12 @@
 package com.javaweb.utils;
 
 import com.javaweb.constant.AppConstant;
+import com.javaweb.model.dto.ArtistDTO;
+import com.javaweb.model.dto.UserDTO;
 import com.javaweb.view.custom.spinner.DateLabelFormatter;
 import com.javaweb.view.custom.table.BorderedHeaderRenderer;
 import com.javaweb.view.custom.table.BorderedTableCellRenderer;
+import com.javaweb.view.theme.ThemeManager;
 import de.androidpit.colorthief.ColorThief;
 import net.coobird.thumbnailator.Thumbnails;
 import net.coobird.thumbnailator.geometry.Positions;
@@ -58,8 +61,8 @@ public class GuiUtil {
         // Add table styling
         table.setRowHeight(30);
         table.setFont(FontUtil.getJetBrainsMonoFont(Font.PLAIN, 16));
-        table.setForeground(AppConstant.TEXT_COLOR);
-        table.setBackground(AppConstant.BACKGROUND_COLOR);
+        table.setForeground(ThemeManager.getInstance().getTextColor());
+        table.setBackground(ThemeManager.getInstance().getBackgroundColor());
         table.setGridColor(AppConstant.BORDER_COLOR);
         table.setBorder(new LineBorder(AppConstant.BORDER_COLOR));
         table.setFocusable(false);
@@ -157,11 +160,6 @@ public class GuiUtil {
         return button;
     }
 
-    public static JLabel createLabel(String text, int style, float size) {
-        JLabel label = createLabel(text);
-        label.setFont(FontUtil.getJetBrainsMonoFont(style, size));
-        return label;
-    }
 
     public static JLabel createLabel(String text, Font font) {
         JLabel label = createLabel(text);
@@ -169,28 +167,29 @@ public class GuiUtil {
         return label;
     }
 
-    public static JLabel createSpotifyFontLabel(String text, int style, int size) {
-        JLabel label = createLabel(text);
-        label.setFont(FontUtil.getSpotifyFont(style, size));
-        return label;
-    }
 
     public static JLabel createLabel(String text) {
         JLabel label = new JLabel(text);
-        label.setForeground(AppConstant.TEXT_COLOR);
+        label.setForeground(ThemeManager.getInstance().getTextColor());
+        return label;
+    }
+
+    public static JLabel createLabel(String text, int style, float size) {
+        JLabel label = createLabel(text);
+        label.setFont(FontUtil.getJetBrainsMonoFont(style, size));
         return label;
     }
 
     public static JLabel createLabel() {
         JLabel label = new JLabel();
-        label.setForeground(AppConstant.TEXT_COLOR);
+        label.setForeground(ThemeManager.getInstance().getTextColor());
         return label;
     }
 
     public static JTextField createLineInputField(int columns) {
         JTextField textField = new JTextField(columns);
         textField.setForeground(AppConstant.TEXT_COLOR);
-        textField.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, AppConstant.TEXT_COLOR)); // Line border
+        textField.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, AppConstant.TEXT_COLOR));
         textField.setBackground(AppConstant.TEXTFIELD_BACKGROUND_COLOR);
         textField.setCaretColor(AppConstant.TEXT_COLOR);
         return textField;
@@ -200,8 +199,8 @@ public class GuiUtil {
         return new JTextField(text, columns);
     }
 
-    public static CompoundBorder createCompoundBorder(Color textColor, int thicc) {
-        return createCompoundBorder(textColor, thicc, 5, 0, 5, 0);
+    public static CompoundBorder createCompoundBorder(int thicc) {
+        return createCompoundBorder(ThemeManager.getInstance().getTextColor(), thicc, 5, 0, 5, 0);
     }
 
     public static CompoundBorder createCompoundBorder(Color textColor, int thicc, int top, int left, int bottom, int right) {
@@ -433,6 +432,47 @@ public class GuiUtil {
         return button;
     }
 
+    public static JButton changeButtonIconColor(String iconPath, int width, int height) {
+        if (ThemeManager.getInstance().getTextColor() == null) {
+            throw new IllegalArgumentException("Icon path or color cannot be null");
+        }
+
+        // Load the original icon
+        ImageIcon originalIcon = createImageIcon(iconPath, width, height);
+
+        // Create a copy of the original image to preserve its structure
+        BufferedImage originalImg = new BufferedImage(
+                originalIcon.getIconWidth(),
+                originalIcon.getIconHeight(),
+                BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = originalImg.createGraphics();
+        originalIcon.paintIcon(null, g, 0, 0);
+        g.dispose();
+
+        Color hoverColor = lightenColor(ThemeManager.getInstance().getTextColor(), 0.3);
+        // Create colored versions
+        BufferedImage normalColoredImg = applyColorToImage(originalImg, ThemeManager.getInstance().getTextColor());
+        BufferedImage hoverColoredImg = applyColorToImage(originalImg, hoverColor);
+
+        try {
+            ImageIcon normalIcon = new ImageIcon(Thumbnails.of(normalColoredImg).size(width, height).asBufferedImage());
+            ImageIcon hoverIcon = new ImageIcon(Thumbnails.of(hoverColoredImg).size(width, height).asBufferedImage());
+
+            JButton newButton = new JButton();
+            newButton.setIcon(normalIcon);
+            newButton.setRolloverIcon(hoverIcon);
+            newButton.setBorderPainted(false);
+            newButton.setContentAreaFilled(false);
+            newButton.setFocusPainted(false);
+            newButton.setOpaque(false);
+            newButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            return newButton;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new JButton();
+        }
+    }
+
     public static JButton changeButtonIconColor(String iconPath, Color color, int width, int height) {
         if (color == null) {
             throw new IllegalArgumentException("Icon path or color cannot be null");
@@ -452,7 +492,7 @@ public class GuiUtil {
 
         Color hoverColor = lightenColor(color, 0.3);
         // Create colored versions
-        BufferedImage normalColoredImg = applyColorToImage(originalImg, color);
+        BufferedImage normalColoredImg = applyColorToImage(originalImg, ThemeManager.getInstance().getTextColor());
         BufferedImage hoverColoredImg = applyColorToImage(originalImg, hoverColor);
 
         try {
@@ -569,19 +609,19 @@ public class GuiUtil {
         return tinted;
     }
 
-    public static void changeButtonIconColor(JButton button, Color color) {
+    public static void changeButtonIconColor(JButton button) {
         Icon baseIcon = button.getIcon();
         Icon rolloverBaseIcon = button.getRolloverIcon();
 
         if (baseIcon instanceof ImageIcon baseImageIcon) {
             Image baseImage = baseImageIcon.getImage();
-            BufferedImage colored = recolorImage(baseImage, color);
+            BufferedImage colored = recolorImage(baseImage, ThemeManager.getInstance().getTextColor());
             button.setIcon(new ImageIcon(colored));
         }
 
         if (rolloverBaseIcon instanceof ImageIcon rolloverImageIcon) {
             Image rolloverImage = rolloverImageIcon.getImage();
-            Color hoverColor = lightenColor(color, 0.3f);
+            Color hoverColor = lightenColor(ThemeManager.getInstance().getTextColor(), 0.3f);
             BufferedImage recoloredHover = recolorImage(rolloverImage, hoverColor);
             button.setRolloverIcon(new ImageIcon(recoloredHover));
         }
@@ -598,7 +638,7 @@ public class GuiUtil {
         return buffered;
     }
 
-    public static void changeLabelIconColor(JLabel label, Color color) {
+    public static void changeLabelIconColor(JLabel label) {
         Icon icon = label.getIcon();
         if (icon instanceof ImageIcon imageIcon) {
             Image image = imageIcon.getImage();
@@ -610,7 +650,7 @@ public class GuiUtil {
 
             // Apply the color overlay
             g2d.setComposite(AlphaComposite.SrcAtop);
-            g2d.setColor(color);
+            g2d.setColor(ThemeManager.getInstance().getTextColor());
             g2d.fillRect(0, 0, bufferedImage.getWidth(), bufferedImage.getHeight());
             g2d.dispose();
 
@@ -862,7 +902,7 @@ public class GuiUtil {
 
     public static JPanel createPanel() {
         JPanel panel = new JPanel();
-        panel.setBackground(AppConstant.BACKGROUND_COLOR);
+        panel.setBackground(ThemeManager.getInstance().getBackgroundColor());
         return panel;
     }
 
@@ -1169,6 +1209,153 @@ public class GuiUtil {
             e.printStackTrace();
             return new ImageIcon();
         }
+    }
+
+    public static TitledBorder createTitledBorder(String title, int justification) {
+        return BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(ThemeManager.getInstance().getTextColor(), 2, true),
+                title,
+                justification,
+                TitledBorder.TOP,
+                FontUtil.getSpotifyFont(Font.BOLD, 14),
+                ThemeManager.getInstance().getTextColor());
+    }
+
+    public static JScrollPane createStyledScrollPane(JPanel contentPanel) {
+        JScrollPane scrollPane = new JScrollPane(contentPanel);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.setBorder(null);
+        scrollPane.getViewport().setOpaque(false);
+        scrollPane.setOpaque(false);
+
+        // Set viewport background to match the app background
+        scrollPane.getViewport().setBackground(ThemeManager.getInstance().getBackgroundColor());
+
+        // Apply modern scrollbar style
+        GuiUtil.applyModernScrollBar(scrollPane, ThemeManager.getInstance().getBackgroundColor(), ThemeManager.getInstance().getBackgroundColor());
+        return scrollPane;
+    }
+
+    public static JLabel createUserAvatar(UserDTO user, int size, Color backgroundColor, Color textColor) {
+        BufferedImage avatarImage = null;
+        boolean useDefaultAvatar = false;
+
+        try {
+            if (user.getAvatar() != null) {
+                BufferedImage originalImage = ImageIO.read(new File(user.getAvatar().getFileUrl()));
+                avatarImage = createSmoothCircularAvatar(originalImage, size);
+            } else {
+                useDefaultAvatar = true;
+            }
+        } catch (IOException e) {
+            useDefaultAvatar = true;
+        }
+
+        if (useDefaultAvatar) {
+            avatarImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2d = avatarImage.createGraphics();
+
+            configureGraphicsForHighQuality(g2d);
+
+            g2d.setColor(backgroundColor);
+            g2d.fillOval(0, 0, size, size);
+
+            String initial = user.getUsername() != null && !user.getUsername().isEmpty() ?
+                    user.getUsername().substring(0, 1).toUpperCase() : "U";
+
+            float fontSize = (float) size * 0.4f;
+            g2d.setColor(textColor);
+            g2d.setFont(FontUtil.getSpotifyFont(Font.BOLD, fontSize));
+
+            FontMetrics fm = g2d.getFontMetrics();
+            int textWidth = fm.stringWidth(initial);
+            int textHeight = fm.getAscent();
+
+            int x = (size - textWidth) / 2;
+            int y = (size - textHeight) / 2 + fm.getAscent();
+
+            g2d.drawString(initial, x, y);
+            g2d.dispose();
+        }
+
+        return new JLabel(new ImageIcon(avatarImage));
+    }
+
+    public static JLabel createArtistAvatar(ArtistDTO artist, int size, Color backgroundColor, Color textColor) {
+
+        BufferedImage avatarImage;
+
+        try {
+            // Try to load the artist's profile picture
+            if (artist.getProfilePicture() != null) {
+                BufferedImage originalImage = ImageIO.read(new File(artist.getProfilePicture()));
+                avatarImage = createSmoothCircularAvatar(originalImage, size);
+            } else {
+                // Create default avatar with initial
+                avatarImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g2d = avatarImage.createGraphics();
+
+                configureGraphicsForHighQuality(g2d);
+
+                // Fill background circle
+                g2d.setColor(backgroundColor);
+                g2d.fillOval(0, 0, size, size);
+
+                // Draw initial
+                String initial = artist.getStageName() != null && !artist.getStageName().isEmpty() ?
+                        artist.getStageName().substring(0, 1).toUpperCase() :
+                        "A";
+
+                g2d.setColor(textColor);
+                g2d.setFont(FontUtil.getSpotifyFont(Font.BOLD, (float) size / 2));
+
+                FontMetrics fm = g2d.getFontMetrics();
+                int textWidth = fm.stringWidth(initial);
+                int textHeight = fm.getAscent();
+                int x = (size - textWidth) / 2;
+                int y = (size - textHeight) / 2 + textHeight;
+
+                g2d.drawString(initial, x, y);
+                g2d.dispose();
+            }
+        } catch (Exception e) {
+            // Create simple colored circle as fallback
+            avatarImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2d = avatarImage.createGraphics();
+            configureGraphicsForHighQuality(g2d);
+            g2d.setColor(backgroundColor);
+            g2d.fillOval(0, 0, size, size);
+            g2d.dispose();
+        }
+
+        return new JLabel(new ImageIcon(avatarImage));
+    }
+
+    public static JLabel createInteractiveUserAvatar(UserDTO user, int size, Color backgroundColor,
+                                                     Color textColor, JMenuItem... popupItems) {
+        JLabel avatarLabel = createUserAvatar(user, size, backgroundColor, textColor);
+        avatarLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        // Ensure the label size matches the image size
+        avatarLabel.setPreferredSize(new Dimension(size, size));
+
+        // Add popup menu if items are provided
+        if (popupItems.length > 0) {
+            JPopupMenu popupMenu = createPopupMenu(backgroundColor, textColor);
+            for (JMenuItem item : popupItems) {
+                popupMenu.add(item);
+            }
+
+            avatarLabel.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    popupMenu.show(e.getComponent(), e.getX(), e.getY());
+                }
+            });
+        }
+
+        return avatarLabel;
     }
 
     public static void showNetworkErrorDialog(Component parentComponent, String message) {
@@ -1489,7 +1676,7 @@ public class GuiUtil {
             default -> AppConstant.SUCCESS_ICON_PATH;
         };
 
-        Icon icon = createColoredDialogIcon(iconPath, 40, accentColor);
+        Icon icon = createColoredIcon(iconPath, 40, accentColor);
         JLabel iconLabel = new JLabel(icon);
         iconLabel.setVerticalAlignment(SwingConstants.TOP);
 
@@ -1617,7 +1804,20 @@ public class GuiUtil {
         return new ImageIcon(image);
     }
 
-    public static Icon createColoredDialogIcon(String iconPath, int size, Color color) {
+    public static Icon createColoredIcon(String iconPath, int size) {
+        try {
+            // Load the original icon
+            ImageIcon originalIcon = createImageIcon(iconPath, size, size);
+            changeIconColor(originalIcon, ThemeManager.getInstance().getTextColor());
+            return originalIcon;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return createCustomDialogIcon(getMessageTypeForPath(iconPath), size, ThemeManager.getInstance().getTextColor(),
+                    AppConstant.BACKGROUND_COLOR);
+        }
+    }
+
+    public static Icon createColoredIcon(String iconPath, int size, Color color) {
         try {
             // Load the original icon
             ImageIcon originalIcon = createImageIcon(iconPath, size, size);

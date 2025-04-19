@@ -1,5 +1,6 @@
 package com.javaweb.converter;
 
+import com.javaweb.constant.AppConstant;
 import com.javaweb.entity.MediaEntity;
 import com.javaweb.entity.RoleEntity;
 import com.javaweb.entity.UserEntity;
@@ -8,6 +9,7 @@ import com.javaweb.enums.MediaType;
 import com.javaweb.enums.RoleType;
 import com.javaweb.model.dto.UserDTO;
 import com.javaweb.model.request.UserRequestDTO;
+import com.javaweb.repository.MediaRepository;
 import com.javaweb.repository.RoleRepository;
 import com.javaweb.utils.FileUtil;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ public class UserConverter implements EntityConverter<UserEntity, UserRequestDTO
 
     private final ModelMapper modelMapper;
     private final RoleRepository roleRepository;
+    private final MediaRepository mediaRepository;
 
     public UserDTO toDTO(UserEntity entity) {
         UserDTO result = modelMapper.map(entity, UserDTO.class);
@@ -38,8 +41,12 @@ public class UserConverter implements EntityConverter<UserEntity, UserRequestDTO
         UserEntity result = modelMapper.map(userRequestDTO, UserEntity.class);
         MediaEntity media = new MediaEntity();
         media.setFileType(MediaType.IMAGE);
+
         if (userRequestDTO.getAvatar() == null) {
-            result.setAvatar(null);
+            result.setAvatar(
+                    mediaRepository.findByFileUrl(AppConstant.DEFAULT_ARTIST_PROFILE_PATH)
+                            .orElse(null)
+            );
         }
 
         if (userRequestDTO.getRequestRoles() != null && !userRequestDTO.getRequestRoles().isEmpty()) {

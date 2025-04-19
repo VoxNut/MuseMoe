@@ -4,22 +4,38 @@ import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "user_artist_follow")
 @Getter
 @Setter
-public class UserArtistFollowEntity extends BaseEntity {
+public class UserArtistFollowEntity implements Serializable {
 
-    @ManyToOne
+    @EmbeddedId
+    private UserArtistFollowId id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @MapsId("followerId")
     @JoinColumn(name = "follower_id")
     private UserEntity follower;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @MapsId("artistId")
     @JoinColumn(name = "artist_id")
     private UserEntity artist;
 
     @Column(name = "followed_at")
     private LocalDateTime followedAt;
+
+    public UserArtistFollowEntity() {
+    }
+
+    public UserArtistFollowEntity(UserEntity follower, UserEntity artist) {
+        this.follower = follower;
+        this.artist = artist;
+        this.id = new UserArtistFollowId(follower.getId(), artist.getId());
+        this.followedAt = LocalDateTime.now();
+    }
 }

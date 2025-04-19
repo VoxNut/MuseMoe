@@ -1,9 +1,7 @@
 package com.javaweb.view;
 
 import com.javaweb.constant.AppConstant;
-import com.javaweb.model.dto.PlaylistDTO;
-import com.javaweb.model.dto.SongDTO;
-import com.javaweb.model.dto.UserDTO;
+import com.javaweb.model.dto.*;
 import com.javaweb.utils.CommonApiUtil;
 import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
@@ -18,13 +16,11 @@ import com.javaweb.view.theme.ThemeManager;
 import com.javaweb.view.user.UserSessionManager;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
@@ -39,9 +35,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private JLabel fullNameLabel;
     private JLabel spinningDisc;
     private JPanel controlButtonsPanel;
-    private Color backgroundColor = AppConstant.BACKGROUND_COLOR;
-    private Color textColor = AppConstant.TEXT_COLOR;
-    private Color accentColor = GuiUtil.darkenColor(AppConstant.BACKGROUND_COLOR, 0.1);
     private JSlider playbackSlider;
     private JButton prevButton;
     private JButton playButton;
@@ -51,6 +44,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private Timer spinTimer;
     private JLabel labelBeginning;
     private JLabel labelEnd;
+
 
     private double rotationAngle = 0.0;
     private static final double SPIN_SPEED = Math.PI / 60;
@@ -79,6 +73,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private JPanel datePanel;
     private RecentSearchDropdown recentSearchDropdown;
     private JButton miniplayerButton;
+    private JButton goBackButton;
+    private JButton goForwardButton;
+    private JLabel followedArtistsLabel;
 
     public HomePage() {
         initializeFrame();
@@ -105,7 +102,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         //Doing nothing because I want user to confirm when logging out
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setLocationRelativeTo(null);
-        GuiUtil.styleTitleBar(this, GuiUtil.lightenColor(backgroundColor, 0.12), textColor);
+        GuiUtil.styleTitleBar(this, GuiUtil.lightenColor(ThemeManager.getInstance().getBackgroundColor(), 0.12), ThemeManager.getInstance().getTextColor());
 
         //Show option pane when user log out
         addWindowListener(new java.awt.event.WindowAdapter() {
@@ -126,7 +123,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
 
     private JPanel createMainPanel() {
-        JPanel mainPanel = GuiUtil.createPanel(new BorderLayout());
+        JPanel mainPanel = GuiUtil.createPanel(new BorderLayout(0, 10));
 
         // Apply a radial gradient using the GuiUtil method instead of the linear gradient
         GuiUtil.setGradientBackground(mainPanel,
@@ -138,7 +135,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         topPanel.setOpaque(false);
         mainPanel.add(topPanel, BorderLayout.NORTH);
 
-        combinedCenterPanel = GuiUtil.createPanel(new BorderLayout());
+        combinedCenterPanel = GuiUtil.createPanel(new BorderLayout(10, 0));
 
         libraryPanel = createLibraryPanel();
         libraryPanel.setOpaque(false);
@@ -167,8 +164,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
     private JPanel createHeaderPanel() {
         JPanel headerPanel = new JPanel(new BorderLayout(10, 0));
-        headerPanel.setBackground(backgroundColor);
-        headerPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+        headerPanel.setBackground(ThemeManager.getInstance().getBackgroundColor());
 
         // Use GridBagLayout for the header content panel
         JPanel headerContentPanel = new JPanel(new GridBagLayout());
@@ -177,19 +174,15 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.NONE;
         gbc.insets = new Insets(0, 10, 0, 10);
-        gbc.weighty = 1.0; // Căn giữa theo chiều dọc
+        gbc.weighty = 1;
 
         // ---------- LEFT SECTION (Date) ----------
         datePanel = new JPanel();
         datePanel.setOpaque(false);
         datePanel.setAlignmentY(Component.CENTER_ALIGNMENT);
-        datePanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(textColor, 2, true),
-                BorderFactory.createEmptyBorder(5, 5, 5, 5)
-        ));
 
-        dateLabel = new JLabel();
-        dateLabel.setForeground(textColor);
+        dateLabel = GuiUtil.createLabel();
+
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         String currentDate = LocalDate.now().format(dateFormatter);
         dateLabel.setText(currentDate);
@@ -198,15 +191,46 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         datePanel.add(dateLabel);
         datePanel.add(Box.createVerticalGlue());
 
+
+        // Create a panel for date and navigation icons
+        JPanel dateAndNavPanel = new JPanel();
+        dateAndNavPanel.setLayout(new BoxLayout(dateAndNavPanel, BoxLayout.X_AXIS));
+        dateAndNavPanel.setOpaque(false);
+        dateAndNavPanel.setAlignmentY(Component.CENTER_ALIGNMENT);
+
+        // Add date panel
+        dateAndNavPanel.add(datePanel);
+        dateAndNavPanel.add(Box.createHorizontalStrut(15));
+
+        // Add navigation icons
+        goBackButton = GuiUtil.changeButtonIconColor(AppConstant.GO_BACK_ICON_PATH, 20, 20);
+        goBackButton.setAlignmentY(Component.CENTER_ALIGNMENT);
+        goBackButton.setToolTipText("Go Back");
+        goBackButton.addActionListener(e -> {
+            // Add navigation logic here
+            // For example: navigateBack();
+        });
+
+        goForwardButton = GuiUtil.changeButtonIconColor(AppConstant.GO_FORWARD_ICON_PATH, 20, 20);
+        goForwardButton.setAlignmentY(Component.CENTER_ALIGNMENT);
+        goForwardButton.setToolTipText("Go Forward");
+        goForwardButton.addActionListener(e -> {
+            // Add navigation logic here
+            // For example: navigateForward();
+        });
+
+        // Add the buttons to the panel
+        dateAndNavPanel.add(goBackButton);
+        dateAndNavPanel.add(Box.createHorizontalStrut(5));
+        dateAndNavPanel.add(goForwardButton);
+
         // ---------- CENTER SECTION (Search bar & Home icon) ----------
-        JPanel centerPanel = new JPanel();
-        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.X_AXIS));
+        JPanel centerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         centerPanel.setOpaque(false);
-        centerPanel.setAlignmentY(Component.CENTER_ALIGNMENT);
 
 
         // Home icon with vertical centering
-        homeIcon = GuiUtil.changeButtonIconColor(AppConstant.HOME_ICON_PATH, textColor, 20, 20);
+        homeIcon = GuiUtil.changeButtonIconColor(AppConstant.HOME_ICON_PATH, 20, 20);
         homeIcon.setAlignmentY(Component.CENTER_ALIGNMENT);
 
         JPanel homeIconWrapper = new JPanel();
@@ -221,16 +245,12 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         // Search bar with vertical centering
         searchBarWrapper = GuiUtil.createPanel(new BorderLayout());
-        searchBarWrapper.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(textColor, 2, true),
-                BorderFactory.createEmptyBorder(5, 5, 5, 5)
-        ));
-        searchBarWrapper.setPreferredSize(new Dimension(600, 40));
-        searchBarWrapper.setMaximumSize(new Dimension(600, 40));
+        searchBarWrapper.setPreferredSize(new Dimension(getWidth(), 40));
+        searchBarWrapper.setMaximumSize(new Dimension(getWidth(), 40));
         searchBarWrapper.setMinimumSize(new Dimension(200, 40));
         searchBarWrapper.setAlignmentY(Component.CENTER_ALIGNMENT);
-
-        lookupIcon = GuiUtil.changeButtonIconColor(AppConstant.LOOKUP_ICON_PATH, textColor, 20, 20);
+        searchBarWrapper.setBorder(GuiUtil.createCompoundBorder(2));
+        lookupIcon = GuiUtil.changeButtonIconColor(AppConstant.LOOKUP_ICON_PATH, 20, 20);
         lookupIcon.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
         lookupIcon.setOpaque(false);
         lookupIcon.setFocusPainted(false);
@@ -240,8 +260,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         searchField = GuiUtil.createLineInputField("What do you want to muse?...", 20);
         searchField.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
         searchField.setOpaque(false);
-        searchField.setForeground(GuiUtil.darkenColor(textColor, 0.3f));
-        searchField.setCaretColor(textColor);
+        searchField.setForeground(GuiUtil.darkenColor(ThemeManager.getInstance().getTextColor(), 0.3f));
+        searchField.setCaretColor(ThemeManager.getInstance().getTextColor());
         searchField.setAlignmentY(Component.CENTER_ALIGNMENT);
 
         searchField.addFocusListener(new java.awt.event.FocusAdapter() {
@@ -249,14 +269,14 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             public void focusGained(java.awt.event.FocusEvent evt) {
                 if (searchField.getText().equals("What do you want to muse?...")) {
                     searchField.setText("");
-                    searchField.setForeground(textColor);
+                    searchField.setForeground(ThemeManager.getInstance().getTextColor());
                 }
             }
 
             public void focusLost(java.awt.event.FocusEvent evt) {
                 if (searchField.getText().isEmpty() || searchField.getText().trim().isEmpty()) {
                     searchField.setText("What do you want to muse?...");
-                    searchField.setForeground(GuiUtil.darkenColor(textColor, 0.3f));
+                    searchField.setForeground(GuiUtil.darkenColor(ThemeManager.getInstance().getTextColor(), 0.3f));
                 }
             }
         });
@@ -268,7 +288,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                     recentSearchDropdown.hidePopup();
                 } else if (e.getKeyCode() == KeyEvent.VK_ENTER) {
                     if (!searchField.getText().isEmpty() &&
-                        !searchField.getText().equals("What do you want to muse?...")) {
+                            !searchField.getText().equals("What do you want to muse?...")) {
                         performSearch(searchField.getText());
                     }
                 }
@@ -277,8 +297,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             @Override
             public void keyReleased(KeyEvent e) {
                 if (recentSearchDropdown != null &&
-                    !searchField.getText().isEmpty() &&
-                    !searchField.getText().equals("What do you want to muse?...")) {
+                        !searchField.getText().isEmpty() &&
+                        !searchField.getText().equals("What do you want to muse?...")) {
                     recentSearchDropdown.hidePopup();
                 }
             }
@@ -288,7 +308,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (searchField.getText().equals("What do you want to muse?...") ||
-                    searchField.getText().isEmpty()) {
+                        searchField.getText().isEmpty()) {
                     if (NetworkChecker.isNetworkAvailable()) {
                         loadRecentSearches();
                     } else {
@@ -301,7 +321,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         lookupIcon.addActionListener(e -> {
             if (!searchField.getText().isEmpty() &&
-                !searchField.getText().equals("What do you want to muse?...")) {
+                    !searchField.getText().equals("What do you want to muse?...")) {
                 performSearch(searchField.getText());
             }
         });
@@ -315,12 +335,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.X_AXIS));
         rightPanel.setOpaque(false);
         rightPanel.setAlignmentY(Component.CENTER_ALIGNMENT);
-        rightPanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(textColor, 2, true),
-                BorderFactory.createEmptyBorder(5, 5, 5, 5)
-        ));
 
-        miniplayerButton = GuiUtil.changeButtonIconColor(AppConstant.MINIPLAYER_ICON_PATH, textColor, 24, 24);
+        miniplayerButton = GuiUtil.changeButtonIconColor(AppConstant.MINIPLAYER_ICON_PATH, 24, 24);
         miniplayerButton.setOpaque(false);
         miniplayerButton.setFocusPainted(false);
         miniplayerButton.setToolTipText("Open Music Player");
@@ -328,17 +344,11 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         helpPanel = new JPanel();
         helpPanel.setLayout(new BoxLayout(helpPanel, BoxLayout.Y_AXIS));
-        helpPanel.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(textColor, 2, true),
-                "Help",
-                javax.swing.border.TitledBorder.CENTER,
-                javax.swing.border.TitledBorder.TOP,
-                FontUtil.getSpotifyFont(Font.BOLD, 12),
-                textColor
-        ));
+        helpPanel.setBorder(GuiUtil.createTitledBorder("Help", TitledBorder.CENTER));
         helpPanel.setOpaque(false);
-        helpPanel.setPreferredSize(new Dimension(80, 43));
-        helpPanel.setMaximumSize(new Dimension(80, 43));
+
+        helpPanel.setPreferredSize(new Dimension(80, 50));
+        helpPanel.setMaximumSize(new Dimension(80, 50));
 
         helpLabel = GuiUtil.createLabel("Type ?", Font.BOLD, 12);
         helpLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -349,10 +359,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         String userRole = determineUserRole(getCurrentUser().getRoles());
         fullNameLabel = GuiUtil.createLabel(getCurrentUser().getFullName() != null ?
                 getCurrentUser().getFullName() + " - " + userRole : "??? - " + userRole);
-        fullNameLabel.setForeground(textColor);
         fullNameLabel.setAlignmentY(Component.CENTER_ALIGNMENT);
 
-        avatarLabel = createUserAvatar();
+        avatarLabel = createUserProfileAvatar();
         avatarLabel.setAlignmentY(Component.CENTER_ALIGNMENT);
 
         rightPanel.add(miniplayerButton);
@@ -366,30 +375,26 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         // Add components to GridBagLayout
         gbc.gridx = 0;
         gbc.weightx = 0.0;
-        headerContentPanel.add(datePanel, gbc);
+        headerContentPanel.add(dateAndNavPanel, gbc);
 
         gbc.gridx = 1;
         gbc.weightx = 1.0;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.anchor = GridBagConstraints.CENTER;
         headerContentPanel.add(centerPanel, gbc);
 
         gbc.gridx = 2;
-        gbc.weightx = 0.0; // Không co giãn cho rightPanel
+        gbc.weightx = 0.0;
         headerContentPanel.add(rightPanel, gbc);
 
         // Add the content panel to the header panel
         headerPanel.add(headerContentPanel, BorderLayout.CENTER);
-        headerPanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(textColor, 2, true),
-                BorderFactory.createEmptyBorder(5, 5, 5, 5)
-        ));
+        headerPanel.setBorder(GuiUtil.createTitledBorder("Search", TitledBorder.LEFT));
 
         return headerPanel;
     }
 
     private JPanel createMiniMusicPlayerPanel() {
         JPanel miniMusicPlayerPanel = new JPanel(new BorderLayout());
+        miniMusicPlayerPanel.setBorder(GuiUtil.createTitledBorder("Playing", TitledBorder.LEFT));
         miniMusicPlayerPanel.setOpaque(true);
 
         // Create a more organized layout with FlowLayout center alignment
@@ -485,7 +490,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 int sliderValue = playbackSlider.getValue();
 
                 int newTimeInMilli = (int) (sliderValue
-                                            / playerFacade.getCurrentSong().getFrameRatePerMilliseconds());
+                        / playerFacade.getCurrentSong().getFrameRatePerMilliseconds());
 
                 playerFacade.setCurrentTimeInMilli(newTimeInMilli);
                 playerFacade.setCurrentFrame(sliderValue);
@@ -531,13 +536,13 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         controlButtonsPanel.setOpaque(false);
 
         // Previous button
-        prevButton = GuiUtil.changeButtonIconColor(AppConstant.PREVIOUS_ICON_PATH, AppConstant.TEXT_COLOR, 20, 20);
+        prevButton = GuiUtil.changeButtonIconColor(AppConstant.PREVIOUS_ICON_PATH, 20, 20);
         prevButton.addActionListener(e -> {
             playerFacade.prevSong();
         });
 
         // Play button
-        playButton = GuiUtil.changeButtonIconColor(AppConstant.PLAY_ICON_PATH, AppConstant.TEXT_COLOR, 20, 20);
+        playButton = GuiUtil.changeButtonIconColor(AppConstant.PLAY_ICON_PATH, 20, 20);
         playButton.addActionListener(e -> {
             if (playerFacade.isHavingAd()) {
                 return;
@@ -546,7 +551,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         });
 
         // Pause button
-        pauseButton = GuiUtil.changeButtonIconColor(AppConstant.PAUSE_ICON_PATH, AppConstant.TEXT_COLOR, 20, 20);
+        pauseButton = GuiUtil.changeButtonIconColor(AppConstant.PAUSE_ICON_PATH, 20, 20);
         pauseButton.setVisible(false);
         pauseButton.addActionListener(e -> {
             if (playerFacade.isHavingAd()) return;
@@ -554,7 +559,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         });
 
         // Next button
-        nextButton = GuiUtil.changeButtonIconColor(AppConstant.NEXT_ICON_PATH, AppConstant.TEXT_COLOR, 20, 20);
+        nextButton = GuiUtil.changeButtonIconColor(AppConstant.NEXT_ICON_PATH, 20, 20);
         nextButton.addActionListener(e -> {
             playerFacade.nextSong();
         });
@@ -721,12 +726,10 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         labelsPanel.setPreferredSize(new Dimension(getWidth(), 18));
         labelsPanel.setOpaque(false);
 
-        labelBeginning = GuiUtil.createSpotifyFontLabel("00:00", Font.PLAIN, 18);
-        labelBeginning.setForeground(textColor);
+        labelBeginning = GuiUtil.createLabel("00:00", Font.PLAIN, 18);
         labelBeginning.setVisible(false);
 
-        labelEnd = GuiUtil.createSpotifyFontLabel("00:00", Font.PLAIN, 18);
-        labelEnd.setForeground(textColor);
+        labelEnd = GuiUtil.createLabel("00:00", Font.PLAIN, 18);
         labelEnd.setVisible(false);
 
         // Add labels to labelsPanel
@@ -868,95 +871,638 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     }
 
     private JPanel createLibraryPanel() {
-        JPanel libraryNav = new JPanel();
-        libraryNav.setLayout(new BoxLayout(libraryNav, BoxLayout.Y_AXIS));
-        libraryNav.setBackground(AppConstant.BACKGROUND_COLOR);
-        libraryNav.setPreferredSize(new Dimension(100, getHeight()));
+        JPanel libraryNav = GuiUtil.createPanel(new BorderLayout());
+        libraryNav.setBorder(GuiUtil.createTitledBorder("Library", TitledBorder.LEFT));
+        libraryNav.setPreferredSize(new Dimension(200, getHeight()));
+
+        // Create tabbed pane for different library sections
+        JTabbedPane libraryTabs = new JTabbedPane(JTabbedPane.TOP);
+        libraryTabs.setOpaque(true); // Make opaque to show background color
+        libraryTabs.setBackground(ThemeManager.getInstance().getBackgroundColor());
+        libraryTabs.setForeground(ThemeManager.getInstance().getTextColor());
+
+        // Fix the content area background color
+        UIManager.put("TabbedPane.contentAreaColor", ThemeManager.getInstance().getBackgroundColor());
+        UIManager.put("TabbedPane.selected", ThemeManager.getInstance().getBackgroundColor());
+        UIManager.put("TabbedPane.background", ThemeManager.getInstance().getBackgroundColor());
+        UIManager.put("TabbedPane.tabAreaBackground", ThemeManager.getInstance().getBackgroundColor());
+        UIManager.put("TabbedPane.unselectedBackground", GuiUtil.darkenColor(ThemeManager.getInstance().getBackgroundColor(), 0.2f));
+
+        // Customize the tab appearance
+        libraryTabs.setUI(new javax.swing.plaf.basic.BasicTabbedPaneUI() {
+            @Override
+            protected void installDefaults() {
+                super.installDefaults();
+                highlight = GuiUtil.darkenColor(ThemeManager.getInstance().getBackgroundColor(), 0.05f);
+                lightHighlight = GuiUtil.lightenColor(ThemeManager.getInstance().getBackgroundColor(), 0.1f);
+                shadow = GuiUtil.darkenColor(ThemeManager.getInstance().getBackgroundColor(), 0.2f);
+                darkShadow = GuiUtil.darkenColor(ThemeManager.getInstance().getBackgroundColor(), 0.3f);
+                focus = ThemeManager.getInstance().getAccentColor();
+            }
+
+            @Override
+            protected void paintContentBorder(Graphics g, int tabPlacement, int selectedIndex) {
+                // Override to paint content area with custom color
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setColor(ThemeManager.getInstance().getBackgroundColor());
+
+                Insets insets = tabPane.getInsets();
+                int x = insets.left;
+                int y = insets.top + calculateTabAreaHeight(tabPlacement, runCount, maxTabHeight);
+                int w = tabPane.getWidth() - insets.right - insets.left;
+                int h = tabPane.getHeight() - insets.bottom - y;
+
+                g2d.fillRect(x, y, w, h);
+
+                // Call the parent method to draw the borders if needed
+                super.paintContentBorder(g, tabPlacement, selectedIndex);
+            }
+
+            @Override
+            protected void paintTabArea(Graphics g, int tabPlacement, int selectedIndex) {
+                // Override to paint tab area with custom color
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setColor(ThemeManager.getInstance().getBackgroundColor());
+
+                Insets insets = tabPane.getInsets();
+                int x = insets.left;
+                int y = insets.top;
+                int w = tabPane.getWidth() - insets.right - insets.left;
+                int h = calculateTabAreaHeight(tabPlacement, runCount, maxTabHeight);
+
+                g2d.fillRect(x, y, w, h);
+
+                // Call the parent method to draw the tabs
+                super.paintTabArea(g, tabPlacement, selectedIndex);
+            }
+        });
+
+        // Tab 1: Artists
+        JPanel artistsPanel = createArtistsPanel();
+
+        // Tab 2: Playlists
+        JPanel playlistsPanel = createPlaylistsPanel();
+
+        // Tab 3: Liked Songs
+        JPanel likedSongsPanel = createLikedSongsPanel();
+
+        // Add tabs with custom icons
+        libraryTabs.addTab("Artists", GuiUtil.createColoredIcon(AppConstant.ARTIST_ICON_PATH, 16), artistsPanel);
+        libraryTabs.addTab("Playlists", GuiUtil.createColoredIcon(AppConstant.PLAYLIST_ICON_PATH, 16), playlistsPanel);
+        libraryTabs.addTab("Liked", GuiUtil.createColoredIcon(AppConstant.HEART_ICON_PATH, 16), likedSongsPanel);
+
+        libraryNav.add(libraryTabs, BorderLayout.CENTER);
+
         return libraryNav;
     }
 
+    private JPanel createArtistsPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BorderLayout());
+        panel.setOpaque(false);
 
-    private JLabel createUserAvatar() {
-        BufferedImage originalImage = null;
-        boolean useDefaultAvatar = false;
+        JPanel artistsListPanel = new JPanel();
+        artistsListPanel.setLayout(new BoxLayout(artistsListPanel, BoxLayout.Y_AXIS));
+        artistsListPanel.setOpaque(false);
+
+        loadFollowedArtists(artistsListPanel);
+
+        JScrollPane scrollPane = GuiUtil.createStyledScrollPane(artistsListPanel);
+        panel.add(scrollPane, BorderLayout.CENTER);
+
+        return panel;
+    }
+
+    private JPanel createPlaylistsPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BorderLayout());
+        panel.setOpaque(false);
+
+        JPanel playlistsListPanel = new JPanel();
+        playlistsListPanel.setLayout(new BoxLayout(playlistsListPanel, BoxLayout.Y_AXIS));
+        playlistsListPanel.setOpaque(false);
+
+        loadUserPlaylists(playlistsListPanel);
+
+        JScrollPane scrollPane = GuiUtil.createStyledScrollPane(playlistsListPanel);
+        panel.add(scrollPane, BorderLayout.CENTER);
+
+        return panel;
+    }
+
+    private JPanel createLikedSongsPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BorderLayout());
+        panel.setOpaque(false);
+
+        JPanel likedSongsListPanel = new JPanel();
+        likedSongsListPanel.setLayout(new BoxLayout(likedSongsListPanel, BoxLayout.Y_AXIS));
+        likedSongsListPanel.setOpaque(false);
+
+        loadLikedSongs(likedSongsListPanel);
+
+        JScrollPane scrollPane = GuiUtil.createStyledScrollPane(likedSongsListPanel);
+        panel.add(scrollPane, BorderLayout.CENTER);
+
+        return panel;
+    }
+
+    private void loadUserPlaylists(JPanel container) {
+        try {
+            // Check for network connectivity
+            if (!NetworkChecker.isNetworkAvailable()) {
+                addNetworkErrorLabel(container);
+                return;
+            }
+
+            // Fetch user playlists
+            java.util.List<PlaylistDTO> userPlaylists = CommonApiUtil.fetchPlaylistByUserId();
+
+            if (userPlaylists.isEmpty()) {
+                addEmptyContentLabel(container, "No playlists found");
+                return;
+            }
+
+            // Add each playlist to the panel
+            for (PlaylistDTO playlist : userPlaylists) {
+                container.add(createPlaylistPanel(playlist));
+                container.add(Box.createVerticalStrut(5));
+            }
+
+        } catch (Exception e) {
+            log.error("Failed to load user playlists", e);
+            addErrorLabel(container, "Failed to load playlists");
+        }
+    }
+
+
+    private void loadFollowedArtists(JPanel container) {
+        try {
+            // Check for network connectivity
+            if (!NetworkChecker.isNetworkAvailable()) {
+                JLabel errorLabel = new JLabel("Network unavailable");
+                errorLabel.setForeground(ThemeManager.getInstance().getTextColor());
+                errorLabel.setFont(FontUtil.getSpotifyFont(Font.ITALIC, 12));
+                errorLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+                errorLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 0));
+                container.add(errorLabel);
+                return;
+            }
+
+            java.util.List<ArtistDTO> followedArtists = CommonApiUtil.fetchFollowedArtists();
+
+            if (followedArtists.isEmpty()) {
+                JLabel emptyLabel = new JLabel("No followed artists");
+                emptyLabel.setForeground(ThemeManager.getInstance().getTextColor());
+                emptyLabel.setFont(FontUtil.getSpotifyFont(Font.ITALIC, 12));
+                emptyLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+                emptyLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 0));
+                container.add(emptyLabel);
+                return;
+            }
+
+            // Add each artist to the panel
+            for (ArtistDTO artist : followedArtists) {
+                container.add(createArtistPanel(artist));
+                // Add a small gap between artists
+                container.add(Box.createVerticalStrut(5));
+            }
+
+        } catch (Exception e) {
+            log.error("Failed to load followed artists", e);
+            JLabel errorLabel = new JLabel("Failed to load artists");
+            errorLabel.setForeground(ThemeManager.getInstance().getTextColor());
+            errorLabel.setFont(FontUtil.getSpotifyFont(Font.ITALIC, 12));
+            errorLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+            errorLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 0));
+            container.add(errorLabel);
+        }
+    }
+
+    private void loadLikedSongs(JPanel container) {
+        try {
+            // Check for network connectivity
+            if (!NetworkChecker.isNetworkAvailable()) {
+                addNetworkErrorLabel(container);
+                return;
+            }
+
+            // Fetch liked songs
+            java.util.List<SongDTO> likedSongs = CommonApiUtil.findAllSongLikes()
+                    .stream()
+                    .map(SongLikesDTO::getSongDTO)
+                    .toList();
+
+            if (likedSongs.isEmpty()) {
+                addEmptyContentLabel(container, "No liked songs");
+                return;
+            }
+
+            // Create a virtual playlist for liked songs
+            PlaylistDTO likedSongsPlaylist = new PlaylistDTO();
+            likedSongsPlaylist.setName("Liked Songs");
+            likedSongsPlaylist.setSongs(likedSongs);
+
+            // Add the liked songs panel
+            container.add(createLikedSongsCollectionPanel(likedSongsPlaylist));
+
+            // Add some recently liked songs as individual entries
+            JLabel recentLabel = GuiUtil.createLabel("Recently Liked", Font.BOLD, 12);
+            recentLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 5, 10));
+            recentLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+            container.add(recentLabel);
+
+            // Add up to 5 most recent liked songs
+            for (int i = 0; i < Math.min(5, likedSongs.size()); i++) {
+                container.add(createSongPanel(likedSongs.get(i)));
+                container.add(Box.createVerticalStrut(5));
+            }
+
+        } catch (Exception e) {
+            log.error("Failed to load liked songs", e);
+            addErrorLabel(container, "Failed to load liked songs");
+        }
+    }
+
+    private JPanel createLikedSongsCollectionPanel(PlaylistDTO likedSongsPlaylist) {
+        JPanel likedSongsPanel = new JPanel();
+        likedSongsPanel.setLayout(new BorderLayout(10, 0));
+        likedSongsPanel.setOpaque(false);
+        likedSongsPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createEmptyBorder(5, 10, 10, 10),
+                BorderFactory.createMatteBorder(0, 0, 1, 0, GuiUtil.darkenColor(ThemeManager.getInstance().getBackgroundColor(), 0.1f))
+        ));
+        likedSongsPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
+
+        // Create liked songs icon (heart icon with gradient background)
+        JPanel heartIconPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                // Draw gradient background
+                GradientPaint gradient = new GradientPaint(
+                        0, 0, new Color(0xE8128A),
+                        getWidth(), getHeight(), new Color(0x26C6DA)
+                );
+                g2d.setPaint(gradient);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+
+                // Draw heart icon
+                Icon heartIcon = GuiUtil.createColoredIcon(AppConstant.HEART_ICON_PATH, Color.WHITE, 24, 24);
+                heartIcon.paintIcon(this, g2d, (getWidth() - 24) / 2, (getHeight() - 24) / 2);
+
+                g2d.dispose();
+            }
+
+            @Override
+            public Dimension getPreferredSize() {
+                return new Dimension(50, 50);
+            }
+        };
+        heartIconPanel.setOpaque(false);
+
+        // Create info panel
+        JPanel infoPanel = new JPanel();
+        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+        infoPanel.setOpaque(false);
+
+        JLabel titleLabel = GuiUtil.createLabel("Liked Songs", Font.BOLD, 14);
+        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel countLabel = GuiUtil.createLabel(
+                likedSongsPlaylist.getSongs().size() + " song" +
+                        (likedSongsPlaylist.getSongs().size() != 1 ? "s" : ""),
+                Font.PLAIN, 12
+        );
+        countLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        infoPanel.add(Box.createVerticalStrut(5));
+        infoPanel.add(titleLabel);
+        infoPanel.add(countLabel);
+        infoPanel.add(Box.createVerticalStrut(5));
+
+        likedSongsPanel.add(heartIconPanel, BorderLayout.WEST);
+        likedSongsPanel.add(infoPanel, BorderLayout.CENTER);
+
+        // Add hover effect
+        addHoverEffect(likedSongsPanel);
+
+        // Add click handler
+        likedSongsPanel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                log.info("Liked Songs collection clicked");
+                playerFacade.setCurrentPlaylist(likedSongsPlaylist);
+                if (!likedSongsPlaylist.getSongs().isEmpty()) {
+                    playerFacade.loadSong(likedSongsPlaylist.getSongs().getFirst());
+                }
+            }
+        });
+
+        return likedSongsPanel;
+    }
+
+    private JPanel createPlaylistPanel(PlaylistDTO playlist) {
+        JPanel playlistPanel = new JPanel();
+        playlistPanel.setLayout(new BorderLayout(10, 0));
+        playlistPanel.setOpaque(false);
+        playlistPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        playlistPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+
+        // Create playlist cover (based on first song's image)
+        JLabel coverLabel = createPlaylistCover(playlist, 40);
+
+        // Create playlist info panel
+        JPanel infoPanel = new JPanel();
+        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+        infoPanel.setOpaque(false);
+
+        JLabel nameLabel = GuiUtil.createLabel(playlist.getName(), Font.BOLD, 12);
+        nameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel countLabel = GuiUtil.createLabel(
+                playlist.getSongs().size() + " song" + (playlist.getSongs().size() != 1 ? "s" : ""),
+                Font.PLAIN, 10
+        );
+        countLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        infoPanel.add(nameLabel);
+        infoPanel.add(countLabel);
+
+        playlistPanel.add(coverLabel, BorderLayout.WEST);
+        playlistPanel.add(infoPanel, BorderLayout.CENTER);
+
+        // Add hover effect and click handler
+        addHoverEffect(playlistPanel);
+
+        playlistPanel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                log.info("Playlist clicked: {}", playlist.getName());
+                playerFacade.setCurrentPlaylist(playlist);
+                // You might want to show a song selection dialog or just play the first song
+                if (!playlist.getSongs().isEmpty()) {
+                    playerFacade.loadSong(playlist.getSongs().getFirst());
+                }
+            }
+        });
+
+        return playlistPanel;
+    }
+
+    private JLabel createPlaylistCover(PlaylistDTO playlist, int size) {
+        BufferedImage coverImage;
 
         try {
-            if (getCurrentUser().getAvatar() != null) {
-                originalImage = ImageIO.read(new File(getCurrentUser().getAvatar().getFileUrl()));
+            // Try to use the first song's image as the cover
+            if (!playlist.getSongs().isEmpty() && playlist.getSongs().getFirst().getSongImage() != null) {
+                BufferedImage originalImage = playlist.getSongs().getFirst().getSongImage();
+                coverImage = GuiUtil.createSmoothCircularAvatar(originalImage, 6);
             } else {
-                useDefaultAvatar = true;
+                // Create default cover with playlist icon
+                coverImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g2d = coverImage.createGraphics();
+
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                // Fill background
+                g2d.setColor(ThemeManager.getInstance().getAccentColor());
+                g2d.fillRoundRect(0, 0, size, size, 6, 6);
+
+                // Draw playlist icon
+                g2d.setColor(ThemeManager.getInstance().getTextColor());
+                int iconSize = (int) (size * 0.6);
+                int iconX = (size - iconSize) / 2;
+                int iconY = (size - iconSize) / 2;
+
+                // Draw lines to suggest a playlist
+                int lineWidth = (int) (iconSize * 0.7);
+                int lineHeight = iconSize / 8;
+                int lineX = iconX + (iconSize - lineWidth) / 2;
+                int lineStartY = iconY + iconSize / 4;
+
+                for (int i = 0; i < 3; i++) {
+                    g2d.fillRoundRect(lineX, lineStartY + i * (lineHeight + 2),
+                            lineWidth, lineHeight, 2, 2);
+                }
+
+                g2d.dispose();
             }
-        } catch (IOException e) {
-            useDefaultAvatar = true;
-        }
-
-        int size = 40;
-
-        BufferedImage avatarImage;
-        if (useDefaultAvatar) {
-            avatarImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2d = avatarImage.createGraphics();
-
+        } catch (Exception e) {
+            // Create simple colored square as fallback
+            coverImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2d = coverImage.createGraphics();
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-            g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-
-            Color bgColor = this.backgroundColor != null ? this.backgroundColor : AppConstant.NAVBAR_BACKGROUND_COLOR;
-            Color textColor = this.textColor != null ? this.textColor : AppConstant.TEXT_COLOR;
-
-            g2d.setColor(bgColor);
-            g2d.fillOval(0, 0, size, size);
-
-            String initial = getCurrentUser().getUsername() != null && !getCurrentUser().getUsername().isEmpty() ?
-                    getCurrentUser().getUsername().substring(0, 1).toUpperCase() : "U";
-
-            float fontSize = (float) size * 0.4f;
-            g2d.setColor(textColor);
-            g2d.setFont(FontUtil.getJetBrainsMonoFont(Font.BOLD, fontSize));
-
-            FontMetrics fm = g2d.getFontMetrics();
-            int textWidth = fm.stringWidth(initial);
-            int textHeight = fm.getAscent();
-
-            int x = (size - textWidth) / 2;
-            int y = (size - textHeight) / 2 + fm.getAscent();
-
-            g2d.drawString(initial, x, y);
+            g2d.setColor(ThemeManager.getInstance().getAccentColor());
+            g2d.fillRoundRect(0, 0, size, size, 6, 6);
             g2d.dispose();
-        } else {
-            // Use the actual user image and make it circular
-            avatarImage = GuiUtil.createSmoothCircularAvatar(originalImage, size);
         }
 
-        avatarLabel = new JLabel(new ImageIcon(avatarImage));
-        avatarLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        return new JLabel(new ImageIcon(coverImage));
+    }
 
-        // Ensure the label size matches the image size
-        avatarLabel.setPreferredSize(new Dimension(size, size));
+    private JLabel createSongCover(SongDTO song) {
+        BufferedImage coverImage;
 
-        JPopupMenu popupMenu = GuiUtil.createPopupMenu(backgroundColor, textColor);
+        try {
+            if (song.getSongImage() != null) {
+                coverImage = GuiUtil.createSmoothCircularAvatar(song.getSongImage(), 40);
+            } else {
+                // Create default cover with note icon
+                coverImage = new BufferedImage(40, 40, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g2d = coverImage.createGraphics();
+
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                // Fill background
+                g2d.setColor(ThemeManager.getInstance().getAccentColor());
+                g2d.fillRoundRect(0, 0, 40, 40, 6, 6);
+
+                // Draw music note icon
+                g2d.setColor(ThemeManager.getInstance().getTextColor());
+                // Simple music note shape
+                int centerX = 40 / 2;
+                int centerY = 40 / 2;
+                int noteWidth = 40 / 4;
+
+                // Draw note head
+                g2d.fillOval(centerX - noteWidth / 4, centerY + noteWidth / 2,
+                        noteWidth / 2, noteWidth / 3);
+
+                // Draw note stem
+                g2d.fillRect(centerX + noteWidth / 4 - 1, centerY - noteWidth / 2,
+                        2, noteWidth);
+
+                g2d.dispose();
+            }
+        } catch (Exception e) {
+            // Create simple colored square as fallback
+            coverImage = new BufferedImage(40, 40, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2d = coverImage.createGraphics();
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2d.setColor(ThemeManager.getInstance().getTextColor());
+            g2d.fillRoundRect(0, 0, 40, 40, 6, 6);
+            g2d.dispose();
+        }
+
+        return new JLabel(new ImageIcon(coverImage));
+    }
+
+    private JPanel createSongPanel(SongDTO song) {
+        JPanel songPanel = new JPanel();
+        songPanel.setLayout(new BorderLayout(10, 0));
+        songPanel.setOpaque(false);
+        songPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        songPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+
+        // Create song cover
+        JLabel coverLabel = createSongCover(song);
+
+        // Create song info panel
+        JPanel infoPanel = new JPanel();
+        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+        infoPanel.setOpaque(false);
+
+        JLabel titleLabel = GuiUtil.createLabel(song.getSongTitle(), Font.BOLD, 12);
+        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel artistLabel = GuiUtil.createLabel(
+                song.getSongArtist() != null ? song.getSongArtist() : "Unknown Artist",
+                Font.PLAIN, 10
+        );
+        artistLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        infoPanel.add(titleLabel);
+        infoPanel.add(artistLabel);
+
+        songPanel.add(coverLabel, BorderLayout.WEST);
+        songPanel.add(infoPanel, BorderLayout.CENTER);
+
+        // Add hover effect
+        addHoverEffect(songPanel);
+
+        // Add click handler
+        songPanel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                log.info("Song clicked: {}", song.getSongTitle());
+                playerFacade.loadSong(song);
+            }
+        });
+
+        return songPanel;
+    }
+
+    private void addHoverEffect(JPanel panel) {
+        panel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                panel.setBackground(GuiUtil.darkenColor(ThemeManager.getInstance().getBackgroundColor(), 0.1f));
+                panel.setOpaque(true);
+                panel.repaint();
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                panel.setOpaque(false);
+                panel.repaint();
+            }
+        });
+    }
+
+    private void addNetworkErrorLabel(JPanel container) {
+        JLabel errorLabel = GuiUtil.createLabel("Network unavailable", Font.ITALIC, 12);
+        errorLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        errorLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 0));
+        container.add(errorLabel);
+    }
+
+    private void addEmptyContentLabel(JPanel container, String message) {
+        JLabel emptyLabel = GuiUtil.createLabel(message, Font.ITALIC, 12);
+        emptyLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        emptyLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 0));
+        container.add(emptyLabel);
+    }
+
+    private void addErrorLabel(JPanel container, String message) {
+        JLabel errorLabel = GuiUtil.createLabel(message, Font.ITALIC, 12);
+        errorLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        errorLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 0));
+        container.add(errorLabel);
+    }
+
+    private JPanel createArtistPanel(ArtistDTO artist) {
+        JPanel artistPanel = new JPanel();
+        artistPanel.setLayout(new BorderLayout(10, 0));
+        artistPanel.setOpaque(false);
+        artistPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        artistPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+
+        // Create artist avatar
+        JLabel avatarLabel = GuiUtil.createArtistAvatar(artist, 40, ThemeManager.getInstance().getBackgroundColor(), ThemeManager.getInstance().getTextColor());
+
+        // Create artist info panel
+        JPanel infoPanel = new JPanel();
+        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+        infoPanel.setOpaque(false);
+
+        infoPanel.add(Box.createVerticalGlue());
+
+
+        JLabel stageNameLabel = GuiUtil.createLabel(artist.getStageName(), Font.BOLD, 12);
+        stageNameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        infoPanel.add(stageNameLabel);
+
+        infoPanel.add(Box.createVerticalGlue());
+
+
+        artistPanel.add(avatarLabel, BorderLayout.WEST);
+        artistPanel.add(infoPanel, BorderLayout.CENTER);
+
+        // Add hover effect
+        artistPanel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                artistPanel.setBackground(GuiUtil.darkenColor(ThemeManager.getInstance().getBackgroundColor(), 0.1f));
+                artistPanel.setOpaque(true);
+                artistPanel.repaint();
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                artistPanel.setOpaque(false);
+                artistPanel.repaint();
+            }
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                log.info("Artist clicked: {}", artist.getStageName());
+            }
+        });
+
+        return artistPanel;
+    }
+
+
+    private JLabel createUserProfileAvatar() {
         JMenuItem profileItem = GuiUtil.createMenuItem("Account");
         JMenuItem logoutItem = GuiUtil.createMenuItem("Log out");
 
+        logoutItem.addActionListener(e -> logout());
+        profileItem.addActionListener(e -> {/* navigate to profile */});
 
-        popupMenu.add(profileItem);
-        popupMenu.add(logoutItem);
-
-        logoutItem.addActionListener(e -> {
-            logout();
-        });
-        profileItem.addActionListener(e -> {
-//            navigateTo("profile");
-        });
-
-        avatarLabel.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                popupMenu.show(e.getComponent(), e.getX(), e.getY());
-            }
-        });
-
-        return avatarLabel;
+        return GuiUtil.createInteractiveUserAvatar(
+                getCurrentUser(),
+                40,
+                ThemeManager.getInstance().getBackgroundColor(),
+                ThemeManager.getInstance().getTextColor(),
+                profileItem,
+                logoutItem
+        );
     }
 
     private void logout() {
@@ -982,6 +1528,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private JPanel createCenterPanel() {
         cardLayout = new CardLayout();
         centerPanel = new JPanel(cardLayout);
+        centerPanel.setBorder(GuiUtil.createTitledBorder("Main", TitledBorder.LEFT));
         centerPanel.setOpaque(false);
 
         JPanel homePanel = createHomePanel();
@@ -1021,17 +1568,17 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
     @Override
     public void onThemeChanged(Color backgroundColor, Color textColor, Color accentColor) {
-        this.backgroundColor = backgroundColor;
-        this.textColor = textColor;
-        this.accentColor = accentColor;
+
         GuiUtil.styleTitleBar(this, GuiUtil.lightenColor(backgroundColor, 0.12), textColor);
 
         // Update all control colors
-        GuiUtil.changeButtonIconColor(nextButton, textColor);
-        GuiUtil.changeButtonIconColor(prevButton, textColor);
-        GuiUtil.changeButtonIconColor(playButton, textColor);
-        GuiUtil.changeButtonIconColor(pauseButton, textColor);
-        GuiUtil.changeButtonIconColor(miniplayerButton, textColor);
+        GuiUtil.changeButtonIconColor(nextButton);
+        GuiUtil.changeButtonIconColor(prevButton);
+        GuiUtil.changeButtonIconColor(playButton);
+        GuiUtil.changeButtonIconColor(pauseButton);
+        GuiUtil.changeButtonIconColor(miniplayerButton);
+        GuiUtil.changeButtonIconColor(goBackButton);
+        GuiUtil.changeButtonIconColor(goForwardButton);
 
 
         playbackSlider.setBackground(GuiUtil.lightenColor(backgroundColor, 0.2f));
@@ -1052,42 +1599,72 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         // Update avatar if needed
         if (getCurrentUser().getAvatar() == null) {
             userInfoPanel.remove(avatarLabel);
-            avatarLabel = createUserAvatar();
+            avatarLabel = createUserProfileAvatar();
             userInfoPanel.add(avatarLabel);
-            userInfoPanel.revalidate();
-            userInfoPanel.repaint();
         }
-        GuiUtil.changeButtonIconColor(homeIcon, textColor);
-        GuiUtil.changeButtonIconColor(lookupIcon, textColor);
-        searchBarWrapper.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(textColor, 2, true),
-                BorderFactory.createEmptyBorder(5, 5, 5, 5)
-        ));
+
+        GuiUtil.changeButtonIconColor(homeIcon);
+        GuiUtil.changeButtonIconColor(lookupIcon);
 
         searchField.setForeground(textColor);
-        helpPanel.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(textColor, 2, true),
-                "Help",
-                javax.swing.border.TitledBorder.CENTER,
-                javax.swing.border.TitledBorder.TOP,
-                FontUtil.getSpotifyFont(Font.BOLD, 12),
-                textColor
-        ));
+
+        helpPanel.setBorder(GuiUtil.createTitledBorder("Help", TitledBorder.CENTER));
+
         helpLabel.setForeground(textColor);
-        topPanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(textColor, 2, true),
-                BorderFactory.createEmptyBorder(5, 5, 5, 5)
-        ));
 
-        rightPanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(textColor, 2, true),
-                BorderFactory.createEmptyBorder(5, 5, 5, 5)
-        ));
+        topPanel.setBorder(GuiUtil.createTitledBorder("Search", TitledBorder.LEFT));
+        searchBarWrapper.setBorder(GuiUtil.createCompoundBorder(2));
 
-        datePanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(textColor, 2, true),
-                BorderFactory.createEmptyBorder(5, 5, 5, 5)
-        ));
+
+        libraryPanel.setBorder(GuiUtil.createTitledBorder("Library", TitledBorder.LEFT));
+
+        combinedCenterPanel.remove(libraryPanel);
+        libraryPanel = createLibraryPanel();
+        libraryPanel.setOpaque(false);
+        combinedCenterPanel.add(libraryPanel, BorderLayout.WEST);
+        combinedCenterPanel.revalidate();
+        combinedCenterPanel.repaint();
+        if (libraryPanel != null) {
+            Component[] components = libraryPanel.getComponents();
+            for (Component component : components) {
+                if (component instanceof JTabbedPane tabbedPane) {
+                    tabbedPane.setBackground(backgroundColor);
+                    tabbedPane.setForeground(textColor);
+
+                    // Update UI Manager properties
+                    UIManager.put("TabbedPane.contentAreaColor", backgroundColor);
+                    UIManager.put("TabbedPane.selected", backgroundColor);
+                    UIManager.put("TabbedPane.background", backgroundColor);
+                    UIManager.put("TabbedPane.tabAreaBackground", backgroundColor);
+                    UIManager.put("TabbedPane.unselectedBackground", GuiUtil.darkenColor(backgroundColor, 0.2f));
+
+                    // Force UI manager to update
+                    SwingUtilities.updateComponentTreeUI(tabbedPane);
+
+                    // Update tab icons
+                    for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+                        String title = tabbedPane.getTitleAt(i);
+                        Icon icon = null;
+                        switch (title) {
+                            case "Artists" ->
+                                    icon = GuiUtil.createColoredIcon(AppConstant.ARTIST_ICON_PATH, textColor, 16, 16);
+                            case "Playlists" ->
+                                    icon = GuiUtil.createColoredIcon(AppConstant.PLAYLIST_ICON_PATH, textColor, 16, 16);
+                            case "Liked" ->
+                                    icon = GuiUtil.createColoredIcon(AppConstant.HEART_ICON_PATH, textColor, 16, 16);
+                        }
+                        if (icon != null) {
+                            tabbedPane.setIconAt(i, icon);
+                        }
+                    }
+                }
+            }
+        }
+
+        centerPanel.setBorder(GuiUtil.createTitledBorder("Main", TitledBorder.LEFT));
+
+        footerPanel.setBorder(GuiUtil.createTitledBorder("Playing", TitledBorder.LEFT));
+
 
         //Apply again the mainPanel
         GuiUtil.setGradientBackground(mainPanel,

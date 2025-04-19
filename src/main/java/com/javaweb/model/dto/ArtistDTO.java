@@ -10,9 +10,9 @@ import java.util.Set;
 @Setter
 public class ArtistDTO extends AbstractDTO<ArtistDTO> {
 
-    private UserDTO userDTO;
+    private String stageName;
     private String bio;
-    private MediaDTO profilePic;
+    private String profilePicture;
     private Set<AlbumDTO> albumDTOS;
     private Set<SongDTO> songDTOSet;
 }

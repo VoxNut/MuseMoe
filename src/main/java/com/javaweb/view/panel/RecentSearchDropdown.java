@@ -34,7 +34,7 @@ public class RecentSearchDropdown extends ListThemeablePanel {
         super.onThemeChanged(backgroundColor, textColor, accentColor);
 
         headerLabel.setForeground(textColor);
-        GuiUtil.changeLabelIconColor(historyLabel, textColor);
+        GuiUtil.changeLabelIconColor(historyLabel);
         clearButton.setForeground(textColor);
     }
 
@@ -266,7 +266,7 @@ public class RecentSearchDropdown extends ListThemeablePanel {
 
                         // Check if click is outside both components
                         if ((popupBounds == null || !popupBounds.contains(p)) &&
-                            (textFieldBounds == null || !textFieldBounds.contains(p))) {
+                                (textFieldBounds == null || !textFieldBounds.contains(p))) {
                             hidePopup();
                         }
                     } catch (Exception e) {
@@ -350,7 +350,7 @@ public class RecentSearchDropdown extends ListThemeablePanel {
             indicatorPanel.setPreferredSize(new Dimension(24, 24));
             if (isHovered) {
                 noteIcon = new JLabel(GuiUtil.createImageIcon(AppConstant.MUSIC_NOTE_ICON_PATH, 60, 60));
-                GuiUtil.changeLabelIconColor(noteIcon, textColor);
+                GuiUtil.changeLabelIconColor(noteIcon);
                 indicatorPanel.add(Box.createVerticalGlue());
                 indicatorPanel.add(noteIcon);
                 indicatorPanel.add(Box.createVerticalGlue());

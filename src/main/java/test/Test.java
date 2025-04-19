@@ -155,8 +155,8 @@ public class Test {
     private static boolean isAudioFile(String fileName) {
         String extension = getFileExtension(fileName).toLowerCase();
         return extension.equals("mp3") || extension.equals("wav") ||
-               extension.equals("flac") || extension.equals("m4a") ||
-               extension.equals("aac") || extension.equals("ogg");
+                extension.equals("flac") || extension.equals("m4a") ||
+                extension.equals("aac") || extension.equals("ogg");
     }
 
     /**

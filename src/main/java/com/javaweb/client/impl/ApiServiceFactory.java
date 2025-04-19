@@ -92,6 +92,16 @@ public class ApiServiceFactory {
         );
     }
 
+    public UserArtistFollowApiClient createUserArtistFollowApiClient() {
+        return new UserArtistFollowApiClientImpl(
+                createApiClient(),
+                createUrlEncoder(),
+                createResponseParser(),
+                apiConfig,
+                mp3Util
+        );
+    }
+
 
     private ApiClient createApiClient() {
         return new HttpApiClient(HttpClientProvider.getHttpClient());

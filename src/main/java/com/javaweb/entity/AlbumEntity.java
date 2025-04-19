@@ -12,7 +12,11 @@ import java.util.Set;
 @Table(name = "album")
 @Getter
 @Setter
-public class AlbumEntity extends BaseEntity {
+public class AlbumEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "artist_id", nullable = false)

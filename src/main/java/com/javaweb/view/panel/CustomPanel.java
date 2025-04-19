@@ -53,7 +53,7 @@ public class CustomPanel extends JPanel implements ThemeChangeListener {
             component.setForeground(text);
         } else if (component instanceof JButton button) {
             button.setForeground(text);
-            GuiUtil.changeButtonIconColor(button, text);
+            GuiUtil.changeButtonIconColor(button);
         } else if (component instanceof JSlider slider) {
             slider.setForeground(accent);
         }

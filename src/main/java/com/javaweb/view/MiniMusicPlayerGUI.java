@@ -223,7 +223,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         //Volume Icon
         speakerLabel = new JLabel();
         speakerLabel.setIcon(GuiUtil.createImageIcon(AppConstant.SPEAKER_75_ICON, 20, 20));
-        GuiUtil.changeLabelIconColor(speakerLabel, AppConstant.TEXT_COLOR);
+        GuiUtil.changeLabelIconColor(speakerLabel);
         speakerLabel.setBounds(363, 240, 20, 20);
 
 
@@ -265,18 +265,18 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         playbackSliderPanel.setOpaque(false);
         playbackSliderPanel.setPreferredSize(new Dimension(400, 50));
 
-        heartButton = GuiUtil.changeButtonIconColor(AppConstant.HEART_ICON, AppConstant.TEXT_COLOR, 25, 25);
+        heartButton = GuiUtil.changeButtonIconColor(AppConstant.HEART_ICON_PATH, 25, 25);
         heartButton.addActionListener(e -> toggleHeartButton());
         heartButton.setVisible(false);
         heartButton.setBounds(370, 0, 30, 30);
 
-        outLineHeartButton = GuiUtil.changeButtonIconColor(AppConstant.HEART_OUTLINE_ICON, AppConstant.TEXT_COLOR, 25, 25);
+        outLineHeartButton = GuiUtil.changeButtonIconColor(AppConstant.HEART_OUTLINE_ICON, 25, 25);
         outLineHeartButton.addActionListener(e -> toggleOutlineHeartButton());
         outLineHeartButton.setBounds(370, 0, 30, 30);
         outLineHeartButton.setVisible(false);
 
 
-        repeatButton = GuiUtil.changeButtonIconColor(AppConstant.REPEAT_ICON_PATH, AppConstant.TEXT_COLOR, 20, 20);
+        repeatButton = GuiUtil.changeButtonIconColor(AppConstant.REPEAT_ICON_PATH, 20, 20);
         repeatButton.setBounds(10, 0, 20, 20);
         repeatButton.addActionListener(e -> {
             /*
@@ -314,10 +314,10 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         labelsPanel.setPreferredSize(new Dimension(getWidth(), 18));
         labelsPanel.setOpaque(false);
 
-        labelBeginning = GuiUtil.createSpotifyFontLabel("00:00", Font.PLAIN, 18);
+        labelBeginning = GuiUtil.createLabel("00:00", Font.PLAIN, 18);
         labelBeginning.setForeground(AppConstant.TEXT_COLOR);
 
-        labelEnd = GuiUtil.createSpotifyFontLabel("00:00", Font.PLAIN, 18);
+        labelEnd = GuiUtil.createLabel("00:00", Font.PLAIN, 18);
         labelEnd.setForeground(AppConstant.TEXT_COLOR);
 
         // Add labels to labelsPanel
@@ -459,7 +459,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         playbackBtns.setOpaque(false);
 
         // Replay 5 Seconds button
-        replayButton = GuiUtil.changeButtonIconColor(AppConstant.REPLAY_ICON_PATH, AppConstant.MUSIC_PLAYER_TEXT_COLOR, 25,
+        replayButton = GuiUtil.changeButtonIconColor(AppConstant.REPLAY_ICON_PATH, 25,
                 25);
         replayButton.setBounds(40, 0, 40, 40);
         replayButton.addActionListener(e -> {
@@ -470,7 +470,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         playbackBtns.add(replayButton);
 
         // Previous button
-        prevButton = GuiUtil.changeButtonIconColor(AppConstant.PREVIOUS_ICON_PATH, AppConstant.MUSIC_PLAYER_TEXT_COLOR, 30,
+        prevButton = GuiUtil.changeButtonIconColor(AppConstant.PREVIOUS_ICON_PATH, 30,
                 30);
         prevButton.setBounds(120, 0, 40, 40); // Set position and size
         prevButton.addActionListener(e ->
@@ -479,7 +479,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         playbackBtns.add(prevButton);
 
         // Play button
-        playButton = GuiUtil.changeButtonIconColor(AppConstant.PLAY_ICON_PATH, AppConstant.MUSIC_PLAYER_TEXT_COLOR, 30, 30);
+        playButton = GuiUtil.changeButtonIconColor(AppConstant.PLAY_ICON_PATH, 30, 30);
         playButton.setBounds(190, 0, 40, 40); // Set position and size
         playButton.addActionListener(e -> {
             if (playerFacade.isHavingAd()) return;
@@ -488,7 +488,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         playbackBtns.add(playButton);
 
         // Pause button
-        pauseButton = GuiUtil.changeButtonIconColor(AppConstant.PAUSE_ICON_PATH, AppConstant.MUSIC_PLAYER_TEXT_COLOR, 30, 30);
+        pauseButton = GuiUtil.changeButtonIconColor(AppConstant.PAUSE_ICON_PATH, 30, 30);
         pauseButton.setVisible(false);
         pauseButton.setBounds(190, 0, 40, 40); // Set position and size
         pauseButton.addActionListener(e -> {
@@ -499,7 +499,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         playbackBtns.add(pauseButton);
 
         // Next button
-        nextButton = GuiUtil.changeButtonIconColor(AppConstant.NEXT_ICON_PATH, AppConstant.MUSIC_PLAYER_TEXT_COLOR, 30, 30);
+        nextButton = GuiUtil.changeButtonIconColor(AppConstant.NEXT_ICON_PATH, 30, 30);
         nextButton.setBounds(260, 0, 40, 40); // Set position and size
         nextButton.addActionListener(e -> {
             playerFacade.nextSong();
@@ -522,8 +522,8 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
             shuffleButton.setIcon(GuiUtil.changeButtonIconColor(AppConstant.SHUFFLE_ICON_PATH,
                     GuiUtil.darkenColor(ThemeManager.getInstance().getTextColor(), 0.2f), 25, 25).getIcon());
         } else {
-            shuffleButton.setIcon(GuiUtil.changeButtonIconColor(AppConstant.SHUFFLE_ICON_PATH,
-                    ThemeManager.getInstance().getTextColor(), 25, 25).getIcon());
+            shuffleButton.setIcon(GuiUtil.changeButtonIconColor(AppConstant.SHUFFLE_ICON_PATH
+                    , 25, 25).getIcon());
         }
     }
 
@@ -563,7 +563,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         if (CommonApiUtil.deleteSongLikes(playerFacade.getCurrentSong().getId())) {
             outLineHeartButton.setVisible(true);
             heartButton.setVisible(false);
-            GuiUtil.changeButtonIconColor(outLineHeartButton, AppConstant.TEXT_COLOR);
+            GuiUtil.changeButtonIconColor(outLineHeartButton);
         } else {
             GuiUtil.showErrorMessageDialog(this, "An error has occurred when removed : " + playerFacade.getCurrentSong().getSongTitle() + "from liked songs!");
         }
@@ -575,7 +575,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         if (CommonApiUtil.createSongLikes(playerFacade.getCurrentSong().getId())) {
             outLineHeartButton.setVisible(false);
             heartButton.setVisible(true);
-            GuiUtil.changeButtonIconColor(heartButton, ThemeManager.getInstance().getTextColor());
+            GuiUtil.changeButtonIconColor(heartButton);
         } else {
             GuiUtil.showErrorMessageDialog(this, "An error has occurred when added : " + playerFacade.getCurrentSong().getSongTitle() + "to liked songs!");
         }
@@ -587,11 +587,11 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         if (liked) {
             outLineHeartButton.setVisible(false);
             heartButton.setVisible(true);
-            GuiUtil.changeButtonIconColor(heartButton, ThemeManager.getInstance().getTextColor());
+            GuiUtil.changeButtonIconColor(heartButton);
         } else {
             outLineHeartButton.setVisible(true);
             heartButton.setVisible(false);
-            GuiUtil.changeButtonIconColor(outLineHeartButton, ThemeManager.getInstance().getTextColor());
+            GuiUtil.changeButtonIconColor(outLineHeartButton);
         }
     }
 
@@ -615,16 +615,16 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
     }
 
     // New helper method to apply consistent coloring to all buttons
-    private void applyConsistentButtonColors(Color baseColor) {
-        GuiUtil.changeButtonIconColor(nextButton, baseColor);
-        GuiUtil.changeButtonIconColor(prevButton, baseColor);
-        GuiUtil.changeButtonIconColor(playButton, baseColor);
-        GuiUtil.changeButtonIconColor(pauseButton, baseColor);
-        GuiUtil.changeButtonIconColor(replayButton, baseColor);
-        GuiUtil.changeButtonIconColor(shuffleButton, baseColor);
-        GuiUtil.changeLabelIconColor(speakerLabel, baseColor);
-        GuiUtil.changeButtonIconColor(repeatButton, baseColor);
-        GuiUtil.changeButtonIconColor(heartButton, baseColor);
+    private void applyConsistentButtonColors() {
+        GuiUtil.changeButtonIconColor(nextButton);
+        GuiUtil.changeButtonIconColor(prevButton);
+        GuiUtil.changeButtonIconColor(playButton);
+        GuiUtil.changeButtonIconColor(pauseButton);
+        GuiUtil.changeButtonIconColor(shuffleButton);
+        GuiUtil.changeButtonIconColor(replayButton);
+        GuiUtil.changeLabelIconColor(speakerLabel);
+        GuiUtil.changeButtonIconColor(repeatButton);
+        GuiUtil.changeButtonIconColor(heartButton);
     }
 
     // New helper method to apply consistent text styling
@@ -765,7 +765,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
             System.out.println("slider volume in GUI: " + value);
             playerFacade.setVolume(value);
             int percentage = (int) (((double) (value - volumeSlider.getMinimum()) /
-                                     (volumeSlider.getMaximum() - volumeSlider.getMinimum())) * 100);
+                    (volumeSlider.getMaximum() - volumeSlider.getMinimum())) * 100);
 
             String iconPath;
             if (percentage == 0) {
@@ -779,7 +779,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
             }
 
             speakerLabel.setIcon(GuiUtil.createImageIcon(iconPath, 20, 20));
-            GuiUtil.changeLabelIconColor(speakerLabel, AppConstant.TEXT_COLOR);
+            GuiUtil.changeLabelIconColor(speakerLabel);
         });
     }
 
@@ -939,7 +939,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
 
         GuiUtil.setGradientBackground(mainPanel, gradientCenter, gradientOuter, centerX, centerY, radius);
 
-        applyConsistentButtonColors(textColor);
+        applyConsistentButtonColors();
 
         // Set slider colors with better contrast
         playbackSlider.setBackground(GuiUtil.lightenColor(backgroundColor, 0.1f));

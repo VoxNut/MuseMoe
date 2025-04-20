@@ -46,8 +46,7 @@ public class RecentSearchDropdown extends ListThemeablePanel {
         setLayout(new BorderLayout());
 
         // Create visually appealing header with icon
-        JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setOpaque(false);
+        JPanel headerPanel = GuiUtil.createPanel(new BorderLayout());
         headerPanel.setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 10));
 
         // Add recent icon
@@ -140,8 +139,7 @@ public class RecentSearchDropdown extends ListThemeablePanel {
         add(scrollPane, BorderLayout.CENTER);
 
         // Add a subtle footer
-        JPanel footerPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        footerPanel.setOpaque(false);
+        JPanel footerPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.RIGHT));
         footerPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
         // Create clear history button
@@ -329,7 +327,7 @@ public class RecentSearchDropdown extends ListThemeablePanel {
             SongDTO song = (SongDTO) value;
 
             // Create a panel for each cell with more complex layout
-            JPanel cellPanel = new JPanel();
+            JPanel cellPanel = GuiUtil.createPanel();
             cellPanel.setLayout(new BorderLayout(12, 0));
 
             // Set background based on selection/hover state
@@ -344,9 +342,8 @@ public class RecentSearchDropdown extends ListThemeablePanel {
             }
 
             // Add indicator panel on the right (music note for hovered items)
-            JPanel indicatorPanel = new JPanel();
+            JPanel indicatorPanel = GuiUtil.createPanel();
             indicatorPanel.setLayout(new BoxLayout(indicatorPanel, BoxLayout.Y_AXIS));
-            indicatorPanel.setOpaque(false);
             indicatorPanel.setPreferredSize(new Dimension(24, 24));
             if (isHovered) {
                 noteIcon = new JLabel(GuiUtil.createImageIcon(AppConstant.MUSIC_NOTE_ICON_PATH, 60, 60));
@@ -367,15 +364,13 @@ public class RecentSearchDropdown extends ListThemeablePanel {
             }
             imageLabel.setBorder(new EmptyBorder(5, 5, 5, 5));
 
-            JPanel imagePanel = new JPanel(new BorderLayout());
-            imagePanel.setOpaque(false);
+            JPanel imagePanel = GuiUtil.createPanel(new BorderLayout());
             imagePanel.add(imageLabel, BorderLayout.CENTER);
             cellPanel.add(imagePanel, BorderLayout.WEST);
 
             // Create a panel for song information with better organization
-            JPanel infoPanel = new JPanel();
+            JPanel infoPanel = GuiUtil.createPanel();
             infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
-            infoPanel.setOpaque(false);
 
             // Song title
             JLabel titleLabel = new JLabel(song.getSongTitle());
@@ -408,9 +403,7 @@ public class RecentSearchDropdown extends ListThemeablePanel {
             infoPanel.add(albumLabel);
 
             // Add stats panel for song length and play count
-            JPanel statsPanel = new JPanel();
-            statsPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 8, 0));
-            statsPanel.setOpaque(false);
+            JPanel statsPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
             statsPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
             // Song length - NEW
@@ -421,8 +414,7 @@ public class RecentSearchDropdown extends ListThemeablePanel {
                     GuiUtil.darkenColor(backgroundColor, 0.2f) :
                     GuiUtil.darkenColor(textColor, 0.4f));
 
-            JPanel lengthPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
-            lengthPanel.setOpaque(false);
+            JPanel lengthPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
             lengthPanel.add(lengthLabel);
 
             // Play count - NEW
@@ -434,8 +426,7 @@ public class RecentSearchDropdown extends ListThemeablePanel {
                     GuiUtil.darkenColor(textColor, 0.4f));
 
 
-            JPanel countPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
-            countPanel.setOpaque(false);
+            JPanel countPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
             countPanel.add(playCountLabel);
 
             // Add stats to panel

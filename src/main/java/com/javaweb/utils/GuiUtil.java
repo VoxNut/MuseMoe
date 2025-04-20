@@ -195,8 +195,13 @@ public class GuiUtil {
         return textField;
     }
 
-    public static JTextField createLineInputField(String text, int columns) {
-        return new JTextField(text, columns);
+    public static JTextField createInputField(String text, int columns) {
+        JTextField textField = new JTextField(text, columns);
+        textField.setOpaque(false);
+        textField.setForeground(ThemeManager.getInstance().getTextColor());
+        textField.setBackground(ThemeManager.getInstance().getBackgroundColor());
+        textField.setCaretColor(ThemeManager.getInstance().getTextColor());
+        return textField;
     }
 
     public static CompoundBorder createCompoundBorder(int thicc) {
@@ -691,37 +696,47 @@ public class GuiUtil {
     }
 
 
-    public static ImageIcon createRoundedCornerImageIcon(BufferedImage image, int cornerRadius) {
-        try {
-            int width = image.getWidth();
-            int height = image.getHeight();
+    public static JPanel createGradientHeartPanel(int width, int height, int cornerRadius, int iconSize) {
+        JPanel heartIconPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g.create();
+                configureGraphicsForHighQuality(g2d);
 
-            // Create output image with transparency
-            BufferedImage output = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2 = output.createGraphics();
-            configureGraphicsForHighQuality(g2);
+                // Draw gradient background
+                GradientPaint gradient = new GradientPaint(
+                        0, 0, new Color(0xE8128A),
+                        getWidth(), getHeight(), new Color(0x26C6DA)
+                );
+                g2d.setPaint(gradient);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), cornerRadius, cornerRadius);
 
-            // Clip with rounded rectangle
-            int safeRadius = Math.min(cornerRadius, Math.min(width, height) / 2);
-            RoundRectangle2D roundedClip = new RoundRectangle2D.Float(0, 0, width, height, safeRadius, safeRadius);
-            g2.setClip(roundedClip);
+                // Draw heart icon
+                Icon heartIcon = createColoredIcon(AppConstant.HEART_ICON_PATH, Color.WHITE, iconSize, iconSize);
+                heartIcon.paintIcon(this, g2d, (getWidth() - iconSize) / 2, (getHeight() - iconSize) / 2);
 
-            // Draw the original image within the clipped area
-            g2.drawImage(image, 0, 0, null);
+                g2d.dispose();
+            }
 
-            // Add a subtle shadow/border for better definition
-            g2.setClip(null);
-            g2.setColor(new Color(0, 0, 0, 30));
-            g2.setStroke(new BasicStroke(1.0f));
-            g2.draw(roundedClip);
+            @Override
+            public Dimension getPreferredSize() {
+                return new Dimension(width, height);
+            }
 
-            g2.dispose();
+            @Override
+            public Dimension getMinimumSize() {
+                return new Dimension(width, height);
+            }
+        };
 
-            return new ImageIcon(output);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new ImageIcon(image);
-        }
+        heartIconPanel.setOpaque(false);
+        return heartIconPanel;
+    }
+
+
+    public static JPanel createGradientHeartPanel() {
+        return createGradientHeartPanel(50, 50, 10, 24);
     }
 
     public static ImageIcon createRoundedCornerImageIcon(BufferedImage image, int cornerRadius, int width, int height) {
@@ -757,7 +772,6 @@ public class GuiUtil {
             g2.draw(roundedRect);
 
             g2.dispose();
-
             return new ImageIcon(output);
         } catch (Exception e) {
             e.printStackTrace();
@@ -775,13 +789,18 @@ public class GuiUtil {
 
                 g2.drawImage(image, 0, 0, width, height, null);
                 g2.dispose();
-
                 return new ImageIcon(output);
             } catch (Exception ex) {
                 ex.printStackTrace();
                 return new ImageIcon(image);
             }
         }
+    }
+
+    public static JLabel createRoundedCornerImageLabel(BufferedImage image, int cornerRadius, int width, int height) {
+        JLabel label = new JLabel();
+        label.setIcon(createRoundedCornerImageIcon(image, cornerRadius, width, height));
+        return label;
     }
 
     public static ImageIcon createRoundedCornerImageIcon(String path, int cornerRadius, int width, int height) {
@@ -902,13 +921,12 @@ public class GuiUtil {
 
     public static JPanel createPanel() {
         JPanel panel = new JPanel();
-        panel.setBackground(ThemeManager.getInstance().getBackgroundColor());
+        panel.setOpaque(false);
         return panel;
     }
 
     public static JPanel createPanel(LayoutManager layoutManager) {
         JPanel panel = createPanel();
-        panel.setOpaque(false);
         panel.setLayout(layoutManager);
         return panel;
     }
@@ -1211,6 +1229,33 @@ public class GuiUtil {
         }
     }
 
+    public static JLabel createPlaylistIconLabel(int width, int height, Color backgroundColor, Color foregroundColor) {
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = image.createGraphics();
+
+        // Enable anti-aliasing for smoother graphics
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        // Draw rounded rectangle background
+        g2d.setColor(backgroundColor);
+        g2d.fillRoundRect(0, 0, width, height, 6, 6);
+
+        // Draw lines to suggest playlist content
+        g2d.setColor(foregroundColor);
+        int lineWidth = (int) (width * 0.7);
+        int lineHeight = height / 10;
+        int lineX = (width - lineWidth) / 2;
+        int startY = height / 4;
+
+        for (int i = 0; i < 3; i++) {
+            g2d.fillRoundRect(lineX, startY + i * (lineHeight + 2), lineWidth, lineHeight, 2, 2);
+        }
+
+        g2d.dispose();
+
+        return new JLabel(new ImageIcon(image));
+    }
+
     public static TitledBorder createTitledBorder(String title, int justification) {
         return BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(ThemeManager.getInstance().getTextColor(), 2, true),
@@ -1229,12 +1274,18 @@ public class GuiUtil {
         scrollPane.getViewport().setOpaque(false);
         scrollPane.setOpaque(false);
 
-        // Set viewport background to match the app background
         scrollPane.getViewport().setBackground(ThemeManager.getInstance().getBackgroundColor());
 
-        // Apply modern scrollbar style
         GuiUtil.applyModernScrollBar(scrollPane, ThemeManager.getInstance().getBackgroundColor(), ThemeManager.getInstance().getBackgroundColor());
         return scrollPane;
+    }
+
+    public static JLabel createErrorLabel(String content) {
+        JLabel errorLabel = createLabel(content);
+        errorLabel.setFont(FontUtil.getSpotifyFont(Font.ITALIC, 12));
+        errorLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        errorLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 0));
+        return errorLabel;
     }
 
     public static JLabel createUserAvatar(UserDTO user, int size, Color backgroundColor, Color textColor) {
@@ -1282,7 +1333,7 @@ public class GuiUtil {
         return new JLabel(new ImageIcon(avatarImage));
     }
 
-    public static JLabel createArtistAvatar(ArtistDTO artist, int size, Color backgroundColor, Color textColor) {
+    public static JLabel createArtistAvatar(ArtistDTO artist, int size) {
 
         BufferedImage avatarImage;
 
@@ -1299,7 +1350,7 @@ public class GuiUtil {
                 configureGraphicsForHighQuality(g2d);
 
                 // Fill background circle
-                g2d.setColor(backgroundColor);
+                g2d.setColor(ThemeManager.getInstance().getBackgroundColor());
                 g2d.fillOval(0, 0, size, size);
 
                 // Draw initial
@@ -1307,7 +1358,7 @@ public class GuiUtil {
                         artist.getStageName().substring(0, 1).toUpperCase() :
                         "A";
 
-                g2d.setColor(textColor);
+                g2d.setColor(ThemeManager.getInstance().getTextColor());
                 g2d.setFont(FontUtil.getSpotifyFont(Font.BOLD, (float) size / 2));
 
                 FontMetrics fm = g2d.getFontMetrics();
@@ -1320,16 +1371,33 @@ public class GuiUtil {
                 g2d.dispose();
             }
         } catch (Exception e) {
-            // Create simple colored circle as fallback
             avatarImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
             Graphics2D g2d = avatarImage.createGraphics();
             configureGraphicsForHighQuality(g2d);
-            g2d.setColor(backgroundColor);
+            g2d.setColor(ThemeManager.getInstance().getBackgroundColor());
             g2d.fillOval(0, 0, size, size);
             g2d.dispose();
         }
 
         return new JLabel(new ImageIcon(avatarImage));
+    }
+
+
+    public static void addHoverEffect(JPanel panel) {
+        panel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                panel.setOpaque(true);
+                panel.setBackground(GuiUtil.darkenColor(ThemeManager.getInstance().getBackgroundColor(), 0.1f));
+                panel.repaint();
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                panel.setOpaque(false);
+                panel.repaint();
+            }
+        });
     }
 
     public static JLabel createInteractiveUserAvatar(UserDTO user, int size, Color backgroundColor,
@@ -1363,31 +1431,31 @@ public class GuiUtil {
         showCustomMessageDialog(parentComponent,
                 "Network Error: " + message + "\nPlease check your internet connection and try again."
                 , "Error", JOptionPane.ERROR_MESSAGE,
-                AppConstant.BACKGROUND_COLOR, AppConstant.TEXT_COLOR, errorColor);
+                errorColor);
     }
 
     public static void showErrorMessageDialog(Component parentComponent, String message) {
         Color errorColor = new Color(231, 76, 60); // A more refined red
-        showCustomMessageDialog(parentComponent, message, "Error", JOptionPane.ERROR_MESSAGE,
-                AppConstant.BACKGROUND_COLOR, AppConstant.TEXT_COLOR, errorColor);
+        showCustomMessageDialog(parentComponent, message, "Error", JOptionPane.ERROR_MESSAGE
+                , errorColor);
     }
 
     public static void showSuccessMessageDialog(Component parentComponent, String message) {
         Color successColor = new Color(46, 204, 113); // Emerald green
         showCustomMessageDialog(parentComponent, message, "Success", JOptionPane.PLAIN_MESSAGE,
-                AppConstant.BACKGROUND_COLOR, AppConstant.TEXT_COLOR, successColor);
+                successColor);
     }
 
     public static void showWarningMessageDialog(Component parentComponent, String message) {
         Color warningColor = new Color(241, 196, 15); // Vibrant yellow
         showCustomMessageDialog(parentComponent, message, "Warning", JOptionPane.WARNING_MESSAGE,
-                AppConstant.BACKGROUND_COLOR, AppConstant.TEXT_COLOR, warningColor);
+                warningColor);
     }
 
     public static void showInfoMessageDialog(Component parentComponent, String message) {
         Color infoColor = new Color(52, 152, 219); // Light blue
         showCustomMessageDialog(parentComponent, message, "Information", JOptionPane.INFORMATION_MESSAGE,
-                AppConstant.BACKGROUND_COLOR, AppConstant.TEXT_COLOR, infoColor);
+                infoColor);
     }
 
     public static int showCustomConfirmDialog(Component parent, String message, String title,
@@ -1398,6 +1466,7 @@ public class GuiUtil {
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(parent), title, true);
 
         JPanel mainPanel = new JPanel(new BorderLayout(20, 20));
+
         setGradientBackground(mainPanel, bgColor, darkenColor(bgColor, 0.2f), 0.5f, 0.5f, 0.5f);
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
@@ -1451,8 +1520,7 @@ public class GuiUtil {
             dialog.dispose();
         });
 
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
-        buttonPanel.setOpaque(false);
+        JPanel buttonPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
         buttonPanel.add(yesButton);
         buttonPanel.add(noButton);
         mainPanel.add(buttonPanel, BorderLayout.SOUTH);
@@ -1460,6 +1528,7 @@ public class GuiUtil {
         dialog.setContentPane(mainPanel);
         dialog.pack();
         dialog.setLocationRelativeTo(parent);
+        dialog.setResizable(false);
         dialog.setVisible(true);
 
         return result[0];
@@ -1467,7 +1536,7 @@ public class GuiUtil {
 
     public static int showConfirmMessageDialog(Component parentComponent, String message, String title) {
         return showCustomConfirmDialog(parentComponent, message, title,
-                AppConstant.BACKGROUND_COLOR, AppConstant.TEXT_COLOR, new Color(52, 152, 219));
+                ThemeManager.getInstance().getBackgroundColor(), ThemeManager.getInstance().getTextColor(), new Color(52, 152, 219));
     }
 
 
@@ -1649,13 +1718,14 @@ public class GuiUtil {
     }
 
 
-    public static JDialog createCustomMessageDialog(Component parent, String message, String title, int messageType,
-                                                    Color bgColor, Color textColor, Color accentColor) {
+    public static JDialog createCustomMessageDialog(Component parent, String message, String title, int messageType, Color color) {
+        Color bgColor = ThemeManager.getInstance().getBackgroundColor();
+        Color textColor = ThemeManager.getInstance().getTextColor();
         // Create a custom JDialog
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(parent), title, true);
 
         // Create main panel with gradient background
-        JPanel mainPanel = new JPanel(new BorderLayout(20, 20));
+        JPanel mainPanel = GuiUtil.createPanel(new BorderLayout(20, 20));
         setGradientBackground(mainPanel, bgColor, darkenColor(bgColor, 0.2f), 0.5f, 0.5f, 0.5f);
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
@@ -1676,7 +1746,7 @@ public class GuiUtil {
             default -> AppConstant.SUCCESS_ICON_PATH;
         };
 
-        Icon icon = createColoredIcon(iconPath, 40, accentColor);
+        Icon icon = createColoredIcon(iconPath, 40, color);
         JLabel iconLabel = new JLabel(icon);
         iconLabel.setVerticalAlignment(SwingConstants.TOP);
 
@@ -1686,7 +1756,7 @@ public class GuiUtil {
 
         // Create and style OK button
         JButton okButton = new JButton("OK");
-        okButton.setBackground(accentColor);
+        okButton.setBackground(color);
         okButton.setForeground(textColor);
         okButton.setBorderPainted(false);
         okButton.setContentAreaFilled(true);
@@ -1697,18 +1767,17 @@ public class GuiUtil {
         okButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                okButton.setBackground(darkenColor(accentColor, 0.2f));
+                okButton.setBackground(darkenColor(color, 0.2f));
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
-                okButton.setBackground(accentColor);
+                okButton.setBackground(color);
             }
         });
 
         // Create button panel
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        buttonPanel.setOpaque(false);
+        JPanel buttonPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.CENTER));
         buttonPanel.add(okButton);
         mainPanel.add(buttonPanel, BorderLayout.SOUTH);
 
@@ -1720,9 +1789,8 @@ public class GuiUtil {
         return dialog;
     }
 
-    public static void showCustomMessageDialog(Component parent, String message, String title, int messageType,
-                                               Color bgColor, Color textColor, Color accentColor) {
-        JDialog dialog = createCustomMessageDialog(parent, message, title, messageType, bgColor, textColor, accentColor);
+    public static void showCustomMessageDialog(Component parent, String message, String title, int messageType, Color accentColor) {
+        JDialog dialog = createCustomMessageDialog(parent, message, title, messageType, accentColor);
         dialog.setVisible(true);
     }
 

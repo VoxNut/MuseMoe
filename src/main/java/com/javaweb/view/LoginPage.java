@@ -38,7 +38,7 @@ public class LoginPage extends JFrame {
     public LoginPage() {
         initializeFrame();
         cardLayout = new CardLayout();
-        mainPanel = new JPanel(cardLayout);
+        mainPanel = GuiUtil.createPanel(cardLayout);
         mainPanel.add(createMainPanel(), "login");
         mainPanel.add(createSignUpPanel(), "signup");
         add(mainPanel);
@@ -80,7 +80,8 @@ public class LoginPage extends JFrame {
     }
 
     private JPanel createMainPanel() {
-        JPanel mainPanel = new JPanel(new GridLayout(1, 2));
+        JPanel mainPanel = GuiUtil.createPanel(new GridLayout(1, 2));
+        mainPanel.setOpaque(true);
         mainPanel.setBackground(AppConstant.BACKGROUND_COLOR);
         mainPanel.add(createImagePanel());
         mainPanel.add(createRightPanel());
@@ -89,7 +90,8 @@ public class LoginPage extends JFrame {
 
 
     private JPanel createSignUpPanel() {
-        JPanel signUpPanel = new JPanel(new GridLayout(1, 2));
+        JPanel signUpPanel = GuiUtil.createPanel(new GridLayout(1, 2));
+        signUpPanel.setOpaque(true);
         signUpPanel.setBackground(AppConstant.BACKGROUND_COLOR);
         signUpPanel.add(createSignUpFormPanel()); // Left side
         signUpPanel.add(createImagePanelWithSignInButton()); // Right side
@@ -97,7 +99,8 @@ public class LoginPage extends JFrame {
     }
 
     private JPanel createSignUpFormPanel() {
-        JPanel formPanel = new JPanel(new GridBagLayout());
+        JPanel formPanel = GuiUtil.createPanel(new GridBagLayout());
+        formPanel.setOpaque(true);
         formPanel.setBackground(AppConstant.BACKGROUND_COLOR);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -105,7 +108,6 @@ public class LoginPage extends JFrame {
 
         // Title
         JLabel signUpTitle = new JLabel("REGISTER", SwingConstants.CENTER);
-//        signUpTitle.putClientProperty( "FlatLaf.styleClass", "h1" );
         signUpTitle.setFont(FontUtil.getJetBrainsMonoFont(Font.BOLD, 55));
 
         signUpTitle.setForeground(AppConstant.TEXT_COLOR);
@@ -215,8 +217,7 @@ public class LoginPage extends JFrame {
         };
 
         // Create overlay panel for the register button
-        JPanel overlayPanel = new JPanel();
-        overlayPanel.setOpaque(false);
+        JPanel overlayPanel = GuiUtil.createPanel();
         overlayPanel.setLayout(new BoxLayout(overlayPanel, BoxLayout.Y_AXIS));
 
         // 'Sign up' button
@@ -327,7 +328,8 @@ public class LoginPage extends JFrame {
         layeredPane.add(imagePanel, Integer.valueOf(0));
         layeredPane.add(overlayPanel, Integer.valueOf(1));
 
-        JPanel containerPanel = new JPanel(new BorderLayout());
+        JPanel containerPanel = GuiUtil.createPanel(new BorderLayout());
+        containerPanel.setOpaque(true);
         containerPanel.add(layeredPane, BorderLayout.CENTER);
 
         return containerPanel;
@@ -358,7 +360,8 @@ public class LoginPage extends JFrame {
     }
 
     private JPanel createRightPanel() {
-        JPanel rightPanel = new JPanel(new BorderLayout());
+        JPanel rightPanel = GuiUtil.createPanel(new BorderLayout());
+        rightPanel.setOpaque(true);
         rightPanel.setBackground(AppConstant.BACKGROUND_COLOR);
         rightPanel.add(createFormPanel(), BorderLayout.CENTER);
         return rightPanel;
@@ -417,7 +420,8 @@ public class LoginPage extends JFrame {
         gbc.gridy++;
         gbc.gridwidth = 2;
         gbc.anchor = GridBagConstraints.CENTER;
-        JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        JPanel buttonsPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.CENTER));
+        buttonsPanel.setOpaque(true);
         buttonsPanel.setBackground(AppConstant.BACKGROUND_COLOR);
         loginButton = createButton("Login");
         exitButton = createButton("Exit");

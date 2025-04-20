@@ -48,8 +48,8 @@ public class PlaylistPanel extends ListThemeablePanel {
         add(scrollPane, BorderLayout.CENTER);
 
         // Buttons
-        buttonPanel = new JPanel();
-        buttonPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
+
+        buttonPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.RIGHT));
         buttonPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
 
         selectButton = GuiUtil.createButton("Select");

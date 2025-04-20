@@ -4,7 +4,6 @@ import com.javaweb.constant.AppConstant;
 import com.javaweb.enums.RepeatMode;
 import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
-import com.javaweb.model.dto.SongLikesDTO;
 import com.javaweb.utils.CommonApiUtil;
 import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
@@ -104,11 +103,11 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         addToolbar();
 
         // Create a card layout panel instead of BorderLayout for the content
-        JPanel contentPanel = new JPanel(new CardLayout());
+        JPanel contentPanel = GuiUtil.createPanel(new CardLayout());
         contentPanel.setOpaque(false);
 
         // Add the initial message label to its own panel first
-        JPanel messagePanel = new JPanel(new GridBagLayout()); // Use GridBagLayout to center the label
+        JPanel messagePanel = GuiUtil.createPanel(new GridBagLayout());
         messagePanel.setOpaque(false);
 
         // Create the initial message label
@@ -178,9 +177,8 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
     private JPanel addGuiComponents() {
 
         // Create a main panel for other components
-        JPanel mainPanel = new JPanel();
+        JPanel mainPanel = GuiUtil.createPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
-        mainPanel.setOpaque(false);
 
         // Center align components
         mainPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -194,10 +192,9 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         playlistNameLabel.setVisible(false);
 
         // Create a fixed height panel to contain the label
-        JPanel playlistLabelPanel = new JPanel();
+        JPanel playlistLabelPanel = GuiUtil.createPanel();
         playlistLabelPanel.setLayout(new BoxLayout(playlistLabelPanel, BoxLayout.Y_AXIS));
         playlistLabelPanel.setPreferredSize(new Dimension(400, 30));
-        playlistLabelPanel.setOpaque(false);
 
 
         playlistLabelPanel.add(Box.createVerticalStrut(5));
@@ -211,9 +208,8 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
 
 
         //Add the imagePanel
-        JPanel imagePanel = new JPanel();
+        JPanel imagePanel = GuiUtil.createPanel();
         imagePanel.setLayout(null);
-        imagePanel.setOpaque(false);
         imagePanel.setPreferredSize(new Dimension(400, 300));
         //Volume Slider
         configureVolumeSlider();
@@ -260,9 +256,8 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
 
         mainPanel.add(Box.createVerticalStrut(20));
 
-        JPanel playbackSliderPanel = new JPanel();
+        JPanel playbackSliderPanel = GuiUtil.createPanel();
         playbackSliderPanel.setLayout(null);
-        playbackSliderPanel.setOpaque(false);
         playbackSliderPanel.setPreferredSize(new Dimension(400, 50));
 
         heartButton = GuiUtil.changeButtonIconColor(AppConstant.HEART_ICON_PATH, 25, 25);
@@ -310,9 +305,8 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
 
     private JPanel createLabelsPanel() {
         // Create labels panel
-        JPanel labelsPanel = new JPanel(new BorderLayout());
+        JPanel labelsPanel = GuiUtil.createPanel(new BorderLayout());
         labelsPanel.setPreferredSize(new Dimension(getWidth(), 18));
-        labelsPanel.setOpaque(false);
 
         labelBeginning = GuiUtil.createLabel("00:00", Font.PLAIN, 18);
         labelBeginning.setForeground(AppConstant.TEXT_COLOR);
@@ -410,16 +404,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
                     return;
                 }
 
-                List<SongLikesDTO> songLikesDTOS = CommonApiUtil.findAllSongLikes();
-                PlaylistDTO playlistDTO = new PlaylistDTO();
-                playlistDTO.setName("Liked Songs");
-                playlistDTO.setSongs(songLikesDTOS.stream()
-                        .map(SongLikesDTO::getSongDTO)
-                        .toList());
-
-
                 List<PlaylistDTO> playlists = CommonApiUtil.fetchPlaylistByUserId();
-                playlists.add(playlistDTO);
 
                 // Create and display the PlaylistSelectionPanel
                 playlistPanel = new PlaylistSelectionPanel(playlists);
@@ -454,9 +439,8 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
     }
 
     private void addPlaybackBtns() {
-        playbackBtns = new JPanel();
+        playbackBtns = GuiUtil.createPanel();
         playbackBtns.setLayout(null);
-        playbackBtns.setOpaque(false);
 
         // Replay 5 Seconds button
         replayButton = GuiUtil.changeButtonIconColor(AppConstant.REPLAY_ICON_PATH, 25,
@@ -606,7 +590,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
     // Method to update the song image
     public void updateSongImage(SongDTO song) {
         if (song.getSongImage() != null) {
-            songImageLabel.setIcon(GuiUtil.createRoundedCornerImageIcon(song.getSongImage(), 30));
+            songImageLabel.setIcon(GuiUtil.createRoundedCornerImageIcon(song.getSongImage(), 10, 300, 300));
         } else {
             // Default styling when no image is available
             ImageIcon defaultIcon = GuiUtil.createImageIcon(AppConstant.DEFAULT_COVER_PATH, 300, 300);

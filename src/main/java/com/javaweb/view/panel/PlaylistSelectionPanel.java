@@ -54,8 +54,7 @@ public class PlaylistSelectionPanel extends ListThemeablePanel {
         add(scrollPane, BorderLayout.CENTER);
 
         // Buttons
-        buttonPanel = new JPanel();
-        buttonPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
+        buttonPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.RIGHT));
         buttonPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
 
         selectButton = GuiUtil.createButton("Select");
@@ -91,7 +90,7 @@ public class PlaylistSelectionPanel extends ListThemeablePanel {
             PlaylistDTO playlist = (PlaylistDTO) value;
 
             // Create a custom panel for each cell to have more control over layout
-            JPanel cellPanel = new JPanel(new BorderLayout(10, 0));
+            JPanel cellPanel = GuiUtil.createPanel(new BorderLayout(10, 0));
             cellPanel.setOpaque(true);
 
             // Set appropriate background and border based on selection state
@@ -171,13 +170,11 @@ public class PlaylistSelectionPanel extends ListThemeablePanel {
             cellPanel.add(iconPanel, BorderLayout.WEST);
 
             // Create the info panel with playlist name and song count
-            JPanel infoPanel = new JPanel(new GridLayout(2, 1, 0, 2));
-            infoPanel.setOpaque(false);
+            JPanel infoPanel = GuiUtil.createPanel(new GridLayout(2, 1, 0, 2));
 
             // Playlist name
-            JLabel nameLabel = new JLabel(playlist.getName());
+            JLabel nameLabel = GuiUtil.createLabel(playlist.getName());
             nameLabel.setFont(FontUtil.getSpotifyFont(Font.BOLD, 14));
-            nameLabel.setForeground(textColor);
 
             // Song count with subtle styling
             String songCountText = playlist.getSongs().size() + " song" + (playlist.getSongs().size() != 1 ? "s" : "");

@@ -43,7 +43,9 @@ public class AppConstant {
     public static final String GO_FORWARD_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/go-forward-icon.png";
     public static final String PLAYLIST_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/playlist-icon.png";
     public static final String ARTIST_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/music-artist.png";
-
+    public static final String DOWNLOAD_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/download-icon.png";
+    public static final String CHEVRON_UP_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/chevron-up.png";
+    public static final String CHEVRON_DOWN_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/chevron-down.png";
 
     //SALE PAGE
     public static final String CREATE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/create-icon.png";

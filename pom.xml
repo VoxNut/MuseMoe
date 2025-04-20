@@ -73,6 +73,13 @@
             <artifactId>jaxb-api</artifactId>
             <version>2.3.1</version>
         </dependency>
+        
+        <!--Mig Layout-->
+        <dependency>
+            <groupId>com.miglayout</groupId>
+            <artifactId>miglayout</artifactId>
+            <version>3.7.4</version>
+        </dependency>
 
         <!-- PDF and Document Processing -->
         <dependency>

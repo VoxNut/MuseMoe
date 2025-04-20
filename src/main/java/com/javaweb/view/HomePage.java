@@ -15,6 +15,7 @@ import com.javaweb.view.theme.ThemeChangeListener;
 import com.javaweb.view.theme.ThemeManager;
 import com.javaweb.view.user.UserSessionManager;
 import lombok.extern.slf4j.Slf4j;
+import net.miginfocom.swing.MigLayout;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -846,85 +847,143 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private JPanel createLibraryPanel() {
         JPanel libraryNav = GuiUtil.createPanel(new BorderLayout());
         libraryNav.setBorder(GuiUtil.createTitledBorder("Library", TitledBorder.LEFT));
-        libraryNav.setPreferredSize(new Dimension(400, getHeight()));
+        libraryNav.setPreferredSize(new Dimension(230, getHeight()));
 
-        // Create card layout panel instead of tabbed pane
-        JPanel cardPanel = GuiUtil.createPanel(new CardLayout());
+        // Content panel with MigLayout
+        JPanel contentPanel = GuiUtil.createPanel(new MigLayout("fillx, wrap 1, insets 0", "[fill]", "[]0[]"));
+        contentPanel.setOpaque(false);
 
-        // Create navigation buttons panel
-        JPanel navigationPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.CENTER, 5, 5));
+        // Create expandable section for Artists
+        ExpandableCardPanel artistsCard = createExpandableCard("Artists", AppConstant.ARTIST_ICON_PATH, createArtistsPanel());
 
-        // Create the content panels
-        JPanel artistsPanel = createArtistsPanel();
-        JPanel playlistsPanel = createPlaylistsPanel();
-        JPanel likedSongsPanel = createLikedSongsPanel();
+        // Create expandable section for Playlists
+        ExpandableCardPanel playlistsCard = createExpandableCard("Playlists", AppConstant.PLAYLIST_ICON_PATH, createPlaylistsPanel());
 
-        // Add panels to card layout
-        cardPanel.add(artistsPanel, "artists");
-        cardPanel.add(playlistsPanel, "playlists");
-        cardPanel.add(likedSongsPanel, "liked");
+        // Create expandable section for Liked Songs
+        ExpandableCardPanel likedSongsCard = createExpandableCard("Liked", AppConstant.HEART_ICON_PATH, createLikedSongsPanel());
 
-        // Create navigation buttons with icons
-        JButton artistsButton = GuiUtil.createIconButtonWithText("Artists", AppConstant.ARTIST_ICON_PATH);
-        JButton playlistsButton = GuiUtil.createIconButtonWithText("Playlists", AppConstant.PLAYLIST_ICON_PATH);
-        JButton likedButton = GuiUtil.createIconButtonWithText("Liked", AppConstant.HEART_ICON_PATH);
+        // Create expandable section for Downloaded Songs
+        ExpandableCardPanel downloadedSongsCard = createExpandableCard("Downloaded", AppConstant.DOWNLOAD_ICON_PATH, createDownloadedSongsPanel());
 
-        // Add action listeners to buttons
-        CardLayout cardLayout = (CardLayout) cardPanel.getLayout();
+        // Add cards to main panel
+        contentPanel.add(artistsCard, "growx");
+        contentPanel.add(playlistsCard, "growx");
+        contentPanel.add(likedSongsCard, "growx");
+        contentPanel.add(downloadedSongsCard, "growx");
 
-        artistsButton.addActionListener(e -> {
-            cardLayout.show(cardPanel, "artists");
-        });
-
-        playlistsButton.addActionListener(e -> {
-            cardLayout.show(cardPanel, "playlists");
-        });
-
-        likedButton.addActionListener(e -> {
-            cardLayout.show(cardPanel, "liked");
-        });
-
-        // Add buttons to navigation panel
-        navigationPanel.add(artistsButton);
-        navigationPanel.add(playlistsButton);
-        navigationPanel.add(likedButton);
-
-        // Add components to main panel
-        libraryNav.add(navigationPanel, BorderLayout.NORTH);
-        libraryNav.add(cardPanel, BorderLayout.CENTER);
-
-        // Start with Artists panel selected
-        cardLayout.show(cardPanel, "artists");
+        // Add scroll support
+        JScrollPane scrollPane = GuiUtil.createStyledScrollPane(contentPanel);
+        libraryNav.add(scrollPane, BorderLayout.CENTER);
 
         return libraryNav;
     }
 
 
+    private class ExpandableCardPanel extends JPanel {
+        private final JPanel contentPanel;
+        private final JButton toggleButton;
+        private boolean expanded = false;
+
+        public ExpandableCardPanel(String title, String iconPath, JPanel content) {
+            setLayout(new BorderLayout());
+            setOpaque(false);
+            setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0,
+                    GuiUtil.darkenColor(ThemeManager.getInstance().getBackgroundColor(), 0.1f)));
+
+            // Header panel with title and toggle button
+            JPanel headerPanel = GuiUtil.createPanel(new BorderLayout(5, 0));
+            headerPanel.setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 10));
+            headerPanel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+            // Create title with icon
+            JLabel titleLabel = GuiUtil.createLabel(title, Font.BOLD, 14);
+            JLabel iconLabel = new JLabel(GuiUtil.createColoredIcon(iconPath,
+                    ThemeManager.getInstance().getTextColor(), 18, 18));
+
+            JPanel titleWithIcon = GuiUtil.createPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+            titleWithIcon.add(iconLabel);
+            titleWithIcon.add(titleLabel);
+
+            // Create toggle button
+            toggleButton = new JButton(GuiUtil.createColoredIcon(
+                    AppConstant.CHEVRON_DOWN_ICON_PATH,
+                    ThemeManager.getInstance().getTextColor(), 14, 14));
+            toggleButton.setBorderPainted(false);
+            toggleButton.setContentAreaFilled(false);
+            toggleButton.setFocusPainted(false);
+
+            headerPanel.add(titleWithIcon, BorderLayout.WEST);
+            headerPanel.add(toggleButton, BorderLayout.EAST);
+
+            // Setup content panel
+            this.contentPanel = content;
+            this.contentPanel.setVisible(false);
+
+            // Add components
+            add(headerPanel, BorderLayout.NORTH);
+            add(contentPanel, BorderLayout.CENTER);
+
+            // Add hover effect to header
+            GuiUtil.addHoverEffect(headerPanel);
+
+            // Setup click action
+            headerPanel.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    toggleExpanded();
+                }
+            });
+
+            toggleButton.addActionListener(e -> toggleExpanded());
+        }
+
+        private void toggleExpanded() {
+            expanded = !expanded;
+            contentPanel.setVisible(expanded);
+
+            // Rotate the chevron icon
+            Icon icon = GuiUtil.createColoredIcon(
+                    expanded ? AppConstant.CHEVRON_UP_ICON_PATH : AppConstant.CHEVRON_DOWN_ICON_PATH,
+                    ThemeManager.getInstance().getTextColor(), 14, 14);
+            toggleButton.setIcon(icon);
+
+            // Request layout update
+            revalidate();
+            repaint();
+
+            // Ensure the expanded section is visible by scrolling to it if needed
+            if (expanded) {
+                Rectangle bounds = getBounds();
+                scrollRectToVisible(new Rectangle(0, 0, bounds.width, bounds.height));
+            }
+        }
+    }
+
+    // Helper method to create expandable card
+    private ExpandableCardPanel createExpandableCard(String title, String iconPath, JPanel contentPanel) {
+        return new ExpandableCardPanel(title, iconPath, contentPanel);
+    }
+
     private JPanel createArtistsPanel() {
         JPanel panel = GuiUtil.createPanel(new BorderLayout());
 
-        JPanel artistsListPanel = GuiUtil.createPanel();
-        artistsListPanel.setLayout(new BoxLayout(artistsListPanel, BoxLayout.Y_AXIS));
+        JPanel artistsListPanel = GuiUtil.createPanel(new MigLayout("fillx, wrap 1, insets 0", "[fill]", "[]0[]"));
 
         loadFollowedArtists(artistsListPanel);
 
-        JScrollPane scrollPane = GuiUtil.createStyledScrollPane(artistsListPanel);
-        panel.add(scrollPane, BorderLayout.CENTER);
-
+        panel.add(artistsListPanel, BorderLayout.CENTER);
         return panel;
     }
+
 
     private JPanel createPlaylistsPanel() {
         JPanel panel = GuiUtil.createPanel(new BorderLayout());
 
 
-        JPanel playlistsListPanel = GuiUtil.createPanel();
-        playlistsListPanel.setLayout(new BoxLayout(playlistsListPanel, BoxLayout.Y_AXIS));
+        JPanel playlistsListPanel = GuiUtil.createPanel(new MigLayout("fillx, wrap 1, insets 0", "[fill]", "[]0[]"));
 
         loadUserPlaylists(playlistsListPanel);
-
-        JScrollPane scrollPane = GuiUtil.createStyledScrollPane(playlistsListPanel);
-        panel.add(scrollPane, BorderLayout.CENTER);
+        panel.add(playlistsListPanel, BorderLayout.CENTER);
 
         return panel;
     }
@@ -933,13 +992,24 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         JPanel panel = GuiUtil.createPanel(new BorderLayout());
 
 
-        JPanel likedSongsListPanel = GuiUtil.createPanel();
-        likedSongsListPanel.setLayout(new BoxLayout(likedSongsListPanel, BoxLayout.Y_AXIS));
+        JPanel likedSongsListPanel = GuiUtil.createPanel(new MigLayout("fillx, wrap 1, insets 0", "[fill]", "[]0[]"));
 
         loadLikedSongs(likedSongsListPanel);
+        panel.add(likedSongsListPanel, BorderLayout.CENTER);
 
-        JScrollPane scrollPane = GuiUtil.createStyledScrollPane(likedSongsListPanel);
-        panel.add(scrollPane, BorderLayout.CENTER);
+
+        return panel;
+    }
+
+    private JPanel createDownloadedSongsPanel() {
+        JPanel panel = GuiUtil.createPanel(new BorderLayout());
+
+
+        JPanel downloadedSongsListPanel = GuiUtil.createPanel(new MigLayout("fillx, wrap 1, insets 0", "[fill]", "[]0[]"));
+
+        loadDownloadedSongs(downloadedSongsListPanel);
+
+        panel.add(downloadedSongsListPanel, BorderLayout.CENTER);
 
         return panel;
     }
@@ -1056,6 +1126,45 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         }
     }
 
+    private void loadDownloadedSongs(JPanel container) {
+        try {
+            // Check for network connectivity
+            if (!NetworkChecker.isNetworkAvailable()) {
+                container.add(GuiUtil.createErrorLabel("Network is unavailable!"));
+                return;
+            }
+
+            // Fetch liked songs
+            java.util.List<SongDTO> downloadedSongs = CommonApiUtil.fetchUserDownloadedSongs();
+            if (downloadedSongs.isEmpty()) {
+                container.add(GuiUtil.createErrorLabel("No downloaded songs"));
+                return;
+            }
+
+
+            JPanel recentLabelPanel = GuiUtil.createPanel(new BorderLayout());
+            recentLabelPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            recentLabelPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+
+            JLabel recentLabel = GuiUtil.createLabel("Recently Downloaded", Font.BOLD, 14);
+            recentLabelPanel.add(recentLabel, BorderLayout.WEST);
+
+            container.add(recentLabelPanel);
+
+            container.add(Box.createVerticalStrut(5));
+
+            // Add up to 5 most recent liked songs
+            for (int i = 0; i < Math.min(5, downloadedSongs.size()); i++) {
+                container.add(createSongPanel(downloadedSongs.get(i)));
+                container.add(Box.createVerticalStrut(5));
+            }
+
+        } catch (Exception e) {
+            log.error("Failed to load downloaded songs", e);
+            container.add(GuiUtil.createErrorLabel("Failed to load downloaded songs"));
+        }
+    }
+
     private JPanel createLikedSongsCollectionPanel(PlaylistDTO likedSongsPlaylist) {
         JPanel likedSongsPanel = GuiUtil.createPanel(new BorderLayout(10, 0));
 
@@ -1065,7 +1174,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         ));
         likedSongsPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
 
-        JPanel heartIconPanel = GuiUtil.createGradientHeartPanel(80, 80, 15, 36);
+        JPanel heartIconPanel = GuiUtil.createGradientHeartPanel(60, 60, 15, 30);
 
         // Create info panel
         JPanel infoPanel = GuiUtil.createPanel();
@@ -1116,7 +1225,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         if (playlist.getSongs() != null && !playlist.getSongs().isEmpty() &&
                 playlist.getSongs().getFirst().getSongImage() != null) {
             coverLabel = GuiUtil.createRoundedCornerImageLabel(
-                    playlist.getSongs().getFirst().getSongImage(), 10, 40, 40);
+                    playlist.getSongs().getFirst().getSongImage(), 15, 40, 40);
         } else {
             coverLabel = GuiUtil.createPlaylistIconLabel(40, 40,
                     ThemeManager.getInstance().getAccentColor(),
@@ -1164,7 +1273,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         songPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
 
         // Create song cover
-        JLabel coverLabel = GuiUtil.createRoundedCornerImageLabel(song.getSongImage(), 10, 40, 40);
+        JLabel coverLabel = GuiUtil.createRoundedCornerImageLabel(song.getSongImage(), 15, 40, 40);
 
         // Create song info panel
         JPanel infoPanel = GuiUtil.createPanel();
@@ -1407,8 +1516,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         topPanel.setBorder(GuiUtil.createTitledBorder("Search", TitledBorder.LEFT));
         searchBarWrapper.setBorder(GuiUtil.createCompoundBorder(2));
 
-
-        libraryPanel.setBorder(GuiUtil.createTitledBorder("Library", TitledBorder.LEFT));
 
         combinedCenterPanel.remove(libraryPanel);
         libraryPanel = createLibraryPanel();

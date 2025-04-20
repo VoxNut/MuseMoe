@@ -102,20 +102,62 @@ public class GuiUtil {
         table.setDefaultRenderer(Object.class, new BorderedTableCellRenderer());
     }
 
-    //    public static JButton createButton(String text) {
-//        JButton button = new JButton(text);
-//        button.setUI(new CustomButtonUI(AppConstant.BUTTON_BACKGROUND_COLOR, AppConstant.BUTTON_TEXT_COLOR, AppConstant.DISABLE_BACKGROUND_BUTTON, AppConstant.DISABLE_TEXT_BUTTON, AppConstant.DISABLE_BACKGROUND_BUTTON, AppConstant.DISABLE_TEXT_BUTTON));
-//        button.setFont(FontUtil.getJetBrainsMonoFont(Font.BOLD, 16));
-//        button.setBorderPainted(false);
-//        button.setContentAreaFilled(false);
-//        button.setFocusPainted(false);
-//        button.setOpaque(true);
-//        return button;
-//    }
+
     public static JButton createButton(String text) {
         JButton button = new JButton(text);
-        button.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setContentAreaFilled(true);
+        button.setOpaque(false);
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
+        button.setForeground(ThemeManager.getInstance().getTextColor());
+
+        button.putClientProperty("JButton.focusedBackground", button.getBackground());
+        button.setHorizontalAlignment(SwingConstants.LEFT);
+        button.setHorizontalTextPosition(SwingConstants.RIGHT);
+        button.setIconTextGap(8);
+        button.setMargin(new Insets(5, 10, 5, 10));
+
+        // Default background
+        Color baseColor = GuiUtil.darkenColor(ThemeManager.getInstance().getBackgroundColor(), 0.1f);
+        Color hoverColor = GuiUtil.darkenColor(baseColor, 0.15f);
+        Color pressColor = GuiUtil.darkenColor(baseColor, 0.25f);
+
+        button.setBackground(baseColor);
+
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                button.setBackground(hoverColor);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                button.setBackground(baseColor);
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                button.setBackground(pressColor);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (button.getBounds().contains(e.getPoint())) {
+                    button.setBackground(hoverColor);
+                } else {
+                    button.setBackground(baseColor);
+                }
+            }
+        });
+
+        return button;
+    }
+
+    public static JButton createIconButtonWithText(String text, String iconPath) {
+        JButton button = createButton(text);
+        button.setIcon(GuiUtil.createColoredIcon(iconPath, 16));
         return button;
     }
 
@@ -300,7 +342,7 @@ public class GuiUtil {
     }
 
     public static JMenuItem createMenuItem(String text) {
-        return createMenuItem(text, AppConstant.BACKGROUND_COLOR, AppConstant.TEXT_COLOR);
+        return createMenuItem(text, ThemeManager.getInstance().getBackgroundColor(), ThemeManager.getInstance().getTextColor());
 
     }
 

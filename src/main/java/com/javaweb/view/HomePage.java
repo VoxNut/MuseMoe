@@ -846,7 +846,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private JPanel createLibraryPanel() {
         JPanel libraryNav = GuiUtil.createPanel(new BorderLayout());
         libraryNav.setBorder(GuiUtil.createTitledBorder("Library", TitledBorder.LEFT));
-        libraryNav.setPreferredSize(new Dimension(230, getHeight()));
+        libraryNav.setPreferredSize(new Dimension(400, getHeight()));
 
         // Create card layout panel instead of tabbed pane
         JPanel cardPanel = GuiUtil.createPanel(new CardLayout());
@@ -865,26 +865,23 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         cardPanel.add(likedSongsPanel, "liked");
 
         // Create navigation buttons with icons
-        JButton artistsButton = createLibraryNavButton("Artists", AppConstant.ARTIST_ICON_PATH);
-        JButton playlistsButton = createLibraryNavButton("Playlists", AppConstant.PLAYLIST_ICON_PATH);
-        JButton likedButton = createLibraryNavButton("Liked", AppConstant.HEART_ICON_PATH);
+        JButton artistsButton = GuiUtil.createIconButtonWithText("Artists", AppConstant.ARTIST_ICON_PATH);
+        JButton playlistsButton = GuiUtil.createIconButtonWithText("Playlists", AppConstant.PLAYLIST_ICON_PATH);
+        JButton likedButton = GuiUtil.createIconButtonWithText("Liked", AppConstant.HEART_ICON_PATH);
 
         // Add action listeners to buttons
         CardLayout cardLayout = (CardLayout) cardPanel.getLayout();
 
         artistsButton.addActionListener(e -> {
             cardLayout.show(cardPanel, "artists");
-            updateLibraryNavButtons(artistsButton, playlistsButton, likedButton);
         });
 
         playlistsButton.addActionListener(e -> {
             cardLayout.show(cardPanel, "playlists");
-            updateLibraryNavButtons(playlistsButton, artistsButton, likedButton);
         });
 
         likedButton.addActionListener(e -> {
             cardLayout.show(cardPanel, "liked");
-            updateLibraryNavButtons(likedButton, artistsButton, playlistsButton);
         });
 
         // Add buttons to navigation panel
@@ -898,59 +895,10 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         // Start with Artists panel selected
         cardLayout.show(cardPanel, "artists");
-        updateLibraryNavButtons(artistsButton, playlistsButton, likedButton);
 
         return libraryNav;
     }
 
-    private void updateLibraryNavButtons(JButton selectedButton, JButton... otherButtons) {
-        selectedButton.setFont(FontUtil.getSpotifyFont(Font.BOLD, 12));
-        selectedButton.setContentAreaFilled(true);
-        selectedButton.setBackground(GuiUtil.darkenColor(ThemeManager.getInstance().getBackgroundColor(), 0.2f));
-        selectedButton.putClientProperty("selected", true);
-
-        for (JButton button : otherButtons) {
-            button.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 12));
-            button.setContentAreaFilled(false);
-            button.putClientProperty("selected", false);
-        }
-    }
-
-
-    private JButton createLibraryNavButton(String text, String iconPath) {
-        JButton button = new JButton(text);
-        button.setIcon(GuiUtil.createColoredIcon(iconPath, 16));
-        button.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 12));
-        button.setForeground(ThemeManager.getInstance().getTextColor());
-        button.setBackground(GuiUtil.darkenColor(ThemeManager.getInstance().getBackgroundColor(), 0.1f));
-        button.setFocusPainted(false);
-        button.setBorderPainted(false);
-        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        button.setMargin(new Insets(5, 10, 5, 10));
-        button.setHorizontalAlignment(SwingConstants.LEFT);
-        button.setHorizontalTextPosition(SwingConstants.RIGHT);
-        button.setIconTextGap(8);
-
-        // Add hover effect
-        button.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                if (!button.isSelected()) {
-                    button.setContentAreaFilled(true);
-                    button.setBackground(GuiUtil.darkenColor(ThemeManager.getInstance().getBackgroundColor(), 0.15f));
-                }
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                if (!button.isSelected()) {
-                    button.setContentAreaFilled(false);
-                }
-            }
-        });
-
-        return button;
-    }
 
     private JPanel createArtistsPanel() {
         JPanel panel = GuiUtil.createPanel(new BorderLayout());
@@ -1228,13 +1176,74 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         infoPanel.add(titleLabel);
         infoPanel.add(artistLabel);
 
+        // Create action panel for heart icon
+        JPanel actionPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.RIGHT));
+
+        // Check if song is liked
+        boolean isLiked = CommonApiUtil.checkSongLiked(song.getId());
+
+        // Create heart button based on liked status
+        JButton heartButton = GuiUtil.changeButtonIconColor(
+                isLiked ? AppConstant.HEART_ICON_PATH : AppConstant.HEART_OUTLINE_ICON_PATH,
+                20, 20
+        );
+
+        heartButton.addActionListener(e -> {
+            boolean currentlyLiked = CommonApiUtil.checkSongLiked(song.getId());
+
+            if (currentlyLiked) {
+                // Unlike the song
+                if (CommonApiUtil.deleteSongLikes(song.getId())) {
+                    heartButton.setIcon(GuiUtil.createColoredIcon(
+                            AppConstant.HEART_OUTLINE_ICON_PATH,
+                            ThemeManager.getInstance().getTextColor(),
+                            20, 20
+                    ));
+                    JOptionPane.showMessageDialog(songPanel, "Removed from liked songs",
+                            "Success", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(songPanel, "Failed to unlike song",
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } else {
+                // Like the song
+                if (CommonApiUtil.createSongLikes(song.getId())) {
+                    heartButton.setIcon(GuiUtil.createColoredIcon(
+                            AppConstant.HEART_ICON_PATH,
+                            ThemeManager.getInstance().getTextColor(),
+                            20, 20
+                    ));
+                    JOptionPane.showMessageDialog(songPanel, "Added to liked songs",
+                            "Success", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(songPanel, "Failed to like song",
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+
+        actionPanel.add(heartButton);
+
         songPanel.add(coverLabel, BorderLayout.WEST);
         songPanel.add(infoPanel, BorderLayout.CENTER);
+        songPanel.add(actionPanel, BorderLayout.EAST);
 
         // Add hover effect
         GuiUtil.addHoverEffect(songPanel);
 
-        // Add click handler
+        // Add click handler for playing the song
+        songPanel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                // Only handle click if it's not on the heart button
+                Component clickedComponent = SwingUtilities.getDeepestComponentAt(songPanel, e.getX(), e.getY());
+                if (clickedComponent != heartButton) {
+                    log.info("Song clicked: {}", song.getSongTitle());
+                    playerFacade.loadSong(song);
+                }
+            }
+        });
+
         return songPanel;
     }
 

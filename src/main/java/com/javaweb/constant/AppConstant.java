@@ -68,7 +68,7 @@ public class AppConstant {
     public static final String SHUFFLE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/shuffle-icon.png";
     public static final String REPLAY_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/replay-icon.png";
     public static final String HEART_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/heart-icon.png";
-    public static final String HEART_OUTLINE_ICON = "src/main/java/com/javaweb/view/imgs/icon/heart-outline.png";
+    public static final String HEART_OUTLINE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/heart-outline.png";
     public static final String REPEAT_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/repeat-icon.png";
     public static final String ON_REPEAT_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/on-repeat-icon.png";
     public static final String REPEAT_1_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/repeat-1-icon.png";

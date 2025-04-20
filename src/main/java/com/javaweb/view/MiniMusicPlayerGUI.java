@@ -265,7 +265,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         heartButton.setVisible(false);
         heartButton.setBounds(370, 0, 30, 30);
 
-        outLineHeartButton = GuiUtil.changeButtonIconColor(AppConstant.HEART_OUTLINE_ICON, 25, 25);
+        outLineHeartButton = GuiUtil.changeButtonIconColor(AppConstant.HEART_OUTLINE_ICON_PATH, 25, 25);
         outLineHeartButton.addActionListener(e -> toggleOutlineHeartButton());
         outLineHeartButton.setBounds(370, 0, 30, 30);
         outLineHeartButton.setVisible(false);

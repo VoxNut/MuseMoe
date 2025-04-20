@@ -53,11 +53,13 @@ public class App {
         LafManager.setDecorationsEnabled(true);
 
         // Configure UI manager properties
-        UIManager.put("Component.arc", 500);
-        UIManager.put("ProgressBar.arc", 500);
-        UIManager.put("TextComponent.arc", 500);
+        UIManager.put("Component.arc", 100);
+        UIManager.put("TextComponent.arc", 100);
         UIManager.put("TitlePane.iconSize", new Dimension(24, 24));
-
+        UIManager.put("Button.focusWidth", 0);
+        UIManager.put("Button.focusColor", new Color(0, 0, 0, 0));
+        UIManager.put("Component.focusWidth", 0);
+        UIManager.put("Button.shadowWidth", 0);
 
     }
 

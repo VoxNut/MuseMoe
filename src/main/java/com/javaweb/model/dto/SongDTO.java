@@ -38,7 +38,7 @@ public class SongDTO extends AbstractDTO<SongDTO> {
         SongDTO that = (SongDTO) o;
 
         return this.songTitle.equals(that.songTitle)
-               && this.audioFilePath.equals(that.audioFilePath);
+                && this.audioFilePath.equals(that.audioFilePath);
     }
 
     @Override

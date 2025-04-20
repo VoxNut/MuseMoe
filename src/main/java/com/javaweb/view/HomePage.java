@@ -1033,10 +1033,16 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             // Add the liked songs panel
             container.add(createLikedSongsCollectionPanel(likedSongsPlaylist));
 
-            JLabel recentLabel = GuiUtil.createLabel("Recently Liked", Font.BOLD, 12);
-            recentLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 5, 10));
-            recentLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-            container.add(recentLabel);
+            JPanel recentLabelPanel = GuiUtil.createPanel(new BorderLayout());
+            recentLabelPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            recentLabelPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+
+            JLabel recentLabel = GuiUtil.createLabel("Recently Liked", Font.BOLD, 14);
+            recentLabelPanel.add(recentLabel, BorderLayout.WEST);
+
+            container.add(recentLabelPanel);
+
+            container.add(Box.createVerticalStrut(5));
 
             // Add up to 5 most recent liked songs
             for (int i = 0; i < Math.min(5, likedSongs.size()); i++) {
@@ -1110,9 +1116,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         if (playlist.getSongs() != null && !playlist.getSongs().isEmpty() &&
                 playlist.getSongs().getFirst().getSongImage() != null) {
             coverLabel = GuiUtil.createRoundedCornerImageLabel(
-                    playlist.getSongs().getFirst().getSongImage(), 10, 30, 30);
+                    playlist.getSongs().getFirst().getSongImage(), 10, 40, 40);
         } else {
-            coverLabel = GuiUtil.createPlaylistIconLabel(30, 30,
+            coverLabel = GuiUtil.createPlaylistIconLabel(40, 40,
                     ThemeManager.getInstance().getAccentColor(),
                     ThemeManager.getInstance().getTextColor());
         }
@@ -1158,7 +1164,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         songPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
 
         // Create song cover
-        JLabel coverLabel = GuiUtil.createRoundedCornerImageLabel(song.getSongImage(), 10, 30, 30);
+        JLabel coverLabel = GuiUtil.createRoundedCornerImageLabel(song.getSongImage(), 10, 40, 40);
 
         // Create song info panel
         JPanel infoPanel = GuiUtil.createPanel();
@@ -1199,11 +1205,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                             ThemeManager.getInstance().getTextColor(),
                             20, 20
                     ));
-                    JOptionPane.showMessageDialog(songPanel, "Removed from liked songs",
-                            "Success", JOptionPane.INFORMATION_MESSAGE);
+                    GuiUtil.showSuccessMessageDialog(HomePage.this, "Removed from liked songs");
                 } else {
-                    JOptionPane.showMessageDialog(songPanel, "Failed to unlike song",
-                            "Error", JOptionPane.ERROR_MESSAGE);
+                    GuiUtil.showErrorMessageDialog(HomePage.this, "Failed to unlike song");
                 }
             } else {
                 // Like the song
@@ -1213,11 +1217,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                             ThemeManager.getInstance().getTextColor(),
                             20, 20
                     ));
-                    JOptionPane.showMessageDialog(songPanel, "Added to liked songs",
-                            "Success", JOptionPane.INFORMATION_MESSAGE);
+                    GuiUtil.showSuccessMessageDialog(HomePage.this, "Added to liked songs");
                 } else {
-                    JOptionPane.showMessageDialog(songPanel, "Failed to like song",
-                            "Error", JOptionPane.ERROR_MESSAGE);
+                    GuiUtil.showSuccessMessageDialog(HomePage.this, "Failed to like song");
                 }
             }
         });

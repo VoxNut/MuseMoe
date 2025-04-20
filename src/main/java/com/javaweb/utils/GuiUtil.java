@@ -1271,6 +1271,17 @@ public class GuiUtil {
         }
     }
 
+    private static Icon createPlaceholderIcon(int size) {
+        BufferedImage placeholder = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = placeholder.createGraphics();
+        g.setColor(Color.PINK);
+        g.fillRect(0, 0, size, size);
+        g.setColor(Color.BLACK);
+        g.drawString("?", size / 3, size / 2); // simple fallback
+        g.dispose();
+        return new ImageIcon(placeholder);
+    }
+
     public static JLabel createPlaylistIconLabel(int width, int height, Color backgroundColor, Color foregroundColor) {
         BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = image.createGraphics();
@@ -1916,14 +1927,16 @@ public class GuiUtil {
 
     public static Icon createColoredIcon(String iconPath, int size) {
         try {
-            // Load the original icon
-            ImageIcon originalIcon = createImageIcon(iconPath, size, size);
-            changeIconColor(originalIcon, ThemeManager.getInstance().getTextColor());
-            return originalIcon;
+            BufferedImage original = ImageIO.read(new File(iconPath));
+            if (original == null) throw new IOException("Image is null");
+
+            BufferedImage resized = Thumbnails.of(original).size(size, size).asBufferedImage();
+            ImageIcon icon = new ImageIcon(resized);
+            changeIconColor(icon, ThemeManager.getInstance().getTextColor());
+            return icon;
         } catch (Exception e) {
             e.printStackTrace();
-            return createCustomDialogIcon(getMessageTypeForPath(iconPath), size, ThemeManager.getInstance().getTextColor(),
-                    AppConstant.BACKGROUND_COLOR);
+            return createPlaceholderIcon(size);
         }
     }
 

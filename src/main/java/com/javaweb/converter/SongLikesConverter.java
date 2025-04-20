@@ -21,6 +21,7 @@ public class SongLikesConverter implements EntityConverter<SongLikesEntity, Song
             return null;
         }
         SongLikesDTO dto = new SongLikesDTO();
+
         dto.setId(entity.getId().getSongId());
         dto.setUserDTO(userConverter.toDTO(entity.getUser()));
         dto.setSongDTO(songConverter.toDTO(entity.getSong()));

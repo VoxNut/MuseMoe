@@ -10,6 +10,7 @@ import com.javaweb.view.mini_musicplayer.event.MusicPlayerFacade;
 import com.javaweb.view.mini_musicplayer.event.MusicPlayerMediator;
 import com.javaweb.view.mini_musicplayer.event.PlayerEvent;
 import com.javaweb.view.mini_musicplayer.event.PlayerEventListener;
+import com.javaweb.view.panel.ExpandableCardPanel;
 import com.javaweb.view.panel.RecentSearchDropdown;
 import com.javaweb.view.theme.ThemeChangeListener;
 import com.javaweb.view.theme.ThemeManager;
@@ -75,7 +76,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private JButton miniplayerButton;
     private JButton goBackButton;
     private JButton goForwardButton;
-    private JLabel followedArtistsLabel;
 
     public HomePage() {
         initializeFrame();
@@ -514,9 +514,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         // Previous button
         prevButton = GuiUtil.changeButtonIconColor(AppConstant.PREVIOUS_ICON_PATH, 20, 20);
-        prevButton.addActionListener(e -> {
-            playerFacade.prevSong();
-        });
+        prevButton.addActionListener(e -> playerFacade.prevSong());
 
         // Play button
         playButton = GuiUtil.changeButtonIconColor(AppConstant.PLAY_ICON_PATH, 20, 20);
@@ -537,9 +535,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         // Next button
         nextButton = GuiUtil.changeButtonIconColor(AppConstant.NEXT_ICON_PATH, 20, 20);
-        nextButton.addActionListener(e -> {
-            playerFacade.nextSong();
-        });
+        nextButton.addActionListener(e -> playerFacade.nextSong());
 
         // Add buttons to control panel
         controlButtonsPanel.add(prevButton);
@@ -668,6 +664,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             if (searchResults != null && !searchResults.isEmpty()) {
                 // Show search results in a popup or another part of the UI
                 SongDTO songDTO = searchResults.getFirst();
+                //For MiniMusicPlayerGUI.
                 java.util.List<PlaylistDTO> playlists = CommonApiUtil.fetchAllPlaylists();
                 Optional<PlaylistDTO> playlistWithSong = playlists.stream()
                         .filter(playlist -> playlist.getSongs().stream()
@@ -878,87 +875,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         return libraryNav;
     }
 
-
-    private class ExpandableCardPanel extends JPanel {
-        private final JPanel contentPanel;
-        private final JButton toggleButton;
-        private boolean expanded = false;
-
-        public ExpandableCardPanel(String title, String iconPath, JPanel content) {
-            setLayout(new BorderLayout());
-            setOpaque(false);
-            setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0,
-                    GuiUtil.darkenColor(ThemeManager.getInstance().getBackgroundColor(), 0.1f)));
-
-            // Header panel with title and toggle button
-            JPanel headerPanel = GuiUtil.createPanel(new BorderLayout(5, 0));
-            headerPanel.setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 10));
-            headerPanel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-
-            // Create title with icon
-            JLabel titleLabel = GuiUtil.createLabel(title, Font.BOLD, 14);
-            JLabel iconLabel = new JLabel(GuiUtil.createColoredIcon(iconPath,
-                    ThemeManager.getInstance().getTextColor(), 18, 18));
-
-            JPanel titleWithIcon = GuiUtil.createPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-            titleWithIcon.add(iconLabel);
-            titleWithIcon.add(titleLabel);
-
-            // Create toggle button
-            toggleButton = new JButton(GuiUtil.createColoredIcon(
-                    AppConstant.CHEVRON_DOWN_ICON_PATH,
-                    ThemeManager.getInstance().getTextColor(), 14, 14));
-            toggleButton.setBorderPainted(false);
-            toggleButton.setContentAreaFilled(false);
-            toggleButton.setFocusPainted(false);
-
-            headerPanel.add(titleWithIcon, BorderLayout.WEST);
-            headerPanel.add(toggleButton, BorderLayout.EAST);
-
-            // Setup content panel
-            this.contentPanel = content;
-            this.contentPanel.setVisible(false);
-
-            // Add components
-            add(headerPanel, BorderLayout.NORTH);
-            add(contentPanel, BorderLayout.CENTER);
-
-            // Add hover effect to header
-            GuiUtil.addHoverEffect(headerPanel);
-
-            // Setup click action
-            headerPanel.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    toggleExpanded();
-                }
-            });
-
-            toggleButton.addActionListener(e -> toggleExpanded());
-        }
-
-        private void toggleExpanded() {
-            expanded = !expanded;
-            contentPanel.setVisible(expanded);
-
-            // Rotate the chevron icon
-            Icon icon = GuiUtil.createColoredIcon(
-                    expanded ? AppConstant.CHEVRON_UP_ICON_PATH : AppConstant.CHEVRON_DOWN_ICON_PATH,
-                    ThemeManager.getInstance().getTextColor(), 14, 14);
-            toggleButton.setIcon(icon);
-
-            // Request layout update
-            revalidate();
-            repaint();
-
-            // Ensure the expanded section is visible by scrolling to it if needed
-            if (expanded) {
-                Rectangle bounds = getBounds();
-                scrollRectToVisible(new Rectangle(0, 0, bounds.width, bounds.height));
-            }
-        }
-    }
-
     // Helper method to create expandable card
     private ExpandableCardPanel createExpandableCard(String title, String iconPath, JPanel contentPanel) {
         return new ExpandableCardPanel(title, iconPath, contentPanel);
@@ -978,7 +894,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
     private JPanel createPlaylistsPanel() {
         JPanel panel = GuiUtil.createPanel(new BorderLayout());
-
 
         JPanel playlistsListPanel = GuiUtil.createPanel(new MigLayout("fillx, wrap 1, insets 0", "[fill]", "[]0[]"));
 
@@ -1153,9 +1068,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
             container.add(Box.createVerticalStrut(5));
 
-            // Add up to 5 most recent liked songs
-            for (int i = 0; i < Math.min(5, downloadedSongs.size()); i++) {
-                container.add(createSongPanel(downloadedSongs.get(i)));
+            for (SongDTO downloadedSong : downloadedSongs) {
+                container.add(createSongPanel(downloadedSong));
                 container.add(Box.createVerticalStrut(5));
             }
 
@@ -1427,6 +1341,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 playerFacade.pauseSong();
                 MiniMusicPlayerGUI.getInstance().setVisible(false);
             }
+            ThemeManager.getInstance().setThemeColors(ThemeManager.getInstance().getBackgroundColor(), ThemeManager.getInstance().getTextColor(), ThemeManager.getInstance().getAccentColor());
         }
     }
 
@@ -1469,73 +1384,20 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
     @Override
     public void onThemeChanged(Color backgroundColor, Color textColor, Color accentColor) {
-
+        // Style the frame's title bar
         GuiUtil.styleTitleBar(this, GuiUtil.lightenColor(backgroundColor, 0.12), textColor);
 
-        // Update all control colors
-        GuiUtil.changeButtonIconColor(nextButton);
-        GuiUtil.changeButtonIconColor(prevButton);
-        GuiUtil.changeButtonIconColor(playButton);
-        GuiUtil.changeButtonIconColor(pauseButton);
-        GuiUtil.changeButtonIconColor(miniplayerButton);
-        GuiUtil.changeButtonIconColor(goBackButton);
-        GuiUtil.changeButtonIconColor(goForwardButton);
+        GuiUtil.updatePanelColors(mainPanel, backgroundColor, textColor, accentColor);
 
-
-        playbackSlider.setBackground(GuiUtil.lightenColor(backgroundColor, 0.2f));
-        playbackSlider.setForeground(accentColor);
-
-        // Force repaint of main panel to update the gradient
-        Container contentPane = getContentPane();
-        contentPane.repaint();
-
-        // Update text colors
-        dateLabel.setForeground(textColor);
-        fullNameLabel.setForeground(textColor);
-
-        scrollingLabel.setForeground(textColor);
-        labelBeginning.setForeground(textColor);
-        labelEnd.setForeground(textColor);
-
-        // Update avatar if needed
-        if (getCurrentUser().getAvatar() == null) {
-            userInfoPanel.remove(avatarLabel);
-            avatarLabel = createUserProfileAvatar();
-            userInfoPanel.add(avatarLabel);
-        }
-
-        GuiUtil.changeButtonIconColor(homeIcon);
-        GuiUtil.changeButtonIconColor(lookupIcon);
-
-        searchField.setForeground(textColor);
-
-        helpPanel.setBorder(GuiUtil.createTitledBorder("Help", TitledBorder.CENTER));
-
-        helpLabel.setForeground(textColor);
-
-        topPanel.setBorder(GuiUtil.createTitledBorder("Search", TitledBorder.LEFT));
-        searchBarWrapper.setBorder(GuiUtil.createCompoundBorder(2));
-
-
-        combinedCenterPanel.remove(libraryPanel);
-        libraryPanel = createLibraryPanel();
-        combinedCenterPanel.add(libraryPanel, BorderLayout.WEST);
-        combinedCenterPanel.revalidate();
-        combinedCenterPanel.repaint();
-
-
-        centerPanel.setBorder(GuiUtil.createTitledBorder("Main", TitledBorder.LEFT));
-
-        footerPanel.setBorder(GuiUtil.createTitledBorder("Playing", TitledBorder.LEFT));
-
-
-        //Apply again the mainPanel
+        // Update the gradient background for the main panel
         GuiUtil.setGradientBackground(mainPanel,
                 GuiUtil.lightenColor(backgroundColor, 0.1f),
                 GuiUtil.darkenColor(backgroundColor, 0.1f),
                 0.5f, 0.5f, 0.8f);
 
-        welcomeLabel.setForeground(textColor);
+
+        // Force repaint
+        SwingUtilities.invokeLater(this::repaint);
     }
 
 

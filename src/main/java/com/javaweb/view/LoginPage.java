@@ -4,6 +4,8 @@ import com.javaweb.constant.AppConstant;
 import com.javaweb.enums.AccountStatus;
 import com.javaweb.model.dto.UserDTO;
 import com.javaweb.utils.*;
+import com.javaweb.view.theme.ThemeChangeListener;
+import com.javaweb.view.theme.ThemeManager;
 import com.javaweb.view.user.UserSessionManager;
 import lombok.Getter;
 import org.apache.http.NameValuePair;
@@ -23,7 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.UUID;
 
-public class LoginPage extends JFrame {
+public class LoginPage extends JFrame implements ThemeChangeListener {
     private static final Dimension FRAME_SIZE = new Dimension(1100, 934);
     private static final String IMAGE_PATH = "src/main/java/com/javaweb/view/imgs/back_ground/dark-blossom.jpg";
     private final CardLayout cardLayout;
@@ -41,6 +43,7 @@ public class LoginPage extends JFrame {
         mainPanel = GuiUtil.createPanel(cardLayout);
         mainPanel.add(createMainPanel(), "login");
         mainPanel.add(createSignUpPanel(), "signup");
+        ThemeManager.getInstance().addThemeChangeListener(this);
         add(mainPanel);
         addEventListeners();
     }
@@ -160,7 +163,7 @@ public class LoginPage extends JFrame {
         gbc.gridy++;
         gbc.gridwidth = 2;
         gbc.anchor = GridBagConstraints.CENTER;
-        JButton signUpButton = createButton("Register");
+        JButton signUpButton = GuiUtil.createButton("Register");
         signUpButton.addActionListener(e -> handleSignUp(usernameField.getText(), emailField.getText(),
                 new String(passwordField.getPassword())));
         formPanel.add(signUpButton, gbc);
@@ -221,7 +224,7 @@ public class LoginPage extends JFrame {
         overlayPanel.setLayout(new BoxLayout(overlayPanel, BoxLayout.Y_AXIS));
 
         // 'Sign up' button
-        JButton signUpButton = createButton("<html><div style=\"text-align: center;\">Haven't got an account yet?<br>REGISTER NOW!</div></html>");
+        JButton signUpButton = GuiUtil.createButton("<html><div style=\"text-align: center;\">Haven't got an account yet?<br>REGISTER NOW!</div></html>");
         signUpButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         signUpButton.setMaximumSize(new Dimension(250, signUpButton.getPreferredSize().height));
         signUpButton.addActionListener(e -> cardLayout.show(mainPanel, "signup"));
@@ -305,7 +308,7 @@ public class LoginPage extends JFrame {
         overlayPanel.setLayout(new BoxLayout(overlayPanel, BoxLayout.Y_AXIS));
 
         // Create and configure sign in button
-        JButton signInButton = createButton("Login");
+        JButton signInButton = GuiUtil.createButton("Login");
         signInButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         signInButton.addActionListener(e -> cardLayout.show(mainPanel, "login"));
 
@@ -423,8 +426,8 @@ public class LoginPage extends JFrame {
         JPanel buttonsPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.CENTER));
         buttonsPanel.setOpaque(true);
         buttonsPanel.setBackground(AppConstant.BACKGROUND_COLOR);
-        loginButton = createButton("Login");
-        exitButton = createButton("Exit");
+        loginButton = GuiUtil.createButton("Login");
+        exitButton = GuiUtil.createButton("Exit");
         buttonsPanel.add(loginButton);
         buttonsPanel.add(exitButton);
         formPanel.add(buttonsPanel, gbc);
@@ -591,12 +594,9 @@ public class LoginPage extends JFrame {
         }
     }
 
-    private JButton createButton(String text) {
-        JButton button = new JButton(text);
-        button.setBackground(AppConstant.BUTTON_BACKGROUND_COLOR);
-        button.setFont(FontUtil.getJetBrainsMonoFont(Font.BOLD, 16));
-        button.setForeground(AppConstant.BUTTON_TEXT_COLOR);
-        return button;
-    }
 
+    @Override
+    public void onThemeChanged(Color backgroundColor, Color textColor, Color accentColor) {
+        GuiUtil.updatePanelColors(mainPanel, backgroundColor, textColor, accentColor);
+    }
 }

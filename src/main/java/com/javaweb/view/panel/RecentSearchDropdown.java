@@ -134,8 +134,7 @@ public class RecentSearchDropdown extends ListThemeablePanel {
         });
 
         // Add scrollpane to make list scrollable
-        scrollPane = new JScrollPane(songList);
-        GuiUtil.applyModernScrollBar(scrollPane, backgroundColor, accentColor);
+        scrollPane = GuiUtil.createStyledScrollPane(songList);
         add(scrollPane, BorderLayout.CENTER);
 
         // Add a subtle footer
@@ -358,7 +357,7 @@ public class RecentSearchDropdown extends ListThemeablePanel {
             // Song image
             JLabel imageLabel = new JLabel();
             if (song.getSongImage() != null) {
-                imageLabel.setIcon(GuiUtil.createRoundedCornerImageIcon(song.getSongImage(), 10, 60, 60));
+                imageLabel.setIcon(GuiUtil.createRoundedCornerImageIcon(song.getSongImage(), 15, 60, 60));
             } else {
                 imageLabel.setIcon(GuiUtil.createImageIcon(AppConstant.DEFAULT_COVER_PATH, 60, 60));
             }

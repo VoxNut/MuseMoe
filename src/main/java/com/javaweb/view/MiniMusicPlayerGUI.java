@@ -81,6 +81,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
     private JDialog playlistDialog;
     private JDialog songPlaylistDialog;
 
+
     private MiniMusicPlayerGUI() {
         super("MuseMoe Miniplayer");
         GuiUtil.styleTitleBar(this, GuiUtil.lightenColor(AppConstant.BACKGROUND_COLOR, 0.12), AppConstant.TEXT_COLOR);
@@ -157,6 +158,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
                 setVisible(false);
             }
         });
+
     }
 
     public static synchronized MiniMusicPlayerGUI getInstance() {
@@ -299,6 +301,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         playbackBtns.setAlignmentX(Component.CENTER_ALIGNMENT);
         mainPanel.add(playbackBtns);
 
+
         return mainPanel;
 
     }
@@ -322,23 +325,19 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
     }
 
     private void addToolbar() {
-        toolBar = new JToolBar();
-        toolBar.setFloatable(false);
-        toolBar.setOpaque(true);
-        toolBar.setBorderPainted(false);
-        toolBar.setBackground(AppConstant.BACKGROUND_COLOR);
-        toolBar.setForeground(AppConstant.TEXT_COLOR);
+        toolBar = GuiUtil.createToolBar();
+        // Get theme colors
+        Color backgroundColor = ThemeManager.getInstance().getBackgroundColor();
+        Color textColor = ThemeManager.getInstance().getTextColor();
 
-        // Add the menu bar
-        menuBar = new JMenuBar();
-        menuBar.setBorderPainted(false);
-        menuBar.setOpaque(false);
-        menuBar.setBackground(AppConstant.BACKGROUND_COLOR);
-        menuBar.setForeground(AppConstant.TEXT_COLOR);
+        // Style the toolbar
+        GuiUtil.styleToolBar(toolBar, backgroundColor, textColor);
 
+        // Add the menu bar with proper styling
+        menuBar = GuiUtil.createMenuBar();
         toolBar.add(menuBar);
 
-        // Add the "Song" menu
+        // Add the "Song" menu with proper styling
         songMenu = GuiUtil.createMenu("Song");
         menuBar.add(songMenu);
 
@@ -609,17 +608,6 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         GuiUtil.changeLabelIconColor(speakerLabel);
         GuiUtil.changeButtonIconColor(repeatButton);
         GuiUtil.changeButtonIconColor(heartButton);
-    }
-
-    // New helper method to apply consistent text styling
-    private void applyConsistentTextColors(Color baseColor) {
-        songTitle.setForeground(baseColor);
-        songArtist.setForeground(GuiUtil.darkenColor(baseColor, 0.1f));
-        labelBeginning.setForeground(baseColor);
-        labelEnd.setForeground(baseColor);
-        if (playlistNameLabel != null) {
-            playlistNameLabel.setForeground(baseColor);
-        }
     }
 
 
@@ -907,64 +895,19 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
 
     @Override
     public void onThemeChanged(Color backgroundColor, Color textColor, Color accentColor) {
-
         GuiUtil.styleTitleBar(this, backgroundColor, textColor);
-
-        Color menuBackground = GuiUtil.darkenColor(backgroundColor, 0.1f);
-
-        GuiUtil.styleMenuItem(loadSong, menuBackground, textColor);
-        GuiUtil.styleMenuItem(loadPlaylist, menuBackground, textColor);
-
+        GuiUtil.styleToolBar(toolBar, GuiUtil.darkenColor(backgroundColor, 0.1), textColor);
         float centerX = 0.5f;
         float centerY = 0.5f;
         float radius = 0.8f;
         Color gradientCenter = GuiUtil.lightenColor(backgroundColor, 0.1f);
         Color gradientOuter = GuiUtil.darkenColor(backgroundColor, 0.1f);
-
         GuiUtil.setGradientBackground(mainPanel, gradientCenter, gradientOuter, centerX, centerY, radius);
 
-        applyConsistentButtonColors();
+        GuiUtil.updatePanelColors(mainPanel, backgroundColor, textColor, accentColor);
 
-        // Set slider colors with better contrast
-        playbackSlider.setBackground(GuiUtil.lightenColor(backgroundColor, 0.1f));
-        playbackSlider.setForeground(accentColor);
-
-        volumeSlider.setBackground(GuiUtil.lightenColor(backgroundColor, 0.05f));
-        volumeSlider.setForeground(accentColor);
-
-        // Style menu components
-        toolBar.setForeground(textColor);
-        toolBar.setBackground(menuBackground);
-        menuBar.setBackground(menuBackground);
-        menuBar.setForeground(textColor);
-        songMenu.setBackground(menuBackground);
-        songMenu.setForeground(textColor);
-        playlistMenu.setBackground(menuBackground);
-        playlistMenu.setForeground(textColor);
-
-        songMenu.getPopupMenu().setBorder(null);
-        playlistMenu.getPopupMenu().setBorder(null);
-
-        loadSong.setMargin(new Insets(0, 0, 0, 0));
-        loadSong.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
-
-        loadPlaylist.setMargin(new Insets(0, 0, 0, 0));
-        loadPlaylist.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
-
-        loadSong.setBackground(menuBackground);
-        loadSong.setForeground(textColor);
-
-        loadPlaylist.setBackground(menuBackground);
-        loadPlaylist.setForeground(textColor);
-
-        // Make text elements more visible with consistent colors
-        applyConsistentTextColors(textColor);
-
-        // Update icon colors
         GuiUtil.changeIconColor(miniMuseMoeIcon, textColor);
-
         setIconImage(miniMuseMoeIcon.getImage());
-
     }
 
 

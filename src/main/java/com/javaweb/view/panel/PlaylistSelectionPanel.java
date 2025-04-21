@@ -47,10 +47,7 @@ public class PlaylistSelectionPanel extends ListThemeablePanel {
         playlistList.setFixedCellHeight(56);
         playlistList.setSelectionBackground(accentColor);
         playlistList.setBorder(null);
-        JScrollPane scrollPane = new JScrollPane(playlistList);
-        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        GuiUtil.applyModernScrollBar(scrollPane, backgroundColor, accentColor);
+        JScrollPane scrollPane = GuiUtil.createStyledScrollPane(playlistList);
         add(scrollPane, BorderLayout.CENTER);
 
         // Buttons

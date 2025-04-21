@@ -20,6 +20,20 @@ class SongApiClientImpl implements SongApiClient {
 
 
     @Override
+    public SongDTO fetchSongById(Long id) {
+        try {
+            String url = apiConfig.buildSongUrl("/" + id.toString());
+            String responseEntity = apiClient.get(url);
+            SongDTO songDTO = responseParser.parseObject(responseEntity, SongDTO.class);
+            mp3Util.enrichSongDTO(songDTO);
+            return songDTO;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    @Override
     public SongDTO fetchSongByTitle(String title) {
         try {
 

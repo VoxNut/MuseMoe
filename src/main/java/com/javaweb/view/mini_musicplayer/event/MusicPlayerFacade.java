@@ -3,6 +3,7 @@ package com.javaweb.view.mini_musicplayer.event;
 import com.javaweb.enums.RepeatMode;
 import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
+import com.javaweb.utils.CommonApiUtil;
 import com.javaweb.utils.GuiUtil;
 import com.javaweb.view.MiniMusicPlayerGUI;
 import com.javaweb.view.MusicPlayer;
@@ -10,6 +11,7 @@ import com.javaweb.view.theme.ThemeManager;
 
 import java.awt.*;
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 
 //Replay, pause, play current, cycle repeat, set column
 public class MusicPlayerFacade {
@@ -145,6 +147,38 @@ public class MusicPlayerFacade {
 
     public void setCurrentPlaylist(PlaylistDTO playlist) {
         player.setCurrentPlaylist(playlist);
+
+        // Preload the next few songs if we have a playlist
+        if (playlist != null && !playlist.getSongs().isEmpty()) {
+            int currentIndex = 0;
+            int playlistSize = playlist.size();
+
+            // Preload up to 3 songs ahead in a background thread
+            CompletableFuture.runAsync(() -> {
+                for (int i = 0; i < 3 && i < playlistSize; i++) {
+                    SongDTO songToPreload = playlist.getSongAt((currentIndex + i) % playlistSize);
+
+                    // Only enrich if not already processed
+                    if (songToPreload.getMp3File() == null) {
+                        try {
+                            SongDTO fullSong = CommonApiUtil.fetchSongById(songToPreload.getId());
+                            // Update the playlist song with the enriched data
+                            updatePlaylistSong(playlist, currentIndex + i, fullSong);
+                        } catch (Exception e) {
+                            // Just log and continue
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+
+    private void updatePlaylistSong(PlaylistDTO playlist, int index, SongDTO updatedSong) {
+        if (index < playlist.getSongs().size()) {
+            playlist.getSongs().set(index, updatedSong);
+        }
     }
 
     public SongDTO getCurrentSong() {

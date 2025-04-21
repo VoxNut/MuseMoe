@@ -60,6 +60,7 @@ public class App {
         UIManager.put("Button.focusColor", new Color(0, 0, 0, 0));
         UIManager.put("Component.focusWidth", 0);
         UIManager.put("Button.shadowWidth", 0);
+        GuiUtil.disableJaudiotaggerLogging();
 
     }
 

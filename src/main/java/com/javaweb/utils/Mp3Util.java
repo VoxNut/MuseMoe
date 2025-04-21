@@ -14,22 +14,62 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class Mp3Util {
 
+    private final Map<String, SongMetadata> songCache = new ConcurrentHashMap<>();
+
+    private static class SongMetadata {
+        double frameRate;
+        String formattedLength;
+        BufferedImage albumArt;
+
+        SongMetadata(double frameRate, String formattedLength, BufferedImage albumArt) {
+            this.frameRate = frameRate;
+            this.formattedLength = formattedLength;
+            this.albumArt = albumArt;
+        }
+    }
 
     public void enrichSongDTO(SongDTO songDTO) {
         if (songDTO == null || songDTO.getAudioFilePath() == null) {
             return;
         }
 
+        String audioPath = songDTO.getAudioFilePath();
         try {
-            Mp3File mp3File = new Mp3File(songDTO.getAudioFilePath());
+            // Check if we have cached metadata for this song
+            if (songCache.containsKey(audioPath)) {
+                SongMetadata metadata = songCache.get(audioPath);
+                songDTO.setFrameRatePerMilliseconds(metadata.frameRate);
+                songDTO.setSongLength(metadata.formattedLength);
+                songDTO.setSongImage(metadata.albumArt);
+
+                // Still need to create Mp3File for playback
+                songDTO.setMp3File(new Mp3File(audioPath));
+
+                return;
+            }
+
+            // Not cached, process the song
+            Mp3File mp3File = new Mp3File(audioPath);
             songDTO.setMp3File(mp3File);
-            songDTO.setFrameRatePerMilliseconds((double) mp3File.getFrameCount() / mp3File.getLengthInMilliseconds());
-            songDTO.setSongLength(formatDuration(mp3File.getLengthInSeconds()));
-            songDTO.setSongImage(setSongImageFromFileString(songDTO.getAudioFilePath()));
+
+            double frameRate = (double) mp3File.getFrameCount() / mp3File.getLengthInMilliseconds();
+            songDTO.setFrameRatePerMilliseconds(frameRate);
+
+            String formattedLength = formatDuration(mp3File.getLengthInSeconds());
+            songDTO.setSongLength(formattedLength);
+
+            BufferedImage albumArt = setSongImageFromFileString(audioPath);
+            songDTO.setSongImage(albumArt);
+
+            // Cache the metadata
+            songCache.put(audioPath, new SongMetadata(frameRate, formattedLength, albumArt));
+
         } catch (Exception e) {
             songDTO.setSongLength("00:00");
         }

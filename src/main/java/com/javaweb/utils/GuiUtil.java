@@ -6,6 +6,7 @@ import com.javaweb.model.dto.UserDTO;
 import com.javaweb.view.custom.spinner.DateLabelFormatter;
 import com.javaweb.view.custom.table.BorderedHeaderRenderer;
 import com.javaweb.view.custom.table.BorderedTableCellRenderer;
+import com.javaweb.view.panel.ExpandableCardPanel;
 import com.javaweb.view.theme.ThemeManager;
 import de.androidpit.colorthief.ColorThief;
 import net.coobird.thumbnailator.Thumbnails;
@@ -33,12 +34,11 @@ import org.jfree.data.general.DefaultPieDataset;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
-import javax.swing.border.CompoundBorder;
-import javax.swing.border.LineBorder;
-import javax.swing.border.TitledBorder;
+import javax.swing.border.*;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
@@ -51,11 +51,29 @@ import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 public class GuiUtil {
+
+    private static final Map<String, BufferedImage> imageCache = new ConcurrentHashMap<>();
+    private static final Map<String, Future<BufferedImage>> processingImageCache = new ConcurrentHashMap<>();
+    private static final ExecutorService imageProcessingExecutor =
+            Executors.newFixedThreadPool(2, r -> {
+                Thread t = new Thread(r, "ImageProcessingThread");
+                t.setDaemon(true);
+                return t;
+            });
 
     public static void formatTable(JTable table) {
         // Add table styling
@@ -100,6 +118,19 @@ public class GuiUtil {
 
         // Add cell renderer
         table.setDefaultRenderer(Object.class, new BorderedTableCellRenderer());
+    }
+
+    public static void disableJaudiotaggerLogging() {
+        Logger rootLogger = Logger.getLogger("");
+
+        rootLogger.setLevel(Level.WARNING);
+
+        for (Handler handler : rootLogger.getHandlers()) {
+            handler.setLevel(Level.WARNING);
+        }
+
+        Logger jaudiotaggerLogger = Logger.getLogger("org.jaudiotagger");
+        jaudiotaggerLogger.setLevel(Level.SEVERE);
     }
 
 
@@ -341,30 +372,43 @@ public class GuiUtil {
         }
     }
 
+
     public static JMenuItem createMenuItem(String text) {
-        return createMenuItem(text, ThemeManager.getInstance().getBackgroundColor(), ThemeManager.getInstance().getTextColor());
-
-    }
-
-    public static JMenuItem createMenuItem(String text, Color backgroundColor, Color textColor) {
         JMenuItem menuItem = new JMenuItem(text);
-        menuItem.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
+        Color backgroundColor = ThemeManager.getInstance().getBackgroundColor();
+        Color textColor = ThemeManager.getInstance().getTextColor();
+
         menuItem.setOpaque(true);
-        menuItem.setBackground(AppConstant.BACKGROUND_COLOR);
-        menuItem.setForeground(AppConstant.TEXT_COLOR);
-        menuItem.setMargin(new Insets(0, 0, 0, 0));
-        menuItem.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        menuItem.setBackground(backgroundColor);
+        menuItem.setForeground(textColor);
+
+        // Add hover effect
+        Color hoverColor = lightenColor(backgroundColor, 0.1f);
+        menuItem.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                menuItem.setBackground(hoverColor);
+            }
+
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                menuItem.setBackground(backgroundColor);
+            }
+        });
+
         return menuItem;
     }
 
-    public static void applyModernScrollBar(Component component, Color backgroundColor, Color accentColor) {
+
+    public static void applyModernScrollBar(Component component) {
+        Color backgroundColor = ThemeManager.getInstance().getBackgroundColor();
+        Color textColor = ThemeManager.getInstance().getTextColor();
+        Color accentColor = ThemeManager.getInstance().getAccentColor();
         if (component instanceof JScrollPane sp) {
             sp.setBorder(BorderFactory.createEmptyBorder());
             sp.getViewport().setBackground(backgroundColor);
 
             // Style scrollbars
             sp.getVerticalScrollBar().setBackground(backgroundColor);
-            sp.getVerticalScrollBar().setForeground(accentColor);
+            sp.getVerticalScrollBar().setForeground(textColor);
             sp.getHorizontalScrollBar().setBackground(backgroundColor);
             sp.getHorizontalScrollBar().setForeground(accentColor);
         }
@@ -373,13 +417,118 @@ public class GuiUtil {
 
     public static JMenu createMenu(String text) {
         JMenu menu = new JMenu(text);
-        menu.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 16));
+        Color backgroundColor = ThemeManager.getInstance().getBackgroundColor();
+        Color textColor = ThemeManager.getInstance().getTextColor();
+
         menu.setOpaque(true);
-        menu.setBackground(AppConstant.BACKGROUND_COLOR);
-        menu.setForeground(AppConstant.TEXT_COLOR);
-        menu.getPopupMenu().setBorder(null);
-        menu.setBorderPainted(false);
+        menu.setBackground(backgroundColor);
+        menu.setForeground(textColor);
+
+        // Style the popup menu
+        JPopupMenu popupMenu = menu.getPopupMenu();
+        popupMenu.setBackground(backgroundColor);
+        popupMenu.setForeground(textColor);
+        popupMenu.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(darkenColor(backgroundColor, 0.2f), 1),
+                BorderFactory.createEmptyBorder(2, 2, 2, 2)
+        ));
+
         return menu;
+    }
+
+    public static void styleToolBar(JToolBar toolBar, Color backgroundColor, Color textColor) {
+        if (toolBar == null) return;
+
+        toolBar.setOpaque(true);
+        toolBar.setBorderPainted(false);
+        toolBar.setBackground(backgroundColor);
+        toolBar.setForeground(textColor);
+
+        // Also update the components inside the toolbar
+        for (Component comp : toolBar.getComponents()) {
+            if (comp instanceof JMenuBar) {
+                styleMenuBar((JMenuBar) comp, backgroundColor, textColor);
+            }
+        }
+    }
+
+    public static void styleMenuBar(JMenuBar menuBar, Color backgroundColor, Color textColor) {
+        if (menuBar == null) return;
+
+        // Style the menu bar itself
+        menuBar.setOpaque(true);
+        menuBar.setBorderPainted(false);
+        menuBar.setBackground(backgroundColor);
+        menuBar.setForeground(textColor);
+        menuBar.setFont(FontUtil.getJetBrainsMonoFont(Font.PLAIN, 16));
+
+        // Style each menu in the menu bar
+        for (int i = 0; i < menuBar.getMenuCount(); i++) {
+            JMenu menu = menuBar.getMenu(i);
+            if (menu != null) {
+                styleMenu(menu, backgroundColor, textColor);
+            }
+        }
+    }
+
+    public static void styleMenu(JMenu menu, Color backgroundColor, Color textColor) {
+        if (menu == null) return;
+
+        // Style the menu itself
+        menu.setOpaque(true);
+        menu.setBackground(backgroundColor);
+        menu.setForeground(textColor);
+        menu.setFont(FontUtil.getJetBrainsMonoFont(Font.PLAIN, 16));
+
+        // Get the popup menu
+        JPopupMenu popupMenu = menu.getPopupMenu();
+        popupMenu.setBackground(backgroundColor);
+        popupMenu.setForeground(textColor);
+
+        // Apply a subtle border to the popup
+        popupMenu.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(darkenColor(backgroundColor, 0.2f), 1),
+                BorderFactory.createEmptyBorder(2, 2, 2, 2)
+        ));
+
+        // Style all menu items
+        for (Component comp : popupMenu.getComponents()) {
+            if (comp instanceof JMenuItem menuItem) {
+                styleMenuItem(menuItem, backgroundColor, textColor);
+            }
+        }
+    }
+
+    public static void styleMenuItem(JMenuItem menuItem, Color backgroundColor, Color textColor) {
+        if (menuItem == null) return;
+
+        // Basic styling
+        menuItem.setOpaque(true);
+        menuItem.setBackground(backgroundColor);
+        menuItem.setForeground(textColor);
+        menuItem.setFont(FontUtil.getJetBrainsMonoFont(Font.PLAIN, 16));
+
+        // Style submenu if this menu item is a JMenu
+        if (menuItem instanceof JMenu) {
+            styleMenu((JMenu) menuItem, backgroundColor, textColor);
+        }
+
+        // Add hover effect
+        Color hoverColor = lightenColor(backgroundColor, 0.1f);
+        menuItem.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                menuItem.setBackground(hoverColor);
+            }
+
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                menuItem.setBackground(backgroundColor);
+            }
+        });
+
+        // Update accelerator text color if present
+        if (menuItem.getAccelerator() != null) {
+            UIManager.put("MenuItem.acceleratorForeground", textColor);
+        }
     }
 
     public static JSpinner createTimeSpinner() {
@@ -777,11 +926,17 @@ public class GuiUtil {
     }
 
 
-    public static JPanel createGradientHeartPanel() {
-        return createGradientHeartPanel(50, 50, 10, 24);
-    }
+    public static BufferedImage createRoundedCornerImage(BufferedImage image, int cornerRadius, int width, int height) {
+        if (image == null) return null;
 
-    public static ImageIcon createRoundedCornerImageIcon(BufferedImage image, int cornerRadius, int width, int height) {
+        // Create a cache key based on image hashcode and dimensions
+        String cacheKey = image.hashCode() + "-" + width + "-" + height + "-" + cornerRadius;
+
+        // Check if we have this image already processed
+        if (imageCache.containsKey(cacheKey)) {
+            return imageCache.get(cacheKey);
+        }
+
         try {
             // First, use Thumbnailator for high-quality resizing
             BufferedImage resized = Thumbnails.of(image)
@@ -795,14 +950,15 @@ public class GuiUtil {
             // Create an output image with transparency
             BufferedImage output = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
             Graphics2D g2 = output.createGraphics();
+
+            // Enable high quality rendering
             configureGraphicsForHighQuality(g2);
 
             // Calculate safe corner radius
             int safeRadius = Math.min(cornerRadius, Math.min(width, height) / 2);
 
             // Create rounded rectangle clip
-            RoundRectangle2D roundedRect = new RoundRectangle2D.Float(0, 0, width, height, safeRadius, safeRadius);
-            g2.setClip(roundedRect);
+            g2.setClip(new RoundRectangle2D.Float(0, 0, width, height, safeRadius, safeRadius));
 
             // Draw the resized image
             g2.drawImage(resized, 0, 0, width, height, null);
@@ -811,10 +967,14 @@ public class GuiUtil {
             g2.setClip(null);
             g2.setColor(new Color(0, 0, 0, 30));
             g2.setStroke(new BasicStroke(1.0f));
-            g2.draw(roundedRect);
+            g2.draw(new RoundRectangle2D.Float(0, 0, width, height, safeRadius, safeRadius));
 
             g2.dispose();
-            return new ImageIcon(output);
+
+            // Cache the processed image
+            imageCache.put(cacheKey, output);
+
+            return output;
         } catch (Exception e) {
             e.printStackTrace();
 
@@ -826,17 +986,24 @@ public class GuiUtil {
                 configureGraphicsForHighQuality(g2);
 
                 int safeRadius = Math.min(cornerRadius, Math.min(width, height) / 2);
-                RoundRectangle2D clip = new RoundRectangle2D.Float(0, 0, width, height, safeRadius, safeRadius);
-                g2.setClip(clip);
+                g2.setClip(new RoundRectangle2D.Float(0, 0, width, height, safeRadius, safeRadius));
 
                 g2.drawImage(image, 0, 0, width, height, null);
                 g2.dispose();
-                return new ImageIcon(output);
+
+                // Cache the fallback image
+                imageCache.put(cacheKey, output);
+
+                return output;
             } catch (Exception ex) {
                 ex.printStackTrace();
-                return new ImageIcon(image);
+                return null;
             }
         }
+    }
+
+    public static ImageIcon createRoundedCornerImageIcon(BufferedImage image, int cornerRadius, int width, int height) {
+        return new ImageIcon(createRoundedCornerImage(image, cornerRadius, width, height));
     }
 
     public static JLabel createRoundedCornerImageLabel(BufferedImage image, int cornerRadius, int width, int height) {
@@ -844,6 +1011,13 @@ public class GuiUtil {
         label.setIcon(createRoundedCornerImageIcon(image, cornerRadius, width, height));
         return label;
     }
+
+    public static JLabel createRoundedCornerImageLabel(String path, int cornerRadius, int width, int height) {
+        JLabel label = new JLabel();
+        label.setIcon(createRoundedCornerImageIcon(path, cornerRadius, width, height));
+        return label;
+    }
+
 
     public static ImageIcon createRoundedCornerImageIcon(String path, int cornerRadius, int width, int height) {
         try {
@@ -1047,14 +1221,6 @@ public class GuiUtil {
         return popupMenu;
     }
 
-    public static void styleMenuItem(JMenuItem menuItem, Color bgColor, Color textColor) {
-        menuItem.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
-        menuItem.setMargin(new Insets(6, 12, 6, 12));
-        menuItem.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
-        menuItem.setBackground(bgColor);
-        menuItem.setForeground(textColor);
-
-    }
 
     public static void setGradientBackground(JPanel panel, Color centerColor, Color outerColor, float centerX, float centerY, float radius) {
         panel.setOpaque(false);
@@ -1282,6 +1448,22 @@ public class GuiUtil {
         return new ImageIcon(placeholder);
     }
 
+    public static <T> java.util.List<Component> findComponentsByType(Container container, Class<T> type) {
+        java.util.List<Component> components = new ArrayList<>();
+
+        for (Component component : container.getComponents()) {
+            if (type.isInstance(component)) {
+                components.add(component);
+            }
+
+            if (component instanceof Container) {
+                components.addAll(findComponentsByType((Container) component, type));
+            }
+        }
+
+        return components;
+    }
+
     public static JLabel createPlaylistIconLabel(int width, int height, Color backgroundColor, Color foregroundColor) {
         BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = image.createGraphics();
@@ -1319,17 +1501,202 @@ public class GuiUtil {
                 ThemeManager.getInstance().getTextColor());
     }
 
-    public static JScrollPane createStyledScrollPane(JPanel contentPanel) {
+    public static void updatePanelColors(Container container, Color backgroundColor, Color textColor, Color accentColor) {
+        if (container == null) return;
+
+        // Update the container's own properties if it's a JComponent
+        if (container instanceof JComponent jComponent) {
+
+            // Handle different types of borders
+            if (jComponent.getBorder() instanceof TitledBorder titledBorder) {
+                titledBorder.setTitleColor(textColor);
+                // Also update the border color itself, not just the title
+                if (titledBorder.getBorder() instanceof LineBorder) {
+                    titledBorder.setBorder(BorderFactory.createLineBorder(textColor, 2, true));
+                }
+            } else if (jComponent.getBorder() instanceof LineBorder) {
+                // Update plain line borders
+                jComponent.setBorder(BorderFactory.createLineBorder(textColor,
+                        ((LineBorder) jComponent.getBorder()).getThickness(),
+                        ((LineBorder) jComponent.getBorder()).getRoundedCorners()));
+            } else if (jComponent.getBorder() instanceof CompoundBorder compoundBorder) {
+                if (compoundBorder.getOutsideBorder() instanceof LineBorder) {
+                    Border insideBorder = compoundBorder.getInsideBorder();
+                    jComponent.setBorder(BorderFactory.createCompoundBorder(
+                            BorderFactory.createLineBorder(textColor,
+                                    ((LineBorder) compoundBorder.getOutsideBorder()).getThickness(),
+                                    ((LineBorder) compoundBorder.getOutsideBorder()).getRoundedCorners()),
+                            insideBorder
+                    ));
+                }
+            } else if (jComponent.getBorder() instanceof MatteBorder matteBorder) {
+                Insets insets = matteBorder.getBorderInsets();
+                jComponent.setBorder(BorderFactory.createMatteBorder(
+                        insets.top, insets.left, insets.bottom, insets.right, textColor));
+            }
+        }
+
+        if (container instanceof JScrollPane scrollPane) {
+            applyModernScrollBar(scrollPane);
+        }
+
+        // Process all components in the container
+        Component[] components = container.getComponents();
+        for (Component component : components) {
+            // Update JLabel text color
+            if (component instanceof JLabel label) {
+                label.setForeground(textColor);
+
+                // Update label icon color if needed
+                if (label.getIcon() instanceof ImageIcon icon) {
+                    if (shouldColorIcon(icon)) {
+                        changeIconColor(icon, textColor);
+                        label.repaint();
+                    }
+                }
+            }
+            // Update buttons
+            else if (component instanceof JButton button) {
+                if (!button.getText().isEmpty()) {
+                    styleButton(button, backgroundColor, textColor, accentColor);
+                }
+
+                // Handle button icons
+                if (button.getIcon() instanceof ImageIcon icon) {
+                    if (shouldColorIcon(icon)) {
+                        changeButtonIconColor(button);
+                    }
+                    button.repaint();
+                }
+            }
+            // Update text components
+            else if (component instanceof JTextComponent textComponent) {
+                textComponent.setForeground(textColor);
+                textComponent.setCaretColor(textColor);
+                if (!(textComponent instanceof JTextArea)) {
+                    textComponent.setBackground(darkenColor(backgroundColor, 0.1f));
+                }
+            } else if (component instanceof JSlider slider) {
+                slider.setBackground(GuiUtil.lightenColor(backgroundColor, 0.1f));
+                slider.setForeground(accentColor);
+            } else if (component instanceof JList<?> list) {
+                list.setBackground(backgroundColor);
+                list.setForeground(textColor);
+                list.setSelectionBackground(accentColor);
+                list.setSelectionForeground(
+                        calculateContrast(accentColor, textColor) > 4.5 ? textColor : backgroundColor);
+            }
+            // Update custom panels that have specific update methods
+            else if (component instanceof ExpandableCardPanel expandableCard) {
+                expandableCard.updateColors(backgroundColor, textColor);
+            }
+
+            // Recursively update child containers
+            if (component instanceof Container childContainer) {
+                updatePanelColors(childContainer, backgroundColor, textColor, accentColor);
+            }
+        }
+    }
+
+    public static JMenuBar createMenuBar() {
+        JMenuBar menuBar = new JMenuBar();
+        menuBar.setOpaque(true);
+        menuBar.setBorderPainted(false);
+        menuBar.setBackground(ThemeManager.getInstance().getBackgroundColor());
+        menuBar.setForeground(ThemeManager.getInstance().getTextColor());
+        return menuBar;
+    }
+
+    public static JToolBar createToolBar() {
+        JToolBar toolBar = new JToolBar();
+        toolBar.setFloatable(false);
+        toolBar.setOpaque(true);
+        toolBar.setBorderPainted(false);
+        toolBar.setBackground(ThemeManager.getInstance().getBackgroundColor());
+        toolBar.setForeground(ThemeManager.getInstance().getTextColor());
+        return toolBar;
+    }
+
+    private static boolean shouldColorIcon(ImageIcon icon) {
+        // Get the icon as a BufferedImage for analysis
+        BufferedImage img = iconToBufferedImage(icon);
+        if (img == null) return false;
+
+        // Calculate characteristics that help determine if it's a simple icon or a complex image
+
+        // 1. Check transparency - most simple icons have high transparency areas
+        int transparentPixels = 0;
+        int totalPixels = img.getWidth() * img.getHeight();
+        int colorVariety = 0;
+        java.util.Set<Integer> uniqueColors = new java.util.HashSet<>();
+
+        // Sample pixels to keep this efficient
+        int sampleRate = Math.max(1, img.getWidth() * img.getHeight() / 1000);
+
+        for (int y = 0; y < img.getHeight(); y += sampleRate) {
+            for (int x = 0; x < img.getWidth(); x += sampleRate) {
+                int rgb = img.getRGB(x, y);
+                int alpha = (rgb >>> 24) & 0xFF;
+
+                if (alpha < 128) {
+                    transparentPixels++;
+                } else {
+                    uniqueColors.add(rgb & 0x00FFFFFF);
+                }
+            }
+        }
+
+        double transparencyRatio = (double) transparentPixels / ((double) totalPixels / sampleRate);
+        colorVariety = uniqueColors.size();
+
+
+        boolean isSmallSize = img.getWidth() <= 48 && img.getHeight() <= 48;
+        boolean hasHighTransparency = transparencyRatio > 0.4;
+        boolean hasLowColorVariety = colorVariety < 20;
+
+        if (icon.getDescription() != null) {
+            String path = icon.getDescription().toLowerCase();
+            if (path.contains("icon") || path.contains("svg") ||
+                    path.contains("button") || path.contains("symbol")) {
+                return true;
+            }
+        }
+
+        return (isSmallSize && (hasHighTransparency || hasLowColorVariety));
+    }
+
+
+    private static BufferedImage iconToBufferedImage(ImageIcon icon) {
+        if (icon == null) return null;
+
+        // If the icon already has a BufferedImage, use it
+        if (icon.getImage() instanceof BufferedImage) {
+            return (BufferedImage) icon.getImage();
+        }
+
+        // Otherwise create a new BufferedImage from the icon
+        BufferedImage img = new BufferedImage(
+                icon.getIconWidth(),
+                icon.getIconHeight(),
+                BufferedImage.TYPE_INT_ARGB
+        );
+
+        Graphics2D g2d = img.createGraphics();
+        icon.paintIcon(null, g2d, 0, 0);
+        g2d.dispose();
+
+        return img;
+    }
+
+    public static JScrollPane createStyledScrollPane(Component contentPanel) {
         JScrollPane scrollPane = new JScrollPane(contentPanel);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.setBorder(null);
         scrollPane.getViewport().setOpaque(false);
         scrollPane.setOpaque(false);
-
         scrollPane.getViewport().setBackground(ThemeManager.getInstance().getBackgroundColor());
-
-        GuiUtil.applyModernScrollBar(scrollPane, ThemeManager.getInstance().getBackgroundColor(), ThemeManager.getInstance().getBackgroundColor());
+        applyModernScrollBar(scrollPane);
         return scrollPane;
     }
 
@@ -1523,7 +1890,7 @@ public class GuiUtil {
         setGradientBackground(mainPanel, bgColor, darkenColor(bgColor, 0.2f), 0.5f, 0.5f, 0.5f);
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        styleDialog(dialog, bgColor, textColor);
+        styleDialog(dialog, darkenColor(bgColor, 0.1f), textColor);
 
         JLabel messageLabel = new JLabel("<html><div style='text-align: center;'>" + message + "</div></html>");
         messageLabel.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
@@ -1531,7 +1898,7 @@ public class GuiUtil {
         messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
         // Create custom icon
-        Icon icon = createCustomDialogIcon(JOptionPane.QUESTION_MESSAGE, 40, accentColor, bgColor);
+        Icon icon = createCustomDialogIcon(JOptionPane.QUESTION_MESSAGE, 50, accentColor.darker(), bgColor);
         JLabel iconLabel = new JLabel(icon);
         iconLabel.setVerticalAlignment(SwingConstants.TOP);
 
@@ -1783,7 +2150,7 @@ public class GuiUtil {
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         // Add title bar styling
-        styleDialog(dialog, bgColor, textColor);
+        styleDialog(dialog, darkenColor(bgColor, 0.1f), textColor);
 
         // Create message label with proper styling
         JLabel messageLabel = new JLabel("<html><div style='text-align: center;'>" + message + "</div></html>");

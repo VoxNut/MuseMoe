@@ -19,5 +19,6 @@ public interface SongApiClient {
 
     List<SongDTO> searchSongs(String query);
 
+    SongDTO fetchSongById(Long id);
 
 }

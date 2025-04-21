@@ -55,7 +55,7 @@ public abstract class ThemeablePanel extends JPanel implements ThemeChangeListen
         for (Component c : container.getComponents()) {
             if (c instanceof JScrollPane scrollPane) {
                 // Apply modern scrollbar with current theme colors
-                GuiUtil.applyModernScrollBar(scrollPane, backgroundColor, accentColor);
+                GuiUtil.applyModernScrollBar(scrollPane);
 
                 // Also theme the viewport's background
                 scrollPane.getViewport().setBackground(backgroundColor);

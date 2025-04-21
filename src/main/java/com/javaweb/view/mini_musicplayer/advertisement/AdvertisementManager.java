@@ -34,7 +34,6 @@ public class AdvertisementManager {
     }
 
     public boolean shouldShowAd(UserDTO user) {
-        // Skip ads for premium, admin or artist users
         Set<String> roles = user.getRoles();
         if (roles.contains(AppConstant.PREMIUM_ROLE) ||
                 roles.contains(AppConstant.ADMIN_ROLE) ||
@@ -42,8 +41,13 @@ public class AdvertisementManager {
             return false;
         }
 
+        int playCount = userPlayCounter.getOrDefault(user.getId(), 0);
 
-        return userPlayCounter.get(user.getId()) == AppConstant.SONGS_BEFORE_AD;
+        if (!userPlayCounter.containsKey(user.getId())) {
+            userPlayCounter.put(user.getId(), 0);
+        }
+
+        return playCount >= AppConstant.SONGS_BEFORE_AD;
     }
 
     public void updateUserPlayCounter(UserDTO user) {

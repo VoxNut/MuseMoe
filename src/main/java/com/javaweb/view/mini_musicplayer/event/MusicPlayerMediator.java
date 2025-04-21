@@ -95,5 +95,13 @@ public class MusicPlayerMediator {
                 new int[]{frame, timeInMillis}));
     }
 
+    public void notifyLoadingStarted() {
+        publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.LOADING_STARTED, null));
+    }
+
+    public void notifyLoadingFinished() {
+        publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.LOADING_FINISHED, null));
+    }
+
 
 }

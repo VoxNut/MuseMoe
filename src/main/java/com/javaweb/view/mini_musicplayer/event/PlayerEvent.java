@@ -18,6 +18,8 @@ public record PlayerEvent(EventType type, Object data) {
         SLIDER_CHANGED,
         HOME_PAGE_SLIDER_CHANGED,
         SLIDER_DRAGGING,
+        LOADING_STARTED,
+        LOADING_FINISHED
     }
 
 }

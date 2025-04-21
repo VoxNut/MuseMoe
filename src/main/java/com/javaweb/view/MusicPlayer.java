@@ -20,11 +20,13 @@ import lombok.Setter;
 
 import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.SourceDataLine;
+import javax.swing.*;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 
@@ -107,8 +109,43 @@ public class MusicPlayer extends PlaybackListener {
     }
 
     public void loadSong(SongDTO song) throws IOException {
+        // If it's an ad or we already have the fully loaded song, process immediately
+        if (adManager.shouldShowAd(getCurrentUser()) || (song != null && song.getMp3File() != null)) {
+            processLoadSong(song);
+            return;
+        }
+
+        // Show loading indicator
+        mediator.notifyLoadingStarted();
+
+        // Load song in background
+        CompletableFuture.supplyAsync(() -> {
+            try {
+                // If we only have basic song info, fetch complete song data
+                assert song != null;
+                if (song.getMp3File() == null) {
+                    return CommonApiUtil.fetchSongById(song.getId());
+                }
+                return song;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return song; // Return original song as fallback
+            }
+        }).thenAccept(loadedSong -> {
+            // Back on UI thread
+            SwingUtilities.invokeLater(() -> {
+                try {
+                    mediator.notifyLoadingFinished();
+                    processLoadSong(loadedSong);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+        });
+    }
+
+    private void processLoadSong(SongDTO song) throws IOException {
         resetPlaybackPosition();
-        // stop the song if possible
         stopSong();
 
         try {
@@ -117,10 +154,8 @@ public class MusicPlayer extends PlaybackListener {
             Thread.currentThread().interrupt();
         }
 
-
-        //Check if Free user has meet the ads condition.
+        // Rest of your existing loadSong logic
         if (adManager.shouldShowAd(getCurrentUser())) {
-            // Store the original song URL before playing the ad
             if (song != null) {
                 adManager.storeLastSong(song);
             }
@@ -134,8 +169,9 @@ public class MusicPlayer extends PlaybackListener {
             currentSong = song;
             mediator.notifyAdOff();
 
-            //Log the play history only if the current song is not ad.
-            CommonApiUtil.logPlayHistory(currentSong.getId());
+            if (currentSong != null && !havingAd) {
+                CommonApiUtil.logPlayHistory(currentSong.getId());
+            }
         }
 
         // play the current song if not null
@@ -363,7 +399,7 @@ public class MusicPlayer extends PlaybackListener {
                 while (!Thread.currentThread().isInterrupted()) {
                     // Check if we should exit the loop
                     if (isPaused || songFinished || pressedNext || pressedPrev ||
-                        pressedShuffle || pressedReplay || advancedPlayer == null) {
+                            pressedShuffle || pressedReplay || advancedPlayer == null) {
                         break;
                     }
 
@@ -382,7 +418,7 @@ public class MusicPlayer extends PlaybackListener {
 
                     // Only notify mediator if the thread isn't interrupted and we're still playing
                     if (!Thread.currentThread().isInterrupted() && !isPaused &&
-                        !songFinished && advancedPlayer != null) {
+                            !songFinished && advancedPlayer != null) {
                         // Use invokeAndWait to ensure UI updates happen synchronously
                         mediator.notifyPlaybackProgress(calculatedFrame, currentTimeInMilli);
                     }

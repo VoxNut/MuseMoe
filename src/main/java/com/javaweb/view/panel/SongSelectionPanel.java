@@ -38,10 +38,9 @@ public class SongSelectionPanel extends ListThemeablePanel {
         songList.setCellRenderer(new SongListCellRenderer());
         songList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        JScrollPane scrollPane = new JScrollPane(songList);
-        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        GuiUtil.applyModernScrollBar(scrollPane, backgroundColor, accentColor);
+        JScrollPane scrollPane = GuiUtil.createStyledScrollPane(songList);
+
+        GuiUtil.applyModernScrollBar(scrollPane);
         add(scrollPane, BorderLayout.CENTER);
 
         // Buttons

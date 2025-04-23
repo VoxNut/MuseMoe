@@ -274,6 +274,56 @@ public class GuiUtil {
         return label;
     }
 
+
+    public static JProgressBar createStyledProgressBar(Color backgroundColor, Color foregroundColor) {
+        JProgressBar progressBar = new JProgressBar();
+
+        // Set colors
+        progressBar.setBackground(GuiUtil.darkenColor(backgroundColor, 0.2f));
+        progressBar.setForeground(foregroundColor);
+
+        // Remove borders
+        progressBar.setBorderPainted(false);
+
+        // Set preferred size for a sleeker look
+        progressBar.setPreferredSize(new Dimension(300, 20));
+
+        // Set UI properties
+        UIManager.put("ProgressBar.arc", 999); // Very rounded corners
+        UIManager.put("ProgressBar.selectionForeground", foregroundColor);
+        UIManager.put("ProgressBar.selectionBackground", backgroundColor);
+
+        if (!progressBar.isIndeterminate()) {
+            new Timer(50, e -> {
+                if (!progressBar.isIndeterminate() && progressBar.getValue() < progressBar.getMaximum()) {
+                    progressBar.repaint();
+                }
+            }).start();
+        }
+
+        return progressBar;
+    }
+
+    public static void styleProgressBar(JProgressBar progressBar, Color backgroundColor, Color foregroundColor) {
+        // Set colors
+        progressBar.setBackground(GuiUtil.darkenColor(backgroundColor, 0.2f));
+        progressBar.setForeground(foregroundColor);
+
+        // Remove borders
+        progressBar.setBorderPainted(false);
+
+        // Set preferred size for a sleeker look
+        progressBar.setPreferredSize(new Dimension(300, 8));
+
+        // Set UI properties for rounded corners
+        UIManager.put("ProgressBar.arc", 999);
+        UIManager.put("ProgressBar.selectionForeground", foregroundColor);
+        UIManager.put("ProgressBar.selectionBackground", backgroundColor);
+
+        // Force the bar to use the new styling
+        progressBar.updateUI();
+    }
+
     public static JTextField createLineInputField(int columns) {
         JTextField textField = new JTextField(columns);
         textField.setForeground(AppConstant.TEXT_COLOR);

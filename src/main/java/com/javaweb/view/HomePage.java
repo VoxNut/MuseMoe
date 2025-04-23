@@ -44,14 +44,24 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private static final float SCROLL_SPEED = 0.5f; // Smaller increment
     private float scrollPosition = 0.0f;
 
-    private final JPanel mainPanel;
+    private JPanel mainPanel;
     private final MusicPlayerFacade playerFacade;
     private JTextField searchField;
     private RecentSearchDropdown recentSearchDropdown;
     private final ImageIcon miniMuseMoeIcon;
+    private JPanel loadingOverlay;
+    private JProgressBar progressBar;
+    private JLabel progressLabel;
+
+    private JPanel headerPanel;
+    private JPanel combinedPanel;
+    private JPanel miniMusicPlayerPanel;
 
     public HomePage() {
         initializeFrame();
+
+        showLoadingOverlay("Loading MuseMoe...");
+
 
         playerFacade = MusicPlayerFacade.getInstance();
         MusicPlayerMediator.getInstance().subscribeToPlayerEvents(this);
@@ -63,8 +73,11 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         setIconImage(miniMuseMoeIcon.getImage());
 
 
-        mainPanel = createMainPanel();
-        add(mainPanel);
+        JPanel initialPanel = createInitialPanel();
+        add(initialPanel);
+
+        SwingUtilities.invokeLater(this::startProgressiveLoading);
+
 
     }
 
@@ -96,6 +109,193 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         setVisible(true);
 
+    }
+
+    private JPanel createInitialPanel() {
+        JPanel panel = GuiUtil.createPanel(new BorderLayout());
+
+        // Apply gradient background
+        GuiUtil.setGradientBackground(panel,
+                GuiUtil.lightenColor(ThemeManager.getInstance().getBackgroundColor(), 0.1f),
+                GuiUtil.darkenColor(ThemeManager.getInstance().getBackgroundColor(), 0.4f),
+                0.5f, 0.5f, 0.8f);
+
+        // Create a simple welcome message
+        JPanel centerPanel = GuiUtil.createPanel(new GridBagLayout());
+        JLabel welcomeLabel = new JLabel("Welcome to Muse Moe");
+        welcomeLabel.setFont(FontUtil.getSpotifyFont(Font.BOLD, 32));
+        welcomeLabel.setForeground(ThemeManager.getInstance().getTextColor());
+
+        JLabel loadingLabel = new JLabel("Loading your music experience...");
+        loadingLabel.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 16));
+        loadingLabel.setForeground(ThemeManager.getInstance().getTextColor());
+
+        // Add components to panel
+        JPanel textPanel = GuiUtil.createPanel();
+        textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.Y_AXIS));
+        textPanel.setOpaque(false);
+
+        welcomeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        loadingLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        textPanel.add(welcomeLabel);
+        textPanel.add(Box.createVerticalStrut(10));
+        textPanel.add(loadingLabel);
+
+        centerPanel.add(textPanel);
+        panel.add(centerPanel, BorderLayout.CENTER);
+
+        return panel;
+    }
+
+    private void showLoadingOverlay(String message) {
+        if (loadingOverlay == null) {
+            loadingOverlay = GuiUtil.createPanel((new GridBagLayout()));
+            loadingOverlay.setOpaque(true);
+            loadingOverlay.setBackground(ThemeManager.getInstance().getBackgroundColor());
+
+            JPanel contentPanel = GuiUtil.createPanel();
+            contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+            contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
+
+
+            // Create a logo or app icon at the top
+            ImageIcon logoIcon = GuiUtil.createImageIcon(AppConstant.MUSE_MOE_LOGO_PATH, 300, 300);
+            JLabel logoLabel = new JLabel(logoIcon);
+            logoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+            // Create the progress message with nice font
+            progressLabel = GuiUtil.createLabel(message, Font.BOLD, 40);
+
+            progressLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+            // Create a modern looking progress bar
+            Color accentColor = ThemeManager.getInstance().getAccentColor();
+
+            progressBar = GuiUtil.createStyledProgressBar(
+                    ThemeManager.getInstance().getBackgroundColor(),
+                    accentColor != null ? accentColor : new Color(52, 152, 219)
+            );
+            progressBar.setAlignmentX(Component.CENTER_ALIGNMENT);
+            progressBar.setIndeterminate(true);
+
+            // Add additional status text below progress bar
+            JLabel statusLabel = GuiUtil.createLabel("Initializing application...", Font.ITALIC, 30);
+            statusLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+            // Add components to the content panel with proper spacing
+            contentPanel.add(logoLabel);
+            contentPanel.add(Box.createVerticalStrut(15));
+            contentPanel.add(progressLabel);
+            contentPanel.add(Box.createVerticalStrut(15));
+            contentPanel.add(progressBar);
+            contentPanel.add(Box.createVerticalStrut(10));
+            contentPanel.add(statusLabel);
+
+            GridBagConstraints gbc = new GridBagConstraints();
+            gbc.gridx = 0;
+            gbc.gridy = 0;
+            loadingOverlay.add(contentPanel, gbc);
+
+            JLayeredPane layeredPane = getLayeredPane();
+            loadingOverlay.setBounds(0, 0, getWidth(), getHeight());
+            layeredPane.add(loadingOverlay, JLayeredPane.POPUP_LAYER);
+
+            // Add resize listener to keep overlay sized correctly
+            addComponentListener(new ComponentAdapter() {
+                @Override
+                public void componentResized(ComponentEvent e) {
+                    loadingOverlay.setBounds(0, 0, getWidth(), getHeight());
+                }
+            });
+        } else {
+            progressLabel.setText(message);
+        }
+
+        loadingOverlay.setVisible(true);
+    }
+
+    private void hideLoadingOverlay() {
+        if (loadingOverlay != null) {
+            loadingOverlay.setVisible(false);
+        }
+    }
+
+    // Progressive loading of UI components
+    private void startProgressiveLoading() {
+        // Create a worker thread for background loading
+        new SwingWorker<Void, String>() {
+            @Override
+            protected Void doInBackground() {
+                try {
+                    // Step 1: Create the main structural panels
+                    publish("Setting up the interface...");
+                    Thread.sleep(100); // Small pause to update UI
+
+                    mainPanel = createMainPanel();
+
+                    // Step 2: Load header components
+                    publish("Loading user profile...");
+                    headerPanel = createHeaderPanel();
+
+                    // Step 3: Load library components
+                    publish("Loading your library...");
+                    combinedPanel = createCombinedPanel();
+
+                    // Step 4: Load player components
+                    publish("Setting up music player...");
+                    miniMusicPlayerPanel = createMiniMusicPlayerPanel();
+
+                    return null;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return null;
+                }
+            }
+
+            @Override
+            protected void process(java.util.List<String> chunks) {
+                if (!chunks.isEmpty()) {
+                    String latestMessage = chunks.getLast();
+                    progressLabel.setText(latestMessage);
+
+                    progressBar.setIndeterminate(false);
+                    progressBar.setIndeterminate(true);
+                }
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    // Replace the initial panel with the fully loaded UI
+                    getContentPane().removeAll();
+                    getContentPane().add(mainPanel);
+
+                    // Final UI updates
+                    mainPanel.add(createHeaderPanel(), BorderLayout.NORTH);
+                    mainPanel.add(createCombinedPanel(), BorderLayout.CENTER);
+                    mainPanel.add(createMiniMusicPlayerPanel(), BorderLayout.SOUTH);
+
+                    // Make UI elements interactive
+                    mainPanel.addMouseListener(new MouseAdapter() {
+                        @Override
+                        public void mouseClicked(MouseEvent e) {
+                            if (searchField.hasFocus() && !searchField.contains(e.getPoint())) {
+                                searchField.transferFocus();
+                            }
+                        }
+                    });
+
+                    // Hide loading overlay and refresh the UI
+                    hideLoadingOverlay();
+                    revalidate();
+                    repaint();
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }.execute();
     }
 
 

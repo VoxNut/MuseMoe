@@ -186,6 +186,15 @@ public class GuiUtil {
         return button;
     }
 
+    public static JButton createPlainButton(String text) {
+        JButton button = new JButton(text);
+        button.setForeground(ThemeManager.getInstance().getTextColor());
+        button.setBackground(ThemeManager.getInstance().getBackgroundColor());
+        button.setFont(FontUtil.getJetBrainsMonoFont(Font.BOLD, 16));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        return button;
+    }
+
     public static JButton createIconButtonWithText(String text, String iconPath) {
         JButton button = createButton(text);
         button.setIcon(GuiUtil.createColoredIcon(iconPath, 16));
@@ -237,6 +246,12 @@ public class GuiUtil {
     public static JLabel createLabel(String text, Font font) {
         JLabel label = createLabel(text);
         label.setFont(font);
+        return label;
+    }
+
+    public static JLabel createInteractiveLabel(String text, int size, float style) {
+        JLabel label = createLabel(text, size, style);
+        label.setCursor(new Cursor(Cursor.HAND_CURSOR));
         return label;
     }
 
@@ -306,10 +321,12 @@ public class GuiUtil {
     }
 
     private static void styleInputField(JTextField textField, Dimension textFieldDimension) {
-        textField.setForeground(AppConstant.TEXT_COLOR);
-        textField.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, AppConstant.TEXT_COLOR));
-        textField.setBackground(AppConstant.TEXTFIELD_BACKGROUND_COLOR);
-        textField.setCaretColor(AppConstant.TEXT_COLOR);
+        Color textColor = ThemeManager.getInstance().getTextColor();
+        Color accentcolor = ThemeManager.getInstance().getAccentColor();
+        textField.setForeground(textColor);
+        textField.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, textColor));
+        textField.setBackground(accentcolor);
+        textField.setCaretColor(textColor);
         textField.setPreferredSize(textFieldDimension);
     }
 
@@ -381,6 +398,8 @@ public class GuiUtil {
         menuItem.setOpaque(true);
         menuItem.setBackground(backgroundColor);
         menuItem.setForeground(textColor);
+        menuItem.setFont(FontUtil.getJetBrainsMonoFont(Font.PLAIN, 16));
+
 
         // Add hover effect
         Color hoverColor = lightenColor(backgroundColor, 0.1f);
@@ -423,6 +442,8 @@ public class GuiUtil {
         menu.setOpaque(true);
         menu.setBackground(backgroundColor);
         menu.setForeground(textColor);
+        menu.setFont(FontUtil.getJetBrainsMonoFont(Font.PLAIN, 16));
+
 
         // Style the popup menu
         JPopupMenu popupMenu = menu.getPopupMenu();
@@ -460,7 +481,6 @@ public class GuiUtil {
         menuBar.setBorderPainted(false);
         menuBar.setBackground(backgroundColor);
         menuBar.setForeground(textColor);
-        menuBar.setFont(FontUtil.getJetBrainsMonoFont(Font.PLAIN, 16));
 
         // Style each menu in the menu bar
         for (int i = 0; i < menuBar.getMenuCount(); i++) {
@@ -478,7 +498,6 @@ public class GuiUtil {
         menu.setOpaque(true);
         menu.setBackground(backgroundColor);
         menu.setForeground(textColor);
-        menu.setFont(FontUtil.getJetBrainsMonoFont(Font.PLAIN, 16));
 
         // Get the popup menu
         JPopupMenu popupMenu = menu.getPopupMenu();
@@ -506,7 +525,6 @@ public class GuiUtil {
         menuItem.setOpaque(true);
         menuItem.setBackground(backgroundColor);
         menuItem.setForeground(textColor);
-        menuItem.setFont(FontUtil.getJetBrainsMonoFont(Font.PLAIN, 16));
 
         // Style submenu if this menu item is a JMenu
         if (menuItem instanceof JMenu) {
@@ -896,9 +914,13 @@ public class GuiUtil {
                 configureGraphicsForHighQuality(g2d);
 
                 // Draw gradient background
+//                GradientPaint gradient = new GradientPaint(
+//                        0, 0, new Color(0xE8128A),
+//                        getWidth(), getHeight(), new Color(0x26C6DA)
+//                );
                 GradientPaint gradient = new GradientPaint(
-                        0, 0, new Color(0xE8128A),
-                        getWidth(), getHeight(), new Color(0x26C6DA)
+                        0, 0, darkenColor(ThemeManager.getInstance().getBackgroundColor(), 0.1),
+                        getWidth(), getHeight(), lightenColor(ThemeManager.getInstance().getBackgroundColor(), 0.4)
                 );
                 g2d.setPaint(gradient);
                 g2d.fillRoundRect(0, 0, getWidth(), getHeight(), cornerRadius, cornerRadius);
@@ -1145,6 +1167,10 @@ public class GuiUtil {
         JPanel panel = createPanel();
         panel.setLayout(layoutManager);
         return panel;
+    }
+
+    public static CompoundBorder createCompoundBorder(TitledBorder titledBorder, Border emptyBorder) {
+        return new CompoundBorder(titledBorder, emptyBorder);
     }
 
     public static JPanel createPanel(TitledBorder title) {
@@ -1576,9 +1602,11 @@ public class GuiUtil {
                 if (!(textComponent instanceof JTextArea)) {
                     textComponent.setBackground(darkenColor(backgroundColor, 0.1f));
                 }
+                // Slider
             } else if (component instanceof JSlider slider) {
                 slider.setBackground(GuiUtil.lightenColor(backgroundColor, 0.1f));
                 slider.setForeground(accentColor);
+                //List
             } else if (component instanceof JList<?> list) {
                 list.setBackground(backgroundColor);
                 list.setForeground(textColor);
@@ -1586,8 +1614,10 @@ public class GuiUtil {
                 list.setSelectionForeground(
                         calculateContrast(accentColor, textColor) > 4.5 ? textColor : backgroundColor);
             }
-            // Update custom panels that have specific update methods
-            else if (component instanceof ExpandableCardPanel expandableCard) {
+            // ToolBar
+            else if (component instanceof JToolBar toolBar) {
+                styleToolBar(toolBar, darkenColor(backgroundColor, 0.1), textColor);
+            } else if (component instanceof ExpandableCardPanel expandableCard) {
                 expandableCard.updateColors(backgroundColor, textColor);
             }
 
@@ -1604,6 +1634,8 @@ public class GuiUtil {
         menuBar.setBorderPainted(false);
         menuBar.setBackground(ThemeManager.getInstance().getBackgroundColor());
         menuBar.setForeground(ThemeManager.getInstance().getTextColor());
+        menuBar.setFont(FontUtil.getJetBrainsMonoFont(Font.PLAIN, 16));
+
         return menuBar;
     }
 
@@ -1614,6 +1646,8 @@ public class GuiUtil {
         toolBar.setBorderPainted(false);
         toolBar.setBackground(ThemeManager.getInstance().getBackgroundColor());
         toolBar.setForeground(ThemeManager.getInstance().getTextColor());
+        toolBar.setFont(FontUtil.getJetBrainsMonoFont(Font.PLAIN, 16));
+
         return toolBar;
     }
 
@@ -2336,7 +2370,7 @@ public class GuiUtil {
             return new Color[]{
                     AppConstant.BACKGROUND_COLOR,
                     AppConstant.TEXT_COLOR,
-                    GuiUtil.darkenColor(AppConstant.BACKGROUND_COLOR, 0.1f)
+                    AppConstant.TEXTFIELD_BACKGROUND_COLOR
             };
         }
 
@@ -2396,7 +2430,7 @@ public class GuiUtil {
         return new Color[]{
                 AppConstant.BACKGROUND_COLOR,
                 AppConstant.TEXT_COLOR,
-                GuiUtil.darkenColor(AppConstant.BACKGROUND_COLOR, 0.1f)
+                AppConstant.TEXTFIELD_BACKGROUND_COLOR
         };
     }
 

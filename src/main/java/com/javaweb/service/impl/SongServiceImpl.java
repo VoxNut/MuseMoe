@@ -33,10 +33,11 @@ public class SongServiceImpl implements SongService {
 
     @Override
     public SongDTO findOneByTitle(String title) {
-        return songConverter.toDTO(
+        SongDTO song = songConverter.toDTO(
                 songRepository.findOneByTitle(title)
                         .orElseThrow(() -> new EntityNotFoundException("Song not found!"))
         );
+        return song;
     }
 
     @Override

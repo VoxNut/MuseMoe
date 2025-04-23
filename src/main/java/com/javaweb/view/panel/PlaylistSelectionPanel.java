@@ -1,6 +1,8 @@
 package com.javaweb.view.panel;
 
+import com.javaweb.constant.AppConstant;
 import com.javaweb.model.dto.PlaylistDTO;
+import com.javaweb.model.dto.SongDTO;
 import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
 import com.javaweb.view.theme.ThemeManager;
@@ -126,45 +128,14 @@ public class PlaylistSelectionPanel extends ListThemeablePanel {
                 });
             }
 
-            // Create a mini playlist icon/indicator
-            JPanel iconPanel = new JPanel() {
-                @Override
-                protected void paintComponent(Graphics g) {
-                    super.paintComponent(g);
-                    Graphics2D g2 = (Graphics2D) g.create();
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            List<SongDTO> songs = playlist.getSongs();
 
-                    int size = Math.min(getWidth(), getHeight()) - 4;
-                    int x = (getWidth() - size) / 2;
-                    int y = (getHeight() - size) / 2;
-
-                    // Draw playlist icon
-                    g2.setColor(isSelected ? textColor : accentColor);
-                    g2.fillRoundRect(x, y, size, size, 6, 6);
-
-                    // Draw "lines" to suggest a playlist
-                    g2.setColor(isSelected ? accentColor : textColor);
-                    int lineWidth = (int) (size * 0.7);
-                    int lineHeight = size / 8;
-                    int lineX = x + (size - lineWidth) / 2;
-                    int lineStartY = y + size / 4;
-
-                    for (int i = 0; i < 3; i++) {
-                        g2.fillRoundRect(lineX, lineStartY + i * (lineHeight + 2), lineWidth, lineHeight, 2, 2);
-                    }
-
-                    g2.dispose();
-                }
-
-                @Override
-                public Dimension getPreferredSize() {
-                    return new Dimension(24, 24);
-                }
-            };
-            iconPanel.setOpaque(false);
+            JLabel imageLabel = !songs.isEmpty() ?
+                    GuiUtil.createRoundedCornerImageLabel(songs.getFirst().getSongImage(), 15, 40, 40)
+                    : GuiUtil.createRoundedCornerImageLabel(AppConstant.DEFAULT_COVER_PATH, 15, 40, 40);
 
             // Add the icon panel
-            cellPanel.add(iconPanel, BorderLayout.WEST);
+            cellPanel.add(imageLabel, BorderLayout.WEST);
 
             // Create the info panel with playlist name and song count
             JPanel infoPanel = GuiUtil.createPanel(new GridLayout(2, 1, 0, 2));

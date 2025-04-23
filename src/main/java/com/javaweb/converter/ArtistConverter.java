@@ -17,7 +17,9 @@ public class ArtistConverter implements EntityConverter<ArtistEntity, ArtistRequ
     public ArtistDTO toDTO(ArtistEntity entity) {
         if (entity != null) {
             ArtistDTO artistDTO = modelMapper.map(entity, ArtistDTO.class);
-            artistDTO.setProfilePicture(entity.getProfilePic().getFileUrl());
+            if ((entity.getProfilePic() != null)) {
+                artistDTO.setProfilePicture(entity.getProfilePic().getFileUrl());
+            }
             return artistDTO;
         }
         return null;

@@ -87,6 +87,7 @@ public class Test {
         // Specify the package/directory path
         disableJaudiotaggerLogging();
         String packagePath = "src/main/java/com/javaweb/view/mini_musicplayer/audio";
+//        String packagePath = "src/main/java/com/javaweb/view/imgs/artist_profile";
         File directory = new File(packagePath);
 
         if (!directory.exists() || !directory.isDirectory()) {
@@ -115,11 +116,12 @@ public class Test {
                                     String title = tag.getFirst(FieldKey.TITLE);
                                     String artist = tag.getFirst(FieldKey.ARTIST);
                                     String album = tag.getFirst(FieldKey.ALBUM);
-
+                                    String quality = tag.getFirst(FieldKey.QUALITY);
                                     // Print metadata with fallbacks for empty values
                                     System.out.println("Title: " + (title.isEmpty() ? "[No Title]" : title));
                                     System.out.println("Artist: " + (artist.isEmpty() ? "[Unknown Artist]" : artist));
                                     System.out.println("Album: " + (album.isEmpty() ? "[Unknown Album]" : album));
+                                    System.out.println("Quality: " + (quality.isEmpty() ? "[Unknown Quality]" : quality));
 
                                     // Check for artwork
                                     Artwork artwork = tag.getFirstArtwork();

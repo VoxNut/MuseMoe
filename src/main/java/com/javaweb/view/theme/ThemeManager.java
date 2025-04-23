@@ -13,7 +13,7 @@ public class ThemeManager implements ThemeSubject {
 
     private Color backgroundColor = AppConstant.BACKGROUND_COLOR;
     private Color textColor = AppConstant.TEXT_COLOR;
-    private Color accentColor = AppConstant.BACKGROUND_COLOR.darker();
+    private Color accentColor = AppConstant.TEXTFIELD_BACKGROUND_COLOR;
 
     private final List<ThemeChangeListener> listeners = new ArrayList<>();
 

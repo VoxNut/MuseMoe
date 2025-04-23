@@ -1,9 +1,5 @@
 package com.javaweb.utils;
 
-import java.io.File;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
 public class StringUtils {
     public static boolean isBlank(String str) {
         int strLen;
@@ -22,6 +18,16 @@ public class StringUtils {
         return !isBlank(str);
     }
 
+    public static String getTruncatedText(String text, int maxLength) {
+        if (text == null || text.length() <= maxLength) {
+            return text;
+        }
+        return text.substring(0, maxLength - 3) + "...";
+    }
+
+    public static String getTruncatedText(String text) {
+        return getTruncatedText(text, 15);
+    }
 
 
 }

@@ -18,7 +18,6 @@ import java.util.function.Consumer;
 public class RecentSearchDropdown extends ListThemeablePanel {
     private final JList<SongDTO> songList;
     private final DefaultListModel<SongDTO> listModel;
-    private final Consumer<SongDTO> onSongSelected;
     private final JScrollPane scrollPane;
     private final JWindow popupWindow;
     private AWTEventListener clickOutsideListener;
@@ -41,7 +40,6 @@ public class RecentSearchDropdown extends ListThemeablePanel {
     public RecentSearchDropdown(JTextField parent, List<SongDTO> recentSongs, Consumer<SongDTO> onSongSelected) {
 
         this.parentTextField = parent;
-        this.onSongSelected = onSongSelected;
 
         setLayout(new BorderLayout());
 
@@ -160,7 +158,7 @@ public class RecentSearchDropdown extends ListThemeablePanel {
 
                 if (response == JOptionPane.YES_OPTION) {
                     // Clear from database
-                    boolean success = CommonApiUtil.clearPlayHistoryBySongs(songIds);
+                    boolean success = CommonApiUtil.clearSearchHistoryBySongs(songIds);
 
                     if (success) {
                         listModel.clear();
@@ -327,17 +325,16 @@ public class RecentSearchDropdown extends ListThemeablePanel {
 
             // Create a panel for each cell with more complex layout
             JPanel cellPanel = GuiUtil.createPanel();
+            cellPanel.setOpaque(true);
             cellPanel.setLayout(new BorderLayout(12, 0));
 
             // Set background based on selection/hover state
             boolean isHovered = (index == hoveredIndex);
 
-            if (isSelected) {
-                cellPanel.setBackground(accentColor);
-            } else if (isHovered) {
-                cellPanel.setBackground(GuiUtil.darkenColor(backgroundColor, 0.1f));
+            if (isHovered) {
+                cellPanel.setBackground(GuiUtil.darkenColor(backgroundColor, 0.2f));
             } else {
-                cellPanel.setBackground(backgroundColor);
+                cellPanel.setBackground(GuiUtil.darkenColor(backgroundColor, 0.1f));
             }
 
             // Add indicator panel on the right (music note for hovered items)

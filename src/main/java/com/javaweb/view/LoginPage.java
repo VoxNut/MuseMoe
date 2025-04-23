@@ -4,7 +4,6 @@ import com.javaweb.constant.AppConstant;
 import com.javaweb.enums.AccountStatus;
 import com.javaweb.model.dto.UserDTO;
 import com.javaweb.utils.*;
-import com.javaweb.view.theme.ThemeChangeListener;
 import com.javaweb.view.theme.ThemeManager;
 import com.javaweb.view.user.UserSessionManager;
 import lombok.Getter;
@@ -25,7 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.UUID;
 
-public class LoginPage extends JFrame implements ThemeChangeListener {
+public class LoginPage extends JFrame {
     private static final Dimension FRAME_SIZE = new Dimension(1100, 934);
     private static final String IMAGE_PATH = "src/main/java/com/javaweb/view/imgs/back_ground/dark-blossom.jpg";
     private final CardLayout cardLayout;
@@ -37,13 +36,16 @@ public class LoginPage extends JFrame implements ThemeChangeListener {
     private JButton exitButton;
     private JLabel forgotPasswordLabel;
 
+    private final Color backgroundColor = ThemeManager.getInstance().getBackgroundColor();
+    private final Color textColor = ThemeManager.getInstance().getTextColor();
+
     public LoginPage() {
         initializeFrame();
         cardLayout = new CardLayout();
         mainPanel = GuiUtil.createPanel(cardLayout);
         mainPanel.add(createMainPanel(), "login");
         mainPanel.add(createSignUpPanel(), "signup");
-        ThemeManager.getInstance().addThemeChangeListener(this);
+
         add(mainPanel);
         addEventListeners();
     }
@@ -65,7 +67,7 @@ public class LoginPage extends JFrame implements ThemeChangeListener {
 
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setLocationRelativeTo(null);
-        GuiUtil.styleTitleBar(this, GuiUtil.lightenColor(AppConstant.BACKGROUND_COLOR, 0.12), AppConstant.TEXT_COLOR);
+        GuiUtil.styleTitleBar(this, GuiUtil.lightenColor(backgroundColor, 0.12), textColor);
 
         addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
@@ -85,7 +87,7 @@ public class LoginPage extends JFrame implements ThemeChangeListener {
     private JPanel createMainPanel() {
         JPanel mainPanel = GuiUtil.createPanel(new GridLayout(1, 2));
         mainPanel.setOpaque(true);
-        mainPanel.setBackground(AppConstant.BACKGROUND_COLOR);
+        mainPanel.setBackground(backgroundColor);
         mainPanel.add(createImagePanel());
         mainPanel.add(createRightPanel());
         return mainPanel;
@@ -95,7 +97,7 @@ public class LoginPage extends JFrame implements ThemeChangeListener {
     private JPanel createSignUpPanel() {
         JPanel signUpPanel = GuiUtil.createPanel(new GridLayout(1, 2));
         signUpPanel.setOpaque(true);
-        signUpPanel.setBackground(AppConstant.BACKGROUND_COLOR);
+        signUpPanel.setBackground(backgroundColor);
         signUpPanel.add(createSignUpFormPanel()); // Left side
         signUpPanel.add(createImagePanelWithSignInButton()); // Right side
         return signUpPanel;
@@ -104,7 +106,7 @@ public class LoginPage extends JFrame implements ThemeChangeListener {
     private JPanel createSignUpFormPanel() {
         JPanel formPanel = GuiUtil.createPanel(new GridBagLayout());
         formPanel.setOpaque(true);
-        formPanel.setBackground(AppConstant.BACKGROUND_COLOR);
+        formPanel.setBackground(backgroundColor);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(10, 10, 10, 10);
@@ -113,7 +115,7 @@ public class LoginPage extends JFrame implements ThemeChangeListener {
         JLabel signUpTitle = new JLabel("REGISTER", SwingConstants.CENTER);
         signUpTitle.setFont(FontUtil.getJetBrainsMonoFont(Font.BOLD, 55));
 
-        signUpTitle.setForeground(AppConstant.TEXT_COLOR);
+        signUpTitle.setForeground(textColor);
         signUpTitle.setBorder(BorderFactory.createEmptyBorder(0, 0, 60, 0));
         gbc.gridx = 0;
         gbc.gridy = 0;
@@ -163,7 +165,7 @@ public class LoginPage extends JFrame implements ThemeChangeListener {
         gbc.gridy++;
         gbc.gridwidth = 2;
         gbc.anchor = GridBagConstraints.CENTER;
-        JButton signUpButton = GuiUtil.createButton("Register");
+        JButton signUpButton = GuiUtil.createPlainButton("Register");
         signUpButton.addActionListener(e -> handleSignUp(usernameField.getText(), emailField.getText(),
                 new String(passwordField.getPassword())));
         formPanel.add(signUpButton, gbc);
@@ -224,7 +226,7 @@ public class LoginPage extends JFrame implements ThemeChangeListener {
         overlayPanel.setLayout(new BoxLayout(overlayPanel, BoxLayout.Y_AXIS));
 
         // 'Sign up' button
-        JButton signUpButton = GuiUtil.createButton("<html><div style=\"text-align: center;\">Haven't got an account yet?<br>REGISTER NOW!</div></html>");
+        JButton signUpButton = GuiUtil.createPlainButton("<html><div style=\"text-align: center;\">Haven't got an account yet?<br>REGISTER NOW!</div></html>");
         signUpButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         signUpButton.setMaximumSize(new Dimension(250, signUpButton.getPreferredSize().height));
         signUpButton.addActionListener(e -> cardLayout.show(mainPanel, "signup"));
@@ -308,7 +310,7 @@ public class LoginPage extends JFrame implements ThemeChangeListener {
         overlayPanel.setLayout(new BoxLayout(overlayPanel, BoxLayout.Y_AXIS));
 
         // Create and configure sign in button
-        JButton signInButton = GuiUtil.createButton("Login");
+        JButton signInButton = GuiUtil.createPlainButton("Login");
         signInButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         signInButton.addActionListener(e -> cardLayout.show(mainPanel, "login"));
 
@@ -365,14 +367,14 @@ public class LoginPage extends JFrame implements ThemeChangeListener {
     private JPanel createRightPanel() {
         JPanel rightPanel = GuiUtil.createPanel(new BorderLayout());
         rightPanel.setOpaque(true);
-        rightPanel.setBackground(AppConstant.BACKGROUND_COLOR);
+        rightPanel.setBackground(backgroundColor);
         rightPanel.add(createFormPanel(), BorderLayout.CENTER);
         return rightPanel;
     }
 
     private JPanel createFormPanel() {
         JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBackground(AppConstant.BACKGROUND_COLOR);
+        formPanel.setBackground(backgroundColor);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(10, 10, 10, 10);
@@ -389,7 +391,7 @@ public class LoginPage extends JFrame implements ThemeChangeListener {
     private void addLoginTitle(JPanel formPanel, GridBagConstraints gbc) {
         JLabel loginTitle = new JLabel("LOGIN", SwingConstants.CENTER);
         loginTitle.setFont(FontUtil.getJetBrainsMonoFont(Font.BOLD, 55));
-        loginTitle.setForeground(AppConstant.TEXT_COLOR);
+        loginTitle.setForeground(textColor);
         loginTitle.setBorder(BorderFactory.createEmptyBorder(0, 0, 60, 0));
         gbc.gridx = 0;
         gbc.gridy = 0;
@@ -425,11 +427,15 @@ public class LoginPage extends JFrame implements ThemeChangeListener {
         gbc.anchor = GridBagConstraints.CENTER;
         JPanel buttonsPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.CENTER));
         buttonsPanel.setOpaque(true);
-        buttonsPanel.setBackground(AppConstant.BACKGROUND_COLOR);
-        loginButton = GuiUtil.createButton("Login");
-        exitButton = GuiUtil.createButton("Exit");
+        buttonsPanel.setBackground(backgroundColor);
+
+        loginButton = GuiUtil.createPlainButton("Login");
+        exitButton = GuiUtil.createPlainButton("Exit");
+
+
         buttonsPanel.add(loginButton);
         buttonsPanel.add(exitButton);
+
         formPanel.add(buttonsPanel, gbc);
     }
 
@@ -438,10 +444,7 @@ public class LoginPage extends JFrame implements ThemeChangeListener {
         gbc.gridy++;
         gbc.gridwidth = 2;
         gbc.anchor = GridBagConstraints.CENTER;
-        forgotPasswordLabel = new JLabel("Forgot your password?");
-        forgotPasswordLabel.setFont(FontUtil.getJetBrainsMonoFont(Font.ITALIC, 13));
-        forgotPasswordLabel.setForeground(AppConstant.TEXT_COLOR);
-        forgotPasswordLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        forgotPasswordLabel = GuiUtil.createInteractiveLabel("Forgot your password?", Font.ITALIC, 13);
         Dimension size = forgotPasswordLabel.getPreferredSize();
         forgotPasswordLabel.setPreferredSize(size);
         formPanel.add(forgotPasswordLabel, gbc);
@@ -574,8 +577,9 @@ public class LoginPage extends JFrame implements ThemeChangeListener {
                 CommonApiUtil.updateLastLoginTime();
                 // Authentication successful
                 this.dispose();
-                //Init user for
+                //Init user
                 UserSessionManager.getInstance().initializeSession(user);
+
                 HomePage homePage = new HomePage();
                 UIManager.put("TitlePane.iconSize", new Dimension(24, 24));
                 homePage.setIconImage(GuiUtil.createImageIcon(AppConstant.MUSE_MOE_LOGO_PATH, 512, 512).getImage());
@@ -594,9 +598,4 @@ public class LoginPage extends JFrame implements ThemeChangeListener {
         }
     }
 
-
-    @Override
-    public void onThemeChanged(Color backgroundColor, Color textColor, Color accentColor) {
-        GuiUtil.updatePanelColors(mainPanel, backgroundColor, textColor, accentColor);
-    }
 }

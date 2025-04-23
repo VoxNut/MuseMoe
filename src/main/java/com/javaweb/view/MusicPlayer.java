@@ -109,7 +109,6 @@ public class MusicPlayer extends PlaybackListener {
     }
 
     public void loadSong(SongDTO song) throws IOException {
-        // If it's an ad or we already have the fully loaded song, process immediately
         if (adManager.shouldShowAd(getCurrentUser()) || (song != null && song.getMp3File() != null)) {
             processLoadSong(song);
             return;

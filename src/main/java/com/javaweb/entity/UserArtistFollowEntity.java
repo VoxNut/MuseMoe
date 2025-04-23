@@ -24,7 +24,7 @@ public class UserArtistFollowEntity implements Serializable {
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("artistId")
     @JoinColumn(name = "artist_id")
-    private UserEntity artist;
+    private ArtistEntity artist;
 
     @Column(name = "followed_at")
     private LocalDateTime followedAt;
@@ -32,7 +32,7 @@ public class UserArtistFollowEntity implements Serializable {
     public UserArtistFollowEntity() {
     }
 
-    public UserArtistFollowEntity(UserEntity follower, UserEntity artist) {
+    public UserArtistFollowEntity(UserEntity follower, ArtistEntity artist) {
         this.follower = follower;
         this.artist = artist;
         this.id = new UserArtistFollowId(follower.getId(), artist.getId());

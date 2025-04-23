@@ -2,11 +2,13 @@ package com.javaweb.service.impl;
 
 import com.javaweb.converter.ArtistConverter;
 import com.javaweb.converter.UserConverter;
+import com.javaweb.entity.ArtistEntity;
 import com.javaweb.entity.UserArtistFollowEntity;
 import com.javaweb.entity.UserArtistFollowId;
 import com.javaweb.entity.UserEntity;
 import com.javaweb.model.dto.ArtistDTO;
 import com.javaweb.model.dto.UserDTO;
+import com.javaweb.repository.ArtistRepository;
 import com.javaweb.repository.UserArtistFollowRepository;
 import com.javaweb.repository.UserRepository;
 import com.javaweb.service.UserArtistFollowService;
@@ -16,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityNotFoundException;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -30,6 +31,7 @@ public class UserArtistFollowServiceImpl implements UserArtistFollowService {
     private final UserArtistFollowRepository userArtistFollowRepository;
     private final ArtistConverter artistConverter;
     private final UserConverter userConverter;
+    private final ArtistRepository artistRepository;
 
 
     @Override
@@ -42,9 +44,9 @@ public class UserArtistFollowServiceImpl implements UserArtistFollowService {
             return userArtistFollowRepository.findByFollower(currentUser)
                     .stream()
                     .map(UserArtistFollowEntity::getArtist)
-                    .map(UserEntity::getArtist)
                     .map(artistConverter::toDTO)
                     .collect(Collectors.toList());
+            
         } catch (Exception e) {
             e.printStackTrace();
             return List.of();
@@ -74,16 +76,10 @@ public class UserArtistFollowServiceImpl implements UserArtistFollowService {
             Long userId = Objects.requireNonNull(SecurityUtils.getPrincipal()).getId();
             UserEntity follower = userRepository.findById(userId)
                     .orElseThrow(() -> new EntityNotFoundException("User not found"));
-            UserEntity artist = userRepository.findById(artistId)
+            ArtistEntity artist = artistRepository.findById(artistId)
                     .orElseThrow(() -> new EntityNotFoundException("Artist not found"));
 
-            UserArtistFollowId id = new UserArtistFollowId(follower.getId(), artist.getId());
-            UserArtistFollowEntity followEntity = new UserArtistFollowEntity();
-            followEntity.setId(id);
-            followEntity.setFollower(follower);
-            followEntity.setArtist(artist);
-            followEntity.setFollowedAt(LocalDateTime.now());
-
+            UserArtistFollowEntity followEntity = new UserArtistFollowEntity(follower, artist);
             userArtistFollowRepository.save(followEntity);
             return true;
         } catch (Exception e) {
@@ -102,6 +98,7 @@ public class UserArtistFollowServiceImpl implements UserArtistFollowService {
                     .orElseThrow(() -> new EntityNotFoundException("Artist not found"));
 
             UserArtistFollowId id = new UserArtistFollowId(follower.getId(), artist.getId());
+
             userArtistFollowRepository.deleteById(id);
 
 

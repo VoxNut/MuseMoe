@@ -6,7 +6,6 @@ import com.javaweb.model.dto.UserDTO;
 import com.javaweb.view.custom.spinner.DateLabelFormatter;
 import com.javaweb.view.custom.table.BorderedHeaderRenderer;
 import com.javaweb.view.custom.table.BorderedTableCellRenderer;
-import com.javaweb.view.panel.ExpandableCardPanel;
 import com.javaweb.view.theme.ThemeManager;
 import de.androidpit.colorthief.ColorThief;
 import net.coobird.thumbnailator.Thumbnails;
@@ -56,9 +55,6 @@ import java.util.Calendar;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -67,13 +63,7 @@ import java.util.logging.Logger;
 public class GuiUtil {
 
     private static final Map<String, BufferedImage> imageCache = new ConcurrentHashMap<>();
-    private static final Map<String, Future<BufferedImage>> processingImageCache = new ConcurrentHashMap<>();
-    private static final ExecutorService imageProcessingExecutor =
-            Executors.newFixedThreadPool(2, r -> {
-                Thread t = new Thread(r, "ImageProcessingThread");
-                t.setDaemon(true);
-                return t;
-            });
+
 
     public static void formatTable(JTable table) {
         // Add table styling
@@ -131,6 +121,25 @@ public class GuiUtil {
 
         Logger jaudiotaggerLogger = Logger.getLogger("org.jaudiotagger");
         jaudiotaggerLogger.setLevel(Level.SEVERE);
+    }
+
+    public static Color blendColor(Color color1, Color color2, float ratio) {
+        if (ratio < 0f) ratio = 0f;
+        if (ratio > 1f) ratio = 1f;
+
+        float inverseRatio = 1f - ratio;
+
+        int r = (int) (color1.getRed() * inverseRatio + color2.getRed() * ratio);
+        int g = (int) (color1.getGreen() * inverseRatio + color2.getGreen() * ratio);
+        int b = (int) (color1.getBlue() * inverseRatio + color2.getBlue() * ratio);
+        int a = (int) (color1.getAlpha() * inverseRatio + color2.getAlpha() * ratio);
+
+        return new Color(
+                Math.min(255, Math.max(0, r)),
+                Math.min(255, Math.max(0, g)),
+                Math.min(255, Math.max(0, b)),
+                Math.min(255, Math.max(0, a))
+        );
     }
 
 
@@ -1667,8 +1676,6 @@ public class GuiUtil {
             // ToolBar
             else if (component instanceof JToolBar toolBar) {
                 styleToolBar(toolBar, darkenColor(backgroundColor, 0.1), textColor);
-            } else if (component instanceof ExpandableCardPanel expandableCard) {
-                expandableCard.updateColors(backgroundColor, textColor);
             }
 
             // Recursively update child containers

@@ -42,7 +42,7 @@ public class PlaylistDTO extends AbstractDTO<PlaylistDTO> {
         if (song.getPosition() != null) {
             for (int i = 0; i < songs.size(); i++) {
                 if (songs.get(i).getPosition() != null &&
-                    songs.get(i).getPosition().equals(song.getPosition())) {
+                        songs.get(i).getPosition().equals(song.getPosition())) {
                     return i;
                 }
             }

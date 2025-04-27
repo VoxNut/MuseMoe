@@ -3,10 +3,12 @@ package com.javaweb.view.mini_musicplayer.event;
 
 import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
 
 // Mediator design pattern
+@Slf4j
 public class MusicPlayerMediator {
     private static MusicPlayerMediator instance;
     private final PlayerEventPublisher eventPublisher;
@@ -101,6 +103,20 @@ public class MusicPlayerMediator {
 
     public void notifyLoadingFinished() {
         publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.LOADING_FINISHED, null));
+    }
+
+    public void notifySongLikedChanged() {
+        publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.SONG_LIKED_CHANGED, null));
+    }
+
+
+    public void notifySpectrumData(String audioFile) {
+        publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.SPECTRUM_DATA, audioFile));
+    }
+    
+    public void notifySpectrumStop() {
+        publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.SPECTRUM_STOP, null));
+
     }
 
 

@@ -17,6 +17,7 @@ import javazoom.jl.player.advanced.PlaybackEvent;
 import javazoom.jl.player.advanced.PlaybackListener;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.SourceDataLine;
@@ -29,7 +30,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-
+@Slf4j
 public class MusicPlayer extends PlaybackListener {
     // this will be used to update isPaused more synchronously
     private static final Object playSignal = new Object();
@@ -100,6 +101,9 @@ public class MusicPlayer extends PlaybackListener {
 
     @Getter
     private RepeatMode repeatMode = RepeatMode.NO_REPEAT;
+
+    @Getter
+    private float currentVolumeGain = 0.0f;
 
 
     // constructor
@@ -237,6 +241,9 @@ public class MusicPlayer extends PlaybackListener {
             bufferedInputStream.close();
             bufferedInputStream = null;
         }
+
+        mediator.notifySpectrumStop();
+
     }
 
     public void nextSong() throws IOException {
@@ -320,15 +327,26 @@ public class MusicPlayer extends PlaybackListener {
 
     public void playCurrentSong() {
         try {
+            volumeControl = null;
+
             fileInputStream = new FileInputStream(currentSong.getAudioFilePath());
             bufferedInputStream = new BufferedInputStream(fileInputStream);
-            device = FactoryRegistry.systemRegistry().createAudioDevice();
+            this.device = FactoryRegistry.systemRegistry().createAudioDevice();
             advancedPlayer = new AdvancedPlayer(bufferedInputStream, device);
 
             advancedPlayer.setPlayBackListener(this);
 
-            startMusicThread();
-            startPlaybackSliderThread();
+            setVolume(currentVolumeGain);
+
+
+            SwingUtilities.invokeLater(
+                    () -> {
+                        startMusicThread();
+                        startPlaybackSliderThread();
+                        mediator.notifySpectrumData(currentSong.getAudioFilePath());
+                    }
+
+            );
 
 
         } catch (Exception e) {
@@ -349,6 +367,7 @@ public class MusicPlayer extends PlaybackListener {
                     // Play from the current frame
                     System.out.println(currentFrame);
                     advancedPlayer.play(currentFrame, Integer.MAX_VALUE);
+
                 } else {
                     // Play from the beginning
                     advancedPlayer.play();
@@ -358,6 +377,7 @@ public class MusicPlayer extends PlaybackListener {
             }
         }).start();
     }
+
 
     // create a thread that will handle updating the slider
     private void startPlaybackSliderThread() {
@@ -415,10 +435,8 @@ public class MusicPlayer extends PlaybackListener {
                         calculatedFrame = totalFrames;
                     }
 
-                    // Only notify mediator if the thread isn't interrupted and we're still playing
                     if (!Thread.currentThread().isInterrupted() && !isPaused &&
                             !songFinished && advancedPlayer != null) {
-                        // Use invokeAndWait to ensure UI updates happen synchronously
                         mediator.notifyPlaybackProgress(calculatedFrame, currentTimeInMilli);
                     }
 
@@ -441,22 +459,31 @@ public class MusicPlayer extends PlaybackListener {
             }
         }, "PlaybackSliderThread");
 
-        // Make it a daemon thread so it doesn't prevent JVM shutdown
         sliderThread.setDaemon(true);
         sliderThread.start();
     }
 
     @Override
     public void playbackStarted(PlaybackEvent evt) {
+
         // this method gets called in the beginning of the song
         System.out.println("Playback Started");
-        volumeControl = null;
+
         songFinished = false;
         pressedNext = false;
         pressedPrev = false;
         pressedShuffle = false;
         pressedReplay = false;
+
         mediator.notifyPlaybackStarted();
+
+        // Reapply current volume
+        Timer volumeTimer = new Timer(1, e -> {
+            setVolume(currentVolumeGain);
+        });
+        volumeTimer.setRepeats(false);
+        volumeTimer.start();
+
     }
 
     @Override
@@ -470,11 +497,7 @@ public class MusicPlayer extends PlaybackListener {
             // This user is initialized through login. So no need to fetch from db again.
             adManager.resetUserCounter(getCurrentUser().getId());
             currentSong = adManager.getLastSongDTO();
-            try {
-                loadSong(currentSong);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            MusicPlayerFacade.getInstance().loadSong(currentSong);
         } else {
             if (isPaused) {
                 // If paused, update the current frame for resuming later
@@ -520,9 +543,10 @@ public class MusicPlayer extends PlaybackListener {
     // Helper method for single song completion logic
     private void handleSingleSongCompletion() throws IOException {
         if (repeatMode == RepeatMode.REPEAT_ONE || repeatMode == RepeatMode.REPEAT_ALL) {
-            MusicPlayerFacade.getInstance().loadSong(currentSong);
+            playCurrentSong();
         } else {
             mediator.notifyPlaybackPaused();
+
             songFinished = true;
         }
     }
@@ -535,11 +559,11 @@ public class MusicPlayer extends PlaybackListener {
                 // Loop back to the beginning of the playlist
                 currentPlaylistIndex = 0;
                 currentSong = currentPlaylist.getSongAt(currentPlaylistIndex);
-                MusicPlayerFacade.getInstance().loadSong(currentSong);
+                playCurrentSong();
 
             } else if (repeatMode == RepeatMode.REPEAT_ONE) {
                 // Repeat the current song
-                MusicPlayerFacade.getInstance().loadSong(currentSong);
+                playCurrentSong();
 
             } else {
                 // End of playlist with no repeat
@@ -607,28 +631,54 @@ public class MusicPlayer extends PlaybackListener {
     }
 
     public void setVolume(float gain) {
-        if (this.volumeControl == null) {
-            Class<JavaSoundAudioDevice> clazz = JavaSoundAudioDevice.class;
-            Field[] fields = clazz.getDeclaredFields();
-            try {
-                SourceDataLine source;
+        // Store the volume setting regardless of player state
+        this.currentVolumeGain = Math.min(Math.max(gain, -40f), 40f);
+
+        if (this.device == null) {
+            // Just store the value for later application
+            return;
+        }
+
+        try {
+            if (this.volumeControl == null) {
+                Class<JavaSoundAudioDevice> clazz = JavaSoundAudioDevice.class;
+                Field[] fields = clazz.getDeclaredFields();
+
+                SourceDataLine source = null;
                 for (Field field : fields) {
                     if ("source".equals(field.getName())) {
                         field.setAccessible(true);
-                        source = (SourceDataLine) field.get(this.device);
+                        Object sourceObj = field.get(this.device);
                         field.setAccessible(false);
-                        this.volumeControl = (FloatControl) source.getControl(FloatControl.Type.MASTER_GAIN);
+
+                        if (sourceObj != null) {
+                            source = (SourceDataLine) sourceObj;
+                        }
                     }
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        if (this.volumeControl != null) {
-            float newGain = Math.min(Math.max(gain, volumeControl.getMinimum()), volumeControl.getMaximum());
-            System.out.println("Was: " + volumeControl.getValue() + " Will be: " + newGain);
 
-            volumeControl.setValue(newGain);
+                // Check if source is available before trying to get control
+                if (source != null && source.isOpen()) {
+                    try {
+                        this.volumeControl = (FloatControl) source.getControl(FloatControl.Type.MASTER_GAIN);
+                    } catch (IllegalArgumentException e) {
+                        // Some audio formats or devices might not support MASTER_GAIN
+                        System.out.println("This audio device doesn't support volume control: " + e.getMessage());
+                        return;
+                    }
+                } else {
+                    // Source not ready yet, will try again later
+                    return;
+                }
+            }
+
+            if (this.volumeControl != null) {
+                float newGain = Math.min(Math.max(currentVolumeGain, volumeControl.getMinimum()), volumeControl.getMaximum());
+                volumeControl.setValue(newGain);
+            }
+        } catch (Exception e) {
+            // Log the exception, but don't let it crash the application
+            System.err.println("Error setting volume: " + e.getMessage());
         }
     }
 

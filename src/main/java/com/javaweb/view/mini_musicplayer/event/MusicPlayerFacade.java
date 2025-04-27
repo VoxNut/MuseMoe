@@ -209,5 +209,13 @@ public class MusicPlayerFacade {
         player.setCurrentFrame(timeInMilli);
     }
 
+    public void notifySongLiked() {
+        mediator.notifySongLikedChanged();
+    }
+
+    public float getCurrentVolumeGain() {
+        return player.getCurrentVolumeGain();
+    }
+
 
 }

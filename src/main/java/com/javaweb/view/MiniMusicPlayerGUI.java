@@ -332,6 +332,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
                 }
                 playerFacade.setCurrentPlaylist(null);
 
+
                 // Fetch all downloaded songs;
                 List<SongDTO> songs = CommonApiUtil.fetchUserDownloadedSongs();
 
@@ -527,6 +528,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
             outLineHeartButton.setVisible(true);
             heartButton.setVisible(false);
             GuiUtil.changeButtonIconColor(outLineHeartButton);
+            playerFacade.notifySongLiked();
         } else {
             GuiUtil.showErrorMessageDialog(this, "An error has occurred when removed : " + playerFacade.getCurrentSong().getSongTitle() + "from liked songs!");
         }
@@ -539,6 +541,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
             outLineHeartButton.setVisible(false);
             heartButton.setVisible(true);
             GuiUtil.changeButtonIconColor(heartButton);
+            playerFacade.notifySongLiked();
         } else {
             GuiUtil.showErrorMessageDialog(this, "An error has occurred when added : " + playerFacade.getCurrentSong().getSongTitle() + "to liked songs!");
         }
@@ -647,6 +650,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
 
                 // Resume playback from the new position
                 playerFacade.playCurrentSong();
+
             }
         });
 
@@ -698,27 +702,39 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         volumeSlider.setPaintLabels(false);
         volumeSlider.setSnapToTicks(false);
 
+
         volumeSlider.addChangeListener(e -> {
-            int value = volumeSlider.getValue();
-            System.out.println("slider volume in GUI: " + value);
-            playerFacade.setVolume(value);
-            int percentage = (int) (((double) (value - volumeSlider.getMinimum()) /
-                    (volumeSlider.getMaximum() - volumeSlider.getMinimum())) * 100);
+            if (!volumeSlider.getValueIsAdjusting()) {
+                int value = volumeSlider.getValue();
+                System.out.println("slider volume in GUI: " + value);
 
-            String iconPath;
-            if (percentage == 0) {
-                iconPath = AppConstant.SPEAKER_0_ICON;
-            } else if (percentage <= 25) {
-                iconPath = AppConstant.SPEAKER_25_ICON;
-            } else if (percentage <= 75) {
-                iconPath = AppConstant.SPEAKER_75_ICON;
-            } else {
-                iconPath = AppConstant.SPEAKER_ICON;
+                Timer volumeTimer = new Timer(100, v -> playerFacade.setVolume(value));
+                volumeTimer.setRepeats(false);
+                volumeTimer.start();
+
+                // Update the UI
+                updateVolumeIcon(value);
             }
-
-            speakerLabel.setIcon(GuiUtil.createImageIcon(iconPath, 20, 20));
-            GuiUtil.changeLabelIconColor(speakerLabel);
         });
+    }
+
+    private void updateVolumeIcon(int value) {
+        int percentage = (int) (((double) (value - volumeSlider.getMinimum()) /
+                (volumeSlider.getMaximum() - volumeSlider.getMinimum())) * 100);
+
+        String iconPath;
+        if (percentage == 0) {
+            iconPath = AppConstant.SPEAKER_0_ICON;
+        } else if (percentage <= 25) {
+            iconPath = AppConstant.SPEAKER_25_ICON;
+        } else if (percentage <= 75) {
+            iconPath = AppConstant.SPEAKER_75_ICON;
+        } else {
+            iconPath = AppConstant.SPEAKER_ICON;
+        }
+
+        speakerLabel.setIcon(GuiUtil.createImageIcon(iconPath, 20, 20));
+        GuiUtil.changeLabelIconColor(speakerLabel);
     }
 
     public void setVolumeSliderValue(int value) {
@@ -787,13 +803,13 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
                     updateSongDetails(song);
                     updatePlaybackSlider(song);
                     setPlaybackSliderValue(0);
-                    setVolumeSliderValue(0);
+                    setVolumeSliderValue(Math.round(playerFacade.getCurrentVolumeGain()));
                     enablePauseButtonDisablePlayButton();
                     hidePlaylistNameLabel(true);
                     try {
                         toggleShuffleButton(false);
                     } catch (IOException e) {
-                        
+
                         throw new RuntimeException(e);
                     }
                 }

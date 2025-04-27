@@ -19,7 +19,10 @@ public record PlayerEvent(EventType type, Object data) {
         HOME_PAGE_SLIDER_CHANGED,
         SLIDER_DRAGGING,
         LOADING_STARTED,
-        LOADING_FINISHED
+        LOADING_FINISHED,
+        SONG_LIKED_CHANGED,
+        SPECTRUM_DATA,
+        SPECTRUM_STOP
     }
 
 }

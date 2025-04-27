@@ -3,6 +3,7 @@ package com.javaweb.view.panel;
 import com.javaweb.constant.AppConstant;
 import com.javaweb.utils.GuiUtil;
 import com.javaweb.view.theme.ThemeManager;
+import lombok.Getter;
 
 import javax.swing.*;
 import java.awt.*;
@@ -10,9 +11,12 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 public class ExpandableCardPanel extends JPanel {
-    private final JPanel contentPanel;
+    private JPanel contentPanel;
     private final JButton toggleButton;
+    @Getter
     private boolean expanded = false;
+    @Getter
+    private final String title;
 
     public ExpandableCardPanel(String title, String iconPath, JPanel content) {
         setLayout(new BorderLayout());
@@ -48,7 +52,7 @@ public class ExpandableCardPanel extends JPanel {
         // Setup content panel
         this.contentPanel = content;
         this.contentPanel.setVisible(false);
-
+        this.title = title;
         // Add components
         add(headerPanel, BorderLayout.NORTH);
         add(contentPanel, BorderLayout.CENTER);
@@ -89,36 +93,23 @@ public class ExpandableCardPanel extends JPanel {
     }
 
 
-    public void updateColors(Color backgroundColor, Color textColor) {
-        // Update the toggle button icon
-        Icon chevronIcon = GuiUtil.createColoredIcon(
-                expanded ? AppConstant.CHEVRON_UP_ICON_PATH : AppConstant.CHEVRON_DOWN_ICON_PATH,
-                textColor, 14, 14);
-        toggleButton.setIcon(chevronIcon);
+    public void setContent(JPanel newContent) {
+        // Remove the old content panel
+        this.remove(contentPanel);
 
-        // Find and update icon and title in header
-        for (Component component : ((Container) getComponent(0)).getComponents()) {
-            if (component instanceof JPanel && ((JPanel) component).getLayout() instanceof FlowLayout) {
-                for (Component c : ((Container) component).getComponents()) {
-                    if (c instanceof JLabel label) {
-                        label.setForeground(textColor);
-                        if (label.getText() == null || label.getText().isEmpty()) {
-                            if (label.getIcon() instanceof ImageIcon icon) {
-                                GuiUtil.changeIconColor(icon, textColor);
-                                label.repaint();
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        // Replace with the new content
+        this.contentPanel = newContent;
+        this.contentPanel.setVisible(expanded);
+        this.add(contentPanel, BorderLayout.CENTER);
 
-        // Update border color
-        setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0,
-                GuiUtil.darkenColor(backgroundColor, 0.1f)));
-
-        // Repaint the card
+        // Force layout update
         revalidate();
         repaint();
+    }
+
+    public void expandPanel() {
+        if (!expanded) {
+            toggleExpanded();
+        }
     }
 }

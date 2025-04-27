@@ -7,6 +7,7 @@ import com.javaweb.view.mini_musicplayer.event.MusicPlayerFacade;
 import com.javaweb.view.mini_musicplayer.event.MusicPlayerMediator;
 import com.javaweb.view.mini_musicplayer.event.PlayerEvent;
 import com.javaweb.view.mini_musicplayer.event.PlayerEventListener;
+import com.javaweb.view.panel.EnhancedSpectrumVisualizer;
 import com.javaweb.view.panel.ExpandableCardPanel;
 import com.javaweb.view.panel.RecentSearchDropdown;
 import com.javaweb.view.theme.ThemeChangeListener;
@@ -19,6 +20,7 @@ import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.File;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
@@ -34,6 +36,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private Timer spinTimer;
     private JLabel labelBeginning;
     private JLabel labelEnd;
+
+    private long lastUpdate = 0;
+    private final int frameInterval = 1000 / 60; // ~16ms
 
     private double rotationAngle = 0.0;
     private static final double SPIN_SPEED = Math.PI / 60;
@@ -56,6 +61,13 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private JPanel headerPanel;
     private JPanel combinedPanel;
     private JPanel miniMusicPlayerPanel;
+
+    private JPanel libraryPanel;
+    private JPanel centerCardPanel;
+
+
+    private EnhancedSpectrumVisualizer visualizerPanel;
+    private boolean visualizerActive = false;
 
     public HomePage() {
         initializeFrame();
@@ -221,7 +233,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         }
     }
 
-    // Progressive loading of UI components
     private void startProgressiveLoading() {
         // Create a worker thread for background loading
         new SwingWorker<Void, String>() {
@@ -230,7 +241,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 try {
                     // Step 1: Create the main structural panels
                     publish("Setting up the interface...");
-                    Thread.sleep(100); // Small pause to update UI
+                    Thread.sleep(100);
 
                     mainPanel = createMainPanel();
 
@@ -272,9 +283,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                     getContentPane().add(mainPanel);
 
                     // Final UI updates
-                    mainPanel.add(createHeaderPanel(), BorderLayout.NORTH);
-                    mainPanel.add(createCombinedPanel(), BorderLayout.CENTER);
-                    mainPanel.add(createMiniMusicPlayerPanel(), BorderLayout.SOUTH);
+                    mainPanel.add(headerPanel, BorderLayout.NORTH);
+                    mainPanel.add(combinedPanel, BorderLayout.CENTER);
+                    mainPanel.add(miniMusicPlayerPanel, BorderLayout.SOUTH);
 
                     // Make UI elements interactive
                     mainPanel.addMouseListener(new MouseAdapter() {
@@ -326,7 +337,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
     private JPanel createCombinedPanel() {
         JPanel combinedPanel = GuiUtil.createPanel(new BorderLayout(10, 0));
-        combinedPanel.add(createLibraryPanel(), BorderLayout.WEST);
+        libraryPanel = createLibraryPanel();
+        combinedPanel.add(libraryPanel, BorderLayout.WEST);
         combinedPanel.add(createCenterPanel(), BorderLayout.CENTER);
         return combinedPanel;
     }
@@ -685,44 +697,48 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     }
 
     private void openMiniplayer() {
+        SwingUtilities.invokeLater(
+                () -> {
+                    for (WindowListener listener : MiniMusicPlayerGUI.getInstance().getWindowListeners()) {
+                        MiniMusicPlayerGUI.getInstance().removeWindowListener(listener);
+                    }
 
-        for (WindowListener listener : MiniMusicPlayerGUI.getInstance().getWindowListeners()) {
-            MiniMusicPlayerGUI.getInstance().removeWindowListener(listener);
-        }
+                    MiniMusicPlayerGUI.getInstance().addWindowListener(new WindowAdapter() {
+                        @Override
+                        public void windowClosing(WindowEvent e) {
+                            // Hide the window instead of disposing it
+                            MiniMusicPlayerGUI.getInstance().setVisible(false);
+                        }
+                    });
 
-        MiniMusicPlayerGUI.getInstance().addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                // Hide the window instead of disposing it
-                MiniMusicPlayerGUI.getInstance().setVisible(false);
-            }
-        });
+                    // Update UI if there's a current song
+                    if (playerFacade.getCurrentSong() != null) {
+                        showPlaybackSlider();
+                        ThemeManager.getInstance().setThemeColors(ThemeManager.getInstance().getBackgroundColor(), ThemeManager.getInstance().getTextColor(), ThemeManager.getInstance().getAccentColor());
+                        // Check if player is paused or playing
+                        if (playerFacade.isPaused()) {
+                            enablePlayButtonDisablePauseButton();
+                        } else {
+                            enablePauseButtonDisablePlayButton();
+                        }
 
-        // Update UI if there's a current song
-        if (playerFacade.getCurrentSong() != null) {
-            showPlaybackSlider();
-            ThemeManager.getInstance().setThemeColors(ThemeManager.getInstance().getBackgroundColor(), ThemeManager.getInstance().getTextColor(), ThemeManager.getInstance().getAccentColor());
-            // Check if player is paused or playing
-            if (playerFacade.isPaused()) {
-                enablePlayButtonDisablePauseButton();
-            } else {
-                enablePauseButtonDisablePlayButton();
-            }
+                        updatePlaybackSlider(playerFacade.getCurrentSong());
+                        updateSpinningDisc(playerFacade.getCurrentSong());
+                        updateScrollingText(playerFacade.getCurrentSong());
+                        setPlaybackSliderValue(playerFacade.getCalculatedFrame());
+                    }
 
-            updatePlaybackSlider(playerFacade.getCurrentSong());
-            updateSpinningDisc(playerFacade.getCurrentSong());
-            updateScrollingText(playerFacade.getCurrentSong());
-            setPlaybackSliderValue(playerFacade.getCalculatedFrame());
-        }
+                    // Show the player if it's not already visible
+                    if (!MiniMusicPlayerGUI.getInstance().isVisible()) {
+                        MiniMusicPlayerGUI.getInstance().setVisible(true);
+                    }
 
-        // Show the player if it's not already visible
-        if (!MiniMusicPlayerGUI.getInstance().isVisible()) {
-            MiniMusicPlayerGUI.getInstance().setVisible(true);
-        }
+                    // Bring to front and give focus
+                    MiniMusicPlayerGUI.getInstance().toFront();
+                    MiniMusicPlayerGUI.getInstance().requestFocus();
+                }
+        );
 
-        // Bring to front and give focus
-        MiniMusicPlayerGUI.getInstance().toFront();
-        MiniMusicPlayerGUI.getInstance().requestFocus();
     }
 
     private void loadRecentSearches() {
@@ -1024,6 +1040,34 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         return panel;
     }
 
+    private void refreshLikedSongsPanel() {
+        // Find the existing liked songs expandable card panel
+        ExpandableCardPanel likedSongsCard = null;
+
+        // Look through the components in the library panel to find the liked songs card
+        for (Component component : GuiUtil.findComponentsByType(libraryPanel, ExpandableCardPanel.class)) {
+            if (component instanceof ExpandableCardPanel card &&
+                    card.getTitle().equals("Liked")) {
+                likedSongsCard = card;
+                break;
+            }
+        }
+
+        if (likedSongsCard != null) {
+            // Create a new liked songs content panel
+            JPanel updatedLikedSongsPanel = createLikedSongsPanel();
+
+            // Update the content of the expandable card
+            likedSongsCard.setContent(updatedLikedSongsPanel);
+
+            // Maintain the expanded state
+            boolean wasExpanded = likedSongsCard.isExpanded();
+            if (wasExpanded) {
+                likedSongsCard.expandPanel();
+            }
+        }
+    }
+
     private JPanel createLikedSongsPanel() {
         JPanel panel = GuiUtil.createPanel(new BorderLayout());
 
@@ -1241,7 +1285,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             @Override
             public void mouseClicked(MouseEvent e) {
                 log.info("Liked Songs collection clicked");
-                playerFacade.setCurrentPlaylist(likedSongsPlaylist);
+//                playerFacade.setCurrentPlaylist(likedSongsPlaylist);
                 if (!likedSongsPlaylist.getSongs().isEmpty()) {
                     playerFacade.loadSong(likedSongsPlaylist.getSongs().getFirst());
                 }
@@ -1292,7 +1336,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             @Override
             public void mouseClicked(MouseEvent e) {
                 log.info("Playlist clicked: {}", playlist.getName());
-                playerFacade.setCurrentPlaylist(playlist);
+//                playerFacade.setCurrentPlaylist(playlist);
                 if (!playlist.getSongs().isEmpty()) {
                     playerFacade.loadSong(playlist.getSongs().getFirst());
                 }
@@ -1318,7 +1362,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel artistLabel = GuiUtil.createLabel(
-                song.getSongArtist() != null ? song.getSongArtist() : "Unknown Artist",
+                song.getSongArtist() != null ? StringUtils.getTruncatedText(song.getSongArtist()) : "Unknown Artist",
                 Font.PLAIN, 10
         );
         artistLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -1349,7 +1393,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                             ThemeManager.getInstance().getTextColor(),
                             20, 20
                     ));
+
                     GuiUtil.showSuccessMessageDialog(HomePage.this, "Removed from liked songs");
+                    refreshLikedSongsPanel();
                 } else {
                     GuiUtil.showErrorMessageDialog(HomePage.this, "Failed to unlike song");
                 }
@@ -1362,6 +1408,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                             20, 20
                     ));
                     GuiUtil.showSuccessMessageDialog(HomePage.this, "Added to liked songs");
+                    refreshLikedSongsPanel();
                 } else {
                     GuiUtil.showSuccessMessageDialog(HomePage.this, "Failed to like song");
                 }
@@ -1468,21 +1515,116 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
     private JPanel createCenterPanel() {
         CardLayout cardLayout = new CardLayout();
-        JPanel centerPanel = GuiUtil.createPanel(cardLayout);
-        centerPanel.setBorder(GuiUtil.createTitledBorder("Main", TitledBorder.LEFT));
+        centerCardPanel = GuiUtil.createPanel(cardLayout);
+        centerCardPanel.setBorder(GuiUtil.createTitledBorder("Main", TitledBorder.LEFT));
+
+        // Create the home panel
         JPanel homePanel = createHomePanel();
         homePanel.setName("home");
-        centerPanel.add(homePanel, "home");
-        return centerPanel;
+        centerCardPanel.add(homePanel, "home");
+
+        // Create the visualizer panel
+        visualizerPanel = new EnhancedSpectrumVisualizer(32);
+        visualizerPanel.setName("visualizer");
+        centerCardPanel.add(visualizerPanel, "visualizer");
+
+        // Add global keyboard listener for Shift+V
+        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(e -> {
+            if (e.getID() == KeyEvent.KEY_PRESSED) {
+                // Shift+V to toggle visualizer
+                if (e.getKeyCode() == 86 && e.isShiftDown()) {
+                    toggleVisualizer();
+                    return true;
+                }
+
+                // B to toggle band count when visualizer is active
+                if (e.getKeyCode() == 66 && visualizerActive) {
+                    toggleVisualizerBands();
+                    return true;
+                }
+            }
+            return false;
+        });
+
+        return centerCardPanel;
     }
 
+    private void toggleVisualizer() {
+        visualizerActive = !visualizerActive;
+        System.out.println(visualizerActive);
+        if (centerCardPanel == null) {
+            log.error("Center card panel is null");
+            return;
+        }
 
-    private JLabel createLogoLabel() {
-        ImageIcon logoIcon = new ImageIcon(AppConstant.MUSE_MOE_LOGO_PATH);
-        Image logoImage = logoIcon.getImage().getScaledInstance(200, 200, Image.SCALE_SMOOTH);
-        JLabel logoLabel = new JLabel(new ImageIcon(logoImage));
-        logoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        return logoLabel;
+        CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
+
+        if (visualizerActive) {
+            cardLayout.show(centerCardPanel, "visualizer");
+            log.info("Visualizer activated");
+            showToast("Visualizer activated (press Shift+V to toggle)");
+        } else {
+            cardLayout.show(centerCardPanel, "home");
+            log.info("Visualizer deactivated");
+        }
+    }
+
+    /**
+     * Toggle through different numbers of frequency bands for the visualizer
+     */
+    private void toggleVisualizerBands() {
+        if (visualizerPanel == null) return;
+
+        int[] bandOptions = {10, 16, 24, 32, 48, 64};
+        int currentBands = visualizerPanel.getNumberOfBands();
+
+        // Find next band option
+        int nextBandIndex = 0;
+        for (int i = 0; i < bandOptions.length; i++) {
+            if (currentBands < bandOptions[i]) {
+                nextBandIndex = i;
+                break;
+            }
+        }
+
+        // Cycle through options
+        int newBands = bandOptions[nextBandIndex];
+        visualizerPanel.setNumberOfBands(newBands);
+
+        // Show feedback
+        showToast("Visualizer: " + newBands + " bands");
+    }
+
+    private void showToast(String message) {
+        JPanel toastPanel = GuiUtil.createPanel();
+        toastPanel.setOpaque(true);
+        toastPanel.setBackground(ThemeManager.getInstance().getBackgroundColor());
+        toastPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+
+        JLabel toastLabel = GuiUtil.createLabel(message);
+        toastPanel.setFont(FontUtil.getSpotifyFont(Font.BOLD, 16));
+
+
+        toastPanel.add(toastLabel);
+
+        // Create an undecorated window for the toast
+        JWindow toastWindow = new JWindow(this);
+        toastWindow.setContentPane(toastPanel);
+        toastWindow.pack();
+
+        // Position at the top center of the main window
+        int x = this.getX() + (this.getWidth() - toastWindow.getWidth()) / 2;
+        int y = this.getY() + 100;
+        toastWindow.setLocation(x, y);
+
+        // Show and automatically hide after 3 seconds
+        toastWindow.setVisible(true);
+
+        Timer timer = new Timer(3000, e -> {
+            toastWindow.dispose();
+        });
+        timer.setRepeats(false);
+        timer.start();
     }
 
 
@@ -1576,6 +1718,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                     if (!playbackSlider.getValueIsAdjusting()) {
                         setPlaybackSliderValue(data[0]);
                         updateSongTimeLabel(data[1]);
+
+
                     }
                 }
                 // Starting to show the playback slider in the Home Page.
@@ -1589,11 +1733,30 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                         return;
                     }
                     setPlaybackSliderValue(data[0]);
+
                     updateSongTimeLabel(data[1]);
+                }
+
+                case SONG_LIKED_CHANGED -> refreshLikedSongsPanel();
+
+                case SPECTRUM_DATA -> {
+                    System.out.println("Sending spectrum data");
+                    if (visualizerActive && visualizerPanel != null) {
+                        String audioFile = (String) event.data();
+                        visualizerPanel.getAudioProcessor().startProcessing(new File(audioFile));
+                    }
+                }
+
+                case SPECTRUM_STOP -> {
+                    System.out.println("Stop sending spectrum data");
+                    if (visualizerActive && visualizerPanel != null) {
+                        SwingUtilities.invokeLater(() -> visualizerPanel.getAudioProcessor().stopProcessing());
+                    }
                 }
             }
         });
     }
+
 
     @Override
     public void dispose() {

@@ -103,7 +103,7 @@ public class AppConstant {
     public static final String DEFAULT_USER_AVT_PATH = "src/main/java/com/javaweb/view/imgs/avatars/anonymous.png";
     public static final String GIF_PATH = "src/main/java/com/javaweb/view/imgs/back_ground/LatteLiteratureBackGround.gif";
     public static final int SONGS_BEFORE_AD = 10;
-    public static final int RECENT_SEARCHED_SONG_LIMIT = 10;
+    public static final int RECENT_SEARCHED_SONG_LIMIT = 20;
 
     //ADS
     public static final String MUSE_MOE_AD = "src/main/java/com/javaweb/view/mini_musicplayer/advertisement/museMoe.mp3";

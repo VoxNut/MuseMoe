@@ -20,7 +20,6 @@ import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.*;
-import java.io.File;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
@@ -1739,20 +1738,13 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
                 case SONG_LIKED_CHANGED -> refreshLikedSongsPanel();
 
-                case SPECTRUM_DATA -> {
-                    System.out.println("Sending spectrum data");
+                case TOGGLE_CAVA -> {
                     if (visualizerActive && visualizerPanel != null) {
-                        String audioFile = (String) event.data();
-                        visualizerPanel.getAudioProcessor().startProcessing(new File(audioFile));
+                        boolean isToggle = (boolean) event.data();
+                        visualizerPanel.toggleCAVA(isToggle);
                     }
                 }
 
-                case SPECTRUM_STOP -> {
-                    System.out.println("Stop sending spectrum data");
-                    if (visualizerActive && visualizerPanel != null) {
-                        SwingUtilities.invokeLater(() -> visualizerPanel.getAudioProcessor().stopProcessing());
-                    }
-                }
             }
         });
     }

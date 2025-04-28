@@ -11,6 +11,7 @@ import org.jaudiotagger.tag.FieldKey;
 import org.jaudiotagger.tag.Tag;
 import org.jaudiotagger.tag.datatype.Artwork;
 
+import javax.sound.sampled.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -83,6 +84,23 @@ public class Test {
         jaudiotaggerLogger.setLevel(Level.SEVERE); // Only show severe errors
     }
 
+    public static void listAvailableAudioDevices() {
+        AudioFormat format = new AudioFormat(44100.0f, 16, 2, true, false);
+
+        Mixer.Info[] mixers = AudioSystem.getMixerInfo();
+        System.out.println("Available audio devices:");
+        for (Mixer.Info info : mixers) {
+            Mixer mixer = AudioSystem.getMixer(info);
+            System.out.println("- " + info.getName() + " | " + info.getDescription());
+
+            // Check if it supports TargetDataLine
+            boolean supportsCapture = mixer.isLineSupported(
+                    new DataLine.Info(TargetDataLine.class, format));
+            System.out.println("  Supports capture: " + supportsCapture);
+        }
+    }
+
+
     public static void main(String[] args) {
         // Specify the package/directory path
         disableJaudiotaggerLogging();
@@ -149,6 +167,8 @@ public class Test {
             System.err.println("Error traversing directory: " + e.getMessage());
             e.printStackTrace();
         }
+
+        listAvailableAudioDevices();
     }
 
     /**

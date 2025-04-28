@@ -242,7 +242,7 @@ public class MusicPlayer extends PlaybackListener {
             bufferedInputStream = null;
         }
 
-        mediator.notifySpectrumStop();
+        mediator.notifyToggleCava(false);
 
     }
 
@@ -341,11 +341,10 @@ public class MusicPlayer extends PlaybackListener {
 
             SwingUtilities.invokeLater(
                     () -> {
+                        mediator.notifyToggleCava(true);
                         startMusicThread();
                         startPlaybackSliderThread();
-                        mediator.notifySpectrumData(currentSong.getAudioFilePath());
                     }
-
             );
 
 

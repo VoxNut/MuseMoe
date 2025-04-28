@@ -186,10 +186,8 @@ public class LoginPage extends JFrame {
 
                 // Use Graphics2D for better quality rendering
                 Graphics2D g2d = (Graphics2D) g.create();
-                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-                g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                GuiUtil.configureGraphicsForHighQuality(g2d);
 
-                // Fill with black in case of letterboxing
                 g2d.setColor(Color.BLACK);
                 g2d.fillRect(0, 0, getWidth(), getHeight());
 

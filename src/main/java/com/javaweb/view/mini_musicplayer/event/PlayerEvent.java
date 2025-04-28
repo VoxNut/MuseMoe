@@ -22,7 +22,9 @@ public record PlayerEvent(EventType type, Object data) {
         LOADING_FINISHED,
         SONG_LIKED_CHANGED,
         SPECTRUM_DATA,
-        SPECTRUM_STOP
+        SPECTRUM_STOP,
+        TOGGLE_CAVA,
+
     }
 
 }

@@ -113,10 +113,14 @@ public class MusicPlayerMediator {
     public void notifySpectrumData(String audioFile) {
         publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.SPECTRUM_DATA, audioFile));
     }
-    
+
     public void notifySpectrumStop() {
         publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.SPECTRUM_STOP, null));
 
+    }
+
+    public void notifyToggleCava(boolean isToggling) {
+        publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.TOGGLE_CAVA, isToggling));
     }
 
 

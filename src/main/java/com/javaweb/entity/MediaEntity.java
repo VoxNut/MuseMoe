@@ -1,10 +1,10 @@
 package com.javaweb.entity;
 
 import com.javaweb.enums.MediaType;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import javax.persistence.*;
 
 @Entity
 @Table(name = "media")
@@ -21,8 +21,6 @@ public class MediaEntity extends BaseEntity {
 
     @Column(name = "file_size")
     private Integer fileSize;
-
-
 
 
 }

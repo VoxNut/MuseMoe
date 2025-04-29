@@ -13,11 +13,11 @@ import com.javaweb.repository.UserArtistFollowRepository;
 import com.javaweb.repository.UserRepository;
 import com.javaweb.service.UserArtistFollowService;
 import com.javaweb.utils.SecurityUtils;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityNotFoundException;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -46,7 +46,7 @@ public class UserArtistFollowServiceImpl implements UserArtistFollowService {
                     .map(UserArtistFollowEntity::getArtist)
                     .map(artistConverter::toDTO)
                     .collect(Collectors.toList());
-            
+
         } catch (Exception e) {
             e.printStackTrace();
             return List.of();

@@ -9,11 +9,11 @@ import com.javaweb.repository.SongRepository;
 import com.javaweb.repository.UserRepository;
 import com.javaweb.service.QueueService;
 import com.javaweb.utils.SecurityUtils;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityNotFoundException;
 import java.util.Objects;
 
 @Service

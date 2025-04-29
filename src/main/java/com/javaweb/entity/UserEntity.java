@@ -1,10 +1,10 @@
 package com.javaweb.entity;
 
 import com.javaweb.enums.AccountStatus;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -60,10 +60,7 @@ public class UserEntity extends BaseEntity {
     private Set<QueueEntity> queues = new HashSet<>();
 
     @OneToMany(mappedBy = "follower")
-    private Set<UserArtistFollowEntity> followers = new HashSet<>();
-
-    @OneToMany(mappedBy = "artist")
-    private Set<UserArtistFollowEntity> artists = new HashSet<>();
+    private Set<UserArtistFollowEntity> following = new HashSet<>();
 
 
 }

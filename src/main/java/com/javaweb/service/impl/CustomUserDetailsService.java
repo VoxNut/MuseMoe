@@ -4,6 +4,7 @@ import com.javaweb.entity.UserEntity;
 import com.javaweb.enums.AccountStatus;
 import com.javaweb.model.dto.MyUserDetail;
 import com.javaweb.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -12,7 +13,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import javax.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,7 +45,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         // Copy remaining properties
         myUserDetail.setId(userEntity.getId());
         myUserDetail.setFullName(userEntity.getFullName());
-      
+
 
         return myUserDetail;
     }

@@ -1,6 +1,7 @@
 package com.javaweb.config;
 
 import com.javaweb.service.impl.CustomUserDetailsService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,11 +12,8 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.annotation.web.configurers.LogoutConfigurer;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-
-import javax.servlet.http.HttpServletResponse;
 
 @Configuration
 @EnableWebSecurity
@@ -34,13 +32,15 @@ public class WebSecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.csrf(AbstractHttpConfigurer::disable)
-                .authorizeRequests(requests -> requests
-                        .antMatchers("/login").permitAll()
-                        .antMatchers("/api/songs/**").permitAll()
-                        .antMatchers("/api/user/**").permitAll()
-                        .antMatchers("/api/playlists/**").permitAll()
-                        .anyRequest().authenticated())
+        http
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(requests -> requests
+                        .requestMatchers("/login").permitAll()
+                        .requestMatchers("/api/songs/**").permitAll()
+                        .requestMatchers("/api/user/**").permitAll()
+                        .requestMatchers("/api/playlists/**").permitAll()
+                        .anyRequest().authenticated()
+                )
                 .formLogin(login -> login
                         .loginProcessingUrl("/login")
                         .usernameParameter("username")
@@ -51,9 +51,11 @@ public class WebSecurityConfig {
                         .failureHandler((request, response, exception) -> {
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                         })
-                        .permitAll())
+                        .permitAll()
+                )
                 .httpBasic(Customizer.withDefaults())
-                .logout(LogoutConfigurer::permitAll);
+                .logout(logout -> logout.permitAll());
+
         http.authenticationProvider(authenticationProvider());
         return http.build();
     }

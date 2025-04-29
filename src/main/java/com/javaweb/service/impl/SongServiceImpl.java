@@ -2,11 +2,14 @@ package com.javaweb.service.impl;
 
 
 import com.javaweb.converter.SongConverter;
+import com.javaweb.entity.SongEntity;
 import com.javaweb.exception.EntityNotFoundException;
 import com.javaweb.model.dto.SongDTO;
+import com.javaweb.model.request.SongRequestDTO;
 import com.javaweb.repository.SongRepository;
 import com.javaweb.service.SongService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +23,7 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Slf4j
 public class SongServiceImpl implements SongService {
 
 
@@ -72,5 +76,16 @@ public class SongServiceImpl implements SongService {
                 .stream()
                 .map(songConverter::toDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean createSong(SongRequestDTO songRequestDTO) {
+        SongEntity song = songConverter.toEntity(songRequestDTO);
+        try {
+            songRepository.save(song);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

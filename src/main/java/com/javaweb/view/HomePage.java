@@ -36,9 +36,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private JLabel labelBeginning;
     private JLabel labelEnd;
 
-    private long lastUpdate = 0;
-    private final int frameInterval = 1000 / 60; // ~16ms
-
     private double rotationAngle = 0.0;
     private static final double SPIN_SPEED = Math.PI / 60;
     private static final int TIMER_DELAY = 16; //
@@ -1559,11 +1556,13 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
 
         if (visualizerActive) {
+            playerFacade.notifyToggleCava(true);
             cardLayout.show(centerCardPanel, "visualizer");
             log.info("Visualizer activated");
-            showToast("Visualizer activated (press Shift+V to toggle)");
+            GuiUtil.showToast(this, "Visualizer activated");
         } else {
             cardLayout.show(centerCardPanel, "home");
+            GuiUtil.showToast(this, "Visualizer deactivated");
             log.info("Visualizer deactivated");
         }
     }
@@ -1574,7 +1573,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private void toggleVisualizerBands() {
         if (visualizerPanel == null) return;
 
-        int[] bandOptions = {10, 16, 24, 32, 48, 64};
+        int[] bandOptions = {10, 16, 24, 32, 48, 64, 98, 128, 256, 512};
         int currentBands = visualizerPanel.getNumberOfBands();
 
         // Find next band option
@@ -1591,7 +1590,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         visualizerPanel.setNumberOfBands(newBands);
 
         // Show feedback
-        showToast("Visualizer: " + newBands + " bands");
+        GuiUtil.showToast(this, "Visualizer: " + newBands + " bands");
     }
 
     private void showToast(String message) {

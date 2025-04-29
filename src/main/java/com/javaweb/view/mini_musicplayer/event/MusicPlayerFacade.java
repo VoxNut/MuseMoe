@@ -217,5 +217,9 @@ public class MusicPlayerFacade {
         return player.getCurrentVolumeGain();
     }
 
+    public void notifyToggleCava(boolean isToggle) {
+        mediator.notifyToggleCava(isToggle);
+    }
+
 
 }

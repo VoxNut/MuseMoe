@@ -1,8 +1,10 @@
 package com.javaweb.api;
 
 import com.javaweb.model.dto.SongDTO;
+import com.javaweb.model.request.SongRequestDTO;
 import com.javaweb.service.SongService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.repository.query.Param;
@@ -15,6 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/songs")
 @RequiredArgsConstructor
+@Slf4j
 public class SongAPI {
 
     private final SongService songService;
@@ -70,6 +73,16 @@ public class SongAPI {
         try {
             List<SongDTO> songDTOS = songService.findAllSongs();
             return ResponseEntity.ok(songDTOS);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/create")
+    public ResponseEntity<Boolean> createSong(@RequestBody SongRequestDTO songRequestDTO) {
+        try {
+            Boolean res = songService.createSong(songRequestDTO);
+            return ResponseEntity.ok(res);
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
         }

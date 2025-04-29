@@ -117,8 +117,6 @@ public class EnhancedSpectrumVisualizer extends JPanel implements ThemeChangeLis
                             "bars = " + numberOfBands + "\n" +
                             "autosens = 1\n" +
                             "sensitivity = 100\n" +
-                            "bar_width = 1\n" +
-                            "bar_spacing = 1\n" +
                             "\n" +
                             "[output]\n" +
                             "method = raw\n" +
@@ -251,34 +249,129 @@ public class EnhancedSpectrumVisualizer extends JPanel implements ThemeChangeLis
 
 
     /**
-     * Update demo visualization when CAVA is not running
+     * Update demo visualization with wave-like animation when CAVA is not running
      */
     private void updateDemoVisualization() {
-        demoPhase += 50; // Thúc đẩy animation
+        demoPhase += 35; // Slower phase advancement for smoother wave motion
+
+        // Create multiple wave components for a more complex, natural look
+        float baseFrequency = 1.0f;
+        float secondaryFrequency = 2.3f;
+        float tertiaryFrequency = 3.7f;
+
+        // Create a pulsing effect for overall amplitude modulation
+        float pulseRate = 0.4f;
+        float pulseDepth = 0.2f;
+        float timeSeconds = demoPhase / 1000.0f;
+        float pulseAmount = 1.0f + pulseDepth * (float) Math.sin(timeSeconds * pulseRate);
+
+        // Wave propagation effect
+        float waveSpeed = timeSeconds * 2.0f;
+        float waveLength = 1.2f;
+
+        // Create a ripple effect that travels across the bands
+        float ripplePosition = (timeSeconds % 5) / 5.0f; // 0 to 1 every 5 seconds
+        float rippleWidth = 0.2f;
 
         for (int i = 0; i < numberOfBands; i++) {
             float normalizedPos = (float) i / numberOfBands;
-            float time = demoPhase / 1000.0f;
-            float value;
 
-            // Tạo các pattern khác nhau cho tần số thấp, trung và cao
-            if (normalizedPos < 0.3f) { // Bass
-                value = 0.3f + 0.5f * (float) Math.sin(time * 1.2 + normalizedPos * Math.PI);
-            } else if (normalizedPos < 0.7f) { // Mid
-                value = 0.2f + 0.3f * (float) Math.sin(time * 2.5 + normalizedPos * 3.0 * Math.PI);
-            } else { // Treble
-                value = 0.1f + 0.2f * (float) Math.sin(time * 3.7 + normalizedPos * 5.0 * Math.PI);
+            // Base amplitude varies by frequency range
+            float baseAmplitude;
+            if (normalizedPos < 0.3f) {          // Bass (low frequencies)
+                baseAmplitude = 0.5f;
+            } else if (normalizedPos < 0.7f) {   // Mid frequencies
+                baseAmplitude = 0.4f;
+            } else {                             // Treble (high frequencies)
+                baseAmplitude = 0.3f;
             }
 
-            // Thêm một chút ngẫu nhiên
-            value += 0.05f * (float) Math.random();
+            // Create primary wave component
+            float primaryWave = (float) Math.sin(
+                    normalizedPos * Math.PI * waveLength + waveSpeed
+            );
 
-            // Giới hạn giá trị
-            demoData[i] = Math.max(0.0f, Math.min(1.0f, value));
+            // Create secondary wave component with different phase
+            float secondaryWave = 0.5f * (float) Math.sin(
+                    normalizedPos * Math.PI * secondaryFrequency + waveSpeed * 1.5f
+            );
+
+            // Create tertiary wave component with even different phase
+            float tertiaryWave = 0.25f * (float) Math.sin(
+                    normalizedPos * Math.PI * tertiaryFrequency + waveSpeed * 0.7f
+            );
+
+            // Combine wave components
+            float combinedWave = baseAmplitude * (primaryWave + secondaryWave + tertiaryWave) / 1.75f;
+
+            // Add ripple effect
+            float distanceFromRipple = Math.abs(normalizedPos - ripplePosition);
+            if (distanceFromRipple < rippleWidth) {
+                float rippleIntensity = (rippleWidth - distanceFromRipple) / rippleWidth;
+                combinedWave += 0.3f * rippleIntensity * (float) Math.sin(timeSeconds * 10.0f);
+            }
+
+            // Add frequency-specific small oscillations for more detail
+            float detailFrequency;
+            if (normalizedPos < 0.3f) {          // Bass has slower oscillations
+                detailFrequency = 3.0f;
+            } else if (normalizedPos < 0.7f) {   // Mid has medium oscillations
+                detailFrequency = 5.0f;
+            } else {                             // Treble has faster oscillations
+                detailFrequency = 8.0f;
+            }
+
+            float detailWave = 0.15f * (float) Math.sin(timeSeconds * detailFrequency + normalizedPos * 20.0f);
+
+            // Apply pulsing effect
+            float value = 0.3f + (combinedWave + detailWave) * pulseAmount;
+
+            // Add subtle random noise for natural variation (reduced from 0.05 to 0.03)
+            value += 0.03f * (float) Math.random();
+
+            // Adjacent bars shouldn't vary too wildly - smooth between neighbors
+            if (i > 0 && i < numberOfBands - 1) {
+                float leftNeighbor = demoData[i - 1];
+                float neighborAvg = leftNeighbor;
+                if (i < numberOfBands - 1) {
+                    neighborAvg = (leftNeighbor + demoData[Math.min(i + 1, numberOfBands - 1)]) / 2.0f;
+                }
+                value = value * 0.7f + neighborAvg * 0.3f;
+            }
+
+            // Ensure values stay in valid range
+            demoData[i] = Math.max(0.05f, Math.min(0.95f, value));
         }
 
-        // Áp dụng dữ liệu demo trực tiếp vào bands
+        // Smooth the final shape to prevent jarring transitions
+        smoothBarValues();
+
+        // Apply demo data to the visualization bands
         System.arraycopy(demoData, 0, bands, 0, numberOfBands);
+    }
+
+    /**
+     * Apply smoothing to create more natural transitions between adjacent bars
+     */
+    private void smoothBarValues() {
+        float[] smoothed = new float[numberOfBands];
+
+        for (int i = 0; i < numberOfBands; i++) {
+            // Center-weighted average of neighboring bars
+            float sum = 0;
+            float weight = 0;
+
+            for (int j = Math.max(0, i - 2); j <= Math.min(numberOfBands - 1, i + 2); j++) {
+                float neighborWeight = 1.0f - Math.abs(i - j) / 3.0f;
+                sum += demoData[j] * neighborWeight;
+                weight += neighborWeight;
+            }
+
+            smoothed[i] = sum / weight;
+        }
+
+        // Copy smoothed values back to demoData
+        System.arraycopy(smoothed, 0, demoData, 0, numberOfBands);
     }
 
     /**
@@ -360,12 +453,22 @@ public class EnhancedSpectrumVisualizer extends JPanel implements ThemeChangeLis
 
         // Hiển thị chỉ báo chế độ demo
         if (demoMode) {
-            g2d.setColor(new Color(255, 255, 255, 150));
-            g2d.setFont(new Font("SansSerif", Font.BOLD, 14));
+            g2d.setColor(foregroundColor);
+            g2d.setFont(FontUtil.getSpotifyFont(Font.BOLD, 14));
             g2d.drawString("DEMO MODE", 10, 20);
 
             // Hiển thị thông tin về số lượng thanh và kích thước
             g2d.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 12));
+            g2d.setColor(foregroundColor);
+            g2d.drawString("Bands: " + numberOfBands + " | Width: " + optimalBarWidth + "px", 10, 40);
+        } else {
+            g2d.setColor(foregroundColor);
+            g2d.setFont(FontUtil.getSpotifyFont(Font.BOLD, 14));
+            g2d.drawString("Audio Visualizer", 10, 20);
+
+            // Hiển thị thông tin về số lượng thanh và kích thước
+            g2d.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 12));
+            g2d.setColor(foregroundColor);
             g2d.drawString("Bands: " + numberOfBands + " | Width: " + optimalBarWidth + "px", 10, 40);
         }
 
@@ -379,8 +482,8 @@ public class EnhancedSpectrumVisualizer extends JPanel implements ThemeChangeLis
     public void setNumberOfBands(int newNumberOfBands) {
         if (newNumberOfBands < 2) {
             newNumberOfBands = 2; // Minimum 2 bands
-        } else if (newNumberOfBands > 64) {
-            newNumberOfBands = 64; // Maximum 64 bands
+        } else if (newNumberOfBands > 512) {
+            newNumberOfBands = 512; //
         }
 
         if (this.numberOfBands == newNumberOfBands) {

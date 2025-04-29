@@ -1937,6 +1937,17 @@ public class GuiUtil {
         return avatarLabel;
     }
 
+
+    public static void showToast(Component parentComponent, String message, int durationMs) {
+        // Delegate to ToastManager
+        ToastManager.getInstance().showToast(parentComponent, message, durationMs);
+    }
+
+    public static void showToast(Component parentComponent, String message) {
+        // Delegate to ToastManager with default duration
+        ToastManager.getInstance().showToast(parentComponent, message);
+    }
+
     public static void showNetworkErrorDialog(Component parentComponent, String message) {
         Color errorColor = new Color(231, 76, 60);
         showCustomMessageDialog(parentComponent,

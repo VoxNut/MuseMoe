@@ -277,6 +277,13 @@ public class GuiUtil {
         return label;
     }
 
+    public static JLabel createLabel(String text, int style, float size, Color color) {
+        JLabel label = createLabel(text);
+        label.setFont(FontUtil.getJetBrainsMonoFont(style, size));
+        label.setForeground(color);
+        return label;
+    }
+
     public static JLabel createLabel() {
         JLabel label = new JLabel();
         label.setForeground(ThemeManager.getInstance().getTextColor());
@@ -411,6 +418,23 @@ public class GuiUtil {
     public static JTextArea createTextArea(int rows, int columns, int width, int height) {
         JTextArea textArea = createTextArea(rows, columns);
         textArea.setMinimumSize(new Dimension(width, height));
+        return textArea;
+    }
+
+    public static JLabel createLabel(String content, int horizontalAlignment, int style, float size) {
+        JLabel label = createLabel(content, style, size);
+        label.setHorizontalAlignment(horizontalAlignment);
+        return label;
+    }
+
+
+    public static JTextArea createTextArea(String content, int fontStyle, int fontSize) {
+        JTextArea textArea = new JTextArea(content);
+        textArea.setFont(FontUtil.getMonoSpacedFont(fontStyle, fontSize));
+        textArea.setForeground(ThemeManager.getInstance().getTextColor());
+        textArea.setEditable(false);
+        textArea.setOpaque(false);
+        textArea.setFocusable(false);
         return textArea;
     }
 

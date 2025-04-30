@@ -46,7 +46,7 @@ public class AppConstant {
     public static final String DOWNLOAD_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/download-icon.png";
     public static final String CHEVRON_UP_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/chevron-up.png";
     public static final String CHEVRON_DOWN_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/chevron-down.png";
-
+    public static final String REFRESH_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/refresh-icon.png";
     //SALE PAGE
     public static final String CREATE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/create-icon.png";
     public static final String DELETE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/delete-icon.png";
@@ -104,6 +104,20 @@ public class AppConstant {
     public static final String GIF_PATH = "src/main/java/com/javaweb/view/imgs/back_ground/LatteLiteratureBackGround.gif";
     public static final int SONGS_BEFORE_AD = 10;
     public static final int RECENT_SEARCHED_SONG_LIMIT = 20;
+    public static final String[] WELCOME_MESSAGE = {
+            "Feel the Music in Colors!",
+            "MuseMoe: Paint Your Songs!",
+            "Vibe with Every Hue!",
+            "Colors That Sing to You!",
+            "See the Beat, Feel the Shade!",
+            "Hues That Echo Your Soul!",
+            "Melodies Paint Your World!",
+            "Feel Every Note in Color!",
+            "Songs That Color Your Heart!",
+            "Harmony in Shades of Sound!"
+    };
+
+    public static final String GITHUB_TOKEN = "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";
 
     //ADS
     public static final String MUSE_MOE_AD = "src/main/java/com/javaweb/view/mini_musicplayer/advertisement/museMoe.mp3";

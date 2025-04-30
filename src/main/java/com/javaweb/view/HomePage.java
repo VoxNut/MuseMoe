@@ -15,15 +15,20 @@ import com.javaweb.view.theme.ThemeManager;
 import com.javaweb.view.user.UserSessionManager;
 import lombok.extern.slf4j.Slf4j;
 import net.miginfocom.swing.MigLayout;
+import org.kohsuke.github.*;
 
 import javax.swing.*;
+import javax.swing.Timer;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.List;
 
 @Slf4j
 public class HomePage extends JFrame implements PlayerEventListener, ThemeChangeListener {
@@ -1590,52 +1595,244 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         GuiUtil.showToast(this, "Visualizer: " + newBands + " bands");
     }
 
-    private void showToast(String message) {
-        JPanel toastPanel = GuiUtil.createPanel();
-        toastPanel.setOpaque(true);
-        toastPanel.setBackground(ThemeManager.getInstance().getBackgroundColor());
-        toastPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+    private JPanel createHomePanel() {
+        // Use MigLayout for the main content panel
+        JPanel mainContent = GuiUtil.createPanel(new MigLayout(
+                "fill, insets 10",
+                "[grow]",
+                "[top][grow][bottom]"
+        ));
 
-        JLabel toastLabel = GuiUtil.createLabel(message);
-        toastPanel.setFont(FontUtil.getSpotifyFont(Font.BOLD, 16));
+
+        String[] welcomeMessages = AppConstant.WELCOME_MESSAGE;
+
+        // Select random message
+        int randomIndex = (int) (Math.random() * welcomeMessages.length);
+        String selectedMessage = welcomeMessages[randomIndex];
+
+        String asciiArt = generateFigletArt(selectedMessage);
+
+        JTextArea asciiArtTextArea = GuiUtil.createTextArea(asciiArt, Font.BOLD, 15);
+
+        JPanel asciiArtPanel = GuiUtil.createPanel(new MigLayout("fill, insets 0"));
+        asciiArtPanel.add(asciiArtTextArea, "left, top, growx");
+
+        mainContent.add(asciiArtPanel, "cell 0 0, growx, aligny top");
+
+        JPanel commitPanel = createCommitPanel();
+        mainContent.add(commitPanel, "cell 0 1, grow");
+
+        return mainContent;
+    }
+
+    private JPanel createCommitPanel() {
+        JPanel panel = GuiUtil.createPanel(new BorderLayout());
+        panel.setBorder(GuiUtil.createTitledBorder("Recent Development Activity", TitledBorder.LEFT));
+
+        JPanel headerPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.LEFT));
 
 
-        toastPanel.add(toastLabel);
+        JButton refreshButton = GuiUtil.createIconButtonWithText("Refresh", AppConstant.REFRESH_ICON_PATH);
 
-        // Create an undecorated window for the toast
-        JWindow toastWindow = new JWindow(this);
-        toastWindow.setContentPane(toastPanel);
-        toastWindow.pack();
+        headerPanel.add(refreshButton);
 
-        // Position at the top center of the main window
-        int x = this.getX() + (this.getWidth() - toastWindow.getWidth()) / 2;
-        int y = this.getY() + 100;
-        toastWindow.setLocation(x, y);
+        // Content panel for commits with scrolling
+        JPanel commitsContent = GuiUtil.createPanel();
+        commitsContent.setLayout(new BoxLayout(commitsContent, BoxLayout.Y_AXIS));
+        commitsContent.setPreferredSize(new Dimension(800, 600));
 
-        // Show and automatically hide after 3 seconds
-        toastWindow.setVisible(true);
+        // Loading placeholder
+        JLabel loadingLabel = GuiUtil.createLabel("Loading commits...", Font.ITALIC, 12);
+        commitsContent.add(loadingLabel);
 
-        Timer timer = new Timer(3000, e -> {
-            toastWindow.dispose();
+        JScrollPane scrollPane = GuiUtil.createStyledScrollPane(commitsContent);
+
+        panel.add(headerPanel, BorderLayout.NORTH);
+        panel.add(scrollPane, BorderLayout.CENTER);
+
+        refreshButton.addActionListener(e -> {
+            fetchCommits("VoxNut/MuseMoe", commitsContent);
         });
-        timer.setRepeats(false);
-        timer.start();
+
+        SwingUtilities.invokeLater(() -> {
+            fetchCommits("VoxNut/MuseMoe", commitsContent);
+        });
+
+        return panel;
+    }
+
+    private void fetchCommits(String repoName, JPanel commitsPanel) {
+        if (repoName.isEmpty()) {
+            GuiUtil.showErrorMessageDialog(commitsPanel, "Please enter a repository name (owner/repo format)");
+            return;
+        }
+
+        commitsPanel.removeAll();
+
+        JLabel loadingLabel = GuiUtil.createLabel("Fetching commits...", Font.ITALIC, 12);
+        commitsPanel.add(loadingLabel);
+        commitsPanel.revalidate();
+        commitsPanel.repaint();
+
+        new SwingWorker<List<CommitInfo>, Void>() {
+            @Override
+            protected List<CommitInfo> doInBackground() throws Exception {
+                try {
+                    GitHub github = new GitHubBuilder().withOAuthToken(AppConstant.GITHUB_TOKEN).build();
+                    GHRepository repo = github.getRepository(repoName);
+
+                    List<GHBranch> branches = repo.getBranches().values().stream().toList();
+
+                    // Store unique commits
+                    Set<String> seenCommits = new HashSet<>();
+                    List<CommitInfo> allCommits = new ArrayList<>();
+
+                    // Get commits from each branch
+                    for (GHBranch branch : branches) {
+                        PagedIterable<GHCommit> branchCommits = repo.queryCommits().from(branch.getName()).list();
+                        for (GHCommit commit : branchCommits) {
+                            String sha = commit.getSHA1();
+                            if (!seenCommits.contains(sha)) {
+                                seenCommits.add(sha);
+
+                                // Create commit info object
+                                String author = commit.getAuthor() != null ? commit.getAuthor().getLogin() : "Unknown";
+                                String date = commit.getCommitDate().toString();
+                                String message = commit.getCommitShortInfo().getMessage();
+
+                                allCommits.add(new CommitInfo(sha, author, date, message, branch.getName()));
+                            }
+                        }
+                    }
+
+                    allCommits.sort((c1, c2) -> c2.date.compareTo(c1.date));
+                    return allCommits;
+
+                } catch (IOException ex) {
+                    log.error("Failed to fetch commits", ex);
+                    throw ex;
+                }
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    List<CommitInfo> commits = get();
+                    updateCommitDisplay(commitsPanel, commits);
+                } catch (Exception e) {
+                    GuiUtil.showErrorMessageDialog(commitsPanel, "Failed to fetch commits: " + e.getMessage());
+                }
+            }
+        }.execute();
+    }
+
+    private void updateCommitDisplay(JPanel panel, List<CommitInfo> commits) {
+        panel.removeAll();
+
+        if (commits.isEmpty()) {
+            JLabel emptyLabel = GuiUtil.createLabel("No commits found", Font.ITALIC, 12);
+            panel.add(emptyLabel);
+            panel.revalidate();
+            panel.repaint();
+            return;
+        }
+
+        // Add a header
+        JPanel headerPanel = GuiUtil.createPanel(new BorderLayout());
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        JLabel countLabel = GuiUtil.createLabel(
+                "Showing " + commits.size() + " commits",
+                Font.BOLD, 12);
+        headerPanel.add(countLabel, BorderLayout.WEST);
+        panel.add(headerPanel);
+
+        // Add each commit
+        for (CommitInfo commit : commits) {
+            JPanel commitPanel = createCommitItemPanel(commit);
+            panel.add(commitPanel);
+            panel.add(Box.createVerticalStrut(5));
+        }
+
+        panel.revalidate();
+        panel.repaint();
+    }
+
+    private JPanel createCommitItemPanel(CommitInfo commit) {
+        // Use MigLayout for finer control of component positioning
+        JPanel itemPanel = GuiUtil.createPanel(new MigLayout("fillx, insets 3 5 3 5", "[100]5[grow]5[150]", "[]"));
+        itemPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0,
+                GuiUtil.darkenColor(ThemeManager.getInstance().getBackgroundColor(), 0.1f)));
+
+        // Create hash and branch labels
+        String shortSha = commit.sha.substring(0, 7);
+        JLabel shaLabel = GuiUtil.createLabel(shortSha, Font.BOLD, 12);
+
+        JLabel branchLabel = GuiUtil.createLabel("[" + commit.branch + "]", Font.ITALIC, 11);
+
+        JPanel leftPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        leftPanel.add(shaLabel);
+        leftPanel.add(branchLabel);
+
+        // Create message label with ellipsis for overflow text
+        JLabel messageLabel = GuiUtil.createLabel(commit.message, Font.PLAIN, 12);
+
+        // Create author and date labels
+        JLabel authorLabel = GuiUtil.createLabel(commit.author, Font.ITALIC, 11);
+        JLabel dateLabel = GuiUtil.createLabel(commit.date, Font.PLAIN, 10);
+        dateLabel.setForeground(GuiUtil.darkenColor(ThemeManager.getInstance().getTextColor(), 0.3f));
+
+        // Create info panel for author and date
+        JPanel infoPanel = GuiUtil.createPanel(new MigLayout("", "[]5[]", "[]"));
+        infoPanel.add(authorLabel);
+        infoPanel.add(dateLabel);
+
+        // Add all components to the item panel
+        itemPanel.add(leftPanel, "cell 0 0");
+        itemPanel.add(messageLabel, "cell 1 0, growx");
+        itemPanel.add(infoPanel, "cell 2 0, right");
+
+        // Add hover effect
+        GuiUtil.addHoverEffect(itemPanel);
+
+        return itemPanel;
     }
 
 
-    private JPanel createHomePanel() {
-        JPanel mainContent = GuiUtil.createPanel(new BorderLayout());
+    private record CommitInfo(String sha, String author, String date, String message, String branch) {
 
-        JPanel backgroundPanel = GuiUtil.createPanel(new GridBagLayout());
+    }
 
-        JLabel welcomeLabel = new JLabel("Welcome to Muse Moe", SwingConstants.CENTER);
-        welcomeLabel.setFont(FontUtil.getJetBrainsMonoFont(Font.BOLD, 36));
-        welcomeLabel.setForeground(AppConstant.TEXT_COLOR);
 
-        backgroundPanel.add(welcomeLabel);
-        mainContent.add(backgroundPanel, BorderLayout.CENTER);
+    private String generateFigletArt(String text) {
+        try {
+            ProcessBuilder processBuilder = new ProcessBuilder(
+                    "figlet",
+                    "-f",
+                    "doom",
+                    "-W",
+                    "-w 120",
+                    "-s",
+                    text
+            );
 
-        return mainContent;
+            processBuilder.redirectErrorStream(true);
+
+            Process process = processBuilder.start();
+
+            // Read the output
+            StringBuilder output = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    output.append(line).append("\n");
+                }
+            }
+
+            return output.toString();
+        } catch (Exception e) {
+            log.error("Error generating ASCII art", e);
+            return "";
+        }
     }
 
     @Override

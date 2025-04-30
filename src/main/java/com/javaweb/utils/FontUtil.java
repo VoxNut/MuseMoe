@@ -49,6 +49,9 @@ public class FontUtil {
         }
     }
 
+    public static Font getMonoSpacedFont(int style, int size) {
+        return new Font(Font.MONOSPACED, style, size);
+    }
 
 
 }

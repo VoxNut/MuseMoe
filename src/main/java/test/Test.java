@@ -7,8 +7,13 @@ import javazoom.jl.decoder.Header;
 import javazoom.jl.decoder.SampleBuffer;
 import org.jaudiotagger.audio.AudioFile;
 import org.jaudiotagger.audio.AudioFileIO;
+import org.jaudiotagger.audio.exceptions.CannotReadException;
+import org.jaudiotagger.audio.exceptions.CannotWriteException;
+import org.jaudiotagger.audio.exceptions.InvalidAudioFrameException;
+import org.jaudiotagger.audio.exceptions.ReadOnlyFileException;
 import org.jaudiotagger.tag.FieldKey;
 import org.jaudiotagger.tag.Tag;
+import org.jaudiotagger.tag.TagException;
 import org.jaudiotagger.tag.datatype.Artwork;
 
 import javax.sound.sampled.*;
@@ -101,7 +106,69 @@ public class Test {
     }
 
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws CannotReadException, TagException, InvalidAudioFrameException, ReadOnlyFileException, IOException, CannotWriteException {
+//        AudioFile audioFile1 = AudioFileIO.read(new File("src/main/java/com/javaweb/view/mini_musicplayer/audio/Lost Umbrella.mp3"));
+//        Tag tag1 = audioFile1.getTag();
+//
+//        tag1.setField(FieldKey.LYRICS, """
+//                Boku wo tsuretette shinmi konde shimau mae ni
+//                Mienai mama tsukamitai toka douse kanawanai kara sa
+//                Aa te wa zutto nurete ite itsuka otoshiteshimau koto
+//                Mada kizuitenakatta
+//
+//                Komakai ame ga me ni shimiru no mo
+//                Shimetta iki ga nodo ni tsumaru no mo
+//                Katachi ni naranai mono wo seotta boku wa
+//                Angai rakudatta no kamo shin naina
+//
+//                Koe ni narenakattabun dake me no mae de jama shiteiru kirisame ni
+//                Kasa wo kazashite nigemadoitaiyo
+//
+//                Boku wo tsuretette shinmi konde shimau mae ni
+//                Mienai mama yararechau to ka douni mo dekinaikarasa
+//                Hanasenai te wa zutto nurete ite itsuka otoshiteshimau koto
+//                Mada kizuitenakatta
+//
+//                Hitaru itsuka no kajikanda tе mo kuwazugirai no amedama mo
+//                Madogoshi no sanjou mo mitenai koto ni shita mama
+//                Douka dokka tooi toko e karеta hana ga saku toko e
+//                Wakaranai mama sou yatte oiteiku kokoro no oto
+//
+//                Tsumetai ame ga me ni shimiru no mo
+//                Shimetta iki ga hoo ni butsukaru no mo
+//                Zenbu zenbu wakaranai mama no boku wa
+//                Kokoro no hibi wo mitashiteiku nda
+//                See upcoming pop shows
+//                Get tickets for your favorite artists
+//                You might also like
+//                The Tortured Poets Department
+//                Taylor Swift
+//                Down Bad
+//                Taylor Swift
+//                Family Matters
+//                Drake
+//                Mizutamari ga dekinai uchi ni
+//                Kasa wo kazashite sekai wo bokasouyo
+//
+//                Boku wo tsuretette shinmi kondeshimau mae ni
+//                Mienai mama tsukamitai to ka douse kanawanaikarasa
+//                Aa te wa zutto nurete ite itsuka otoshiteshimau koto
+//                Zutto kitsuke nakatta
+//
+//                Boku wo tsuretette shinmi kondeshimau mae ni
+//                Mienai mama yararechau to ka dounimo dekinaikarasa
+//                Hanasenai te wa zutto nureteite itsuka nakushite shimau koto
+//                Ima, kizukitakatta
+//
+//                Komakai ame ga me ni himiru no mo
+//                Shimetta iki ga nodo ni tsumaru no mo
+//                Zenbu zenbu wakaranai mama no boku ga
+//                Kokoro no hibi wo makasekitta sei da
+//                """);
+//
+//        audioFile1.commit();
+
+
         // Specify the package/directory path
         disableJaudiotaggerLogging();
         String packagePath = "src/main/java/com/javaweb/view/mini_musicplayer/audio";
@@ -135,11 +202,19 @@ public class Test {
                                     String artist = tag.getFirst(FieldKey.ARTIST);
                                     String album = tag.getFirst(FieldKey.ALBUM);
                                     String quality = tag.getFirst(FieldKey.QUALITY);
+                                    String year = tag.getFirst(FieldKey.YEAR);
+                                    String originalYear = tag.getFirst(FieldKey.ORIGINAL_YEAR);
+                                    String lyrics = tag.getFirst(FieldKey.LYRICS);
+                                    String genre = tag.getFirst(FieldKey.GENRE);
                                     // Print metadata with fallbacks for empty values
                                     System.out.println("Title: " + (title.isEmpty() ? "[No Title]" : title));
                                     System.out.println("Artist: " + (artist.isEmpty() ? "[Unknown Artist]" : artist));
                                     System.out.println("Album: " + (album.isEmpty() ? "[Unknown Album]" : album));
                                     System.out.println("Quality: " + (quality.isEmpty() ? "[Unknown Quality]" : quality));
+                                    System.out.println("year: " + (year.isEmpty() ? "[Unknown year]" : year));
+                                    System.out.println("Original Year: " + (originalYear.isEmpty() ? "[Unknown Original Year]" : originalYear));
+                                    System.out.println("Lyrics: " + (lyrics.isEmpty() ? "[Unknown lyrics]" : lyrics));
+                                    System.out.println("Genre: " + (genre.isEmpty() ? "[Unknown Genre]" : genre));
 
                                     // Check for artwork
                                     Artwork artwork = tag.getFirstArtwork();
@@ -168,7 +243,7 @@ public class Test {
             e.printStackTrace();
         }
 
-        listAvailableAudioDevices();
+
     }
 
     /**
@@ -192,12 +267,4 @@ public class Test {
         return "";
     }
 
-    /**
-     * Formats duration in seconds to mm:ss format
-     */
-    private static String formatDuration(int seconds) {
-        int minutes = seconds / 60;
-        int remainingSeconds = seconds % 60;
-        return String.format("%02d:%02d", minutes, remainingSeconds);
-    }
 }

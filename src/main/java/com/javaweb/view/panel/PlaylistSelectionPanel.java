@@ -5,6 +5,7 @@ import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
+import com.javaweb.view.theme.ThemeChangeListener;
 import com.javaweb.view.theme.ThemeManager;
 
 import javax.swing.*;
@@ -14,14 +15,16 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
 
-public class PlaylistSelectionPanel extends ListThemeablePanel {
+public class PlaylistSelectionPanel extends JPanel implements ThemeChangeListener {
     private final JList<PlaylistDTO> playlistList;
     private final DefaultListModel<PlaylistDTO> listModel;
     private final JLabel titleLabel;
     private final JButton selectButton;
     private final JButton cancelButton;
     private final JPanel buttonPanel;
-
+    private Color textColor;
+    private Color backgroundColor;
+    private Color accentColor;
 
     public PlaylistSelectionPanel(List<PlaylistDTO> playlists) {
         this.textColor = ThemeManager.getInstance().getTextColor();
@@ -31,7 +34,7 @@ public class PlaylistSelectionPanel extends ListThemeablePanel {
 
         setLayout(new BorderLayout());
         setPreferredSize(new Dimension(400, 300));
-
+        setBackground(backgroundColor);
         // Title
         titleLabel = new JLabel("Select a Playlist");
         titleLabel.setFont(FontUtil.getSpotifyFont(Font.BOLD, 16));
@@ -76,9 +79,8 @@ public class PlaylistSelectionPanel extends ListThemeablePanel {
 
     @Override
     public void onThemeChanged(Color backgroundColor, Color textColor, Color accentColor) {
-        super.onThemeChanged(backgroundColor, textColor, accentColor);
-        titleLabel.setForeground(textColor);
-        buttonPanel.setBackground(backgroundColor);
+
+        GuiUtil.updatePanelColors(this, backgroundColor, textColor, accentColor);
     }
 
 

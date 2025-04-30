@@ -5,6 +5,7 @@ import com.javaweb.model.dto.SongDTO;
 import com.javaweb.utils.CommonApiUtil;
 import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
+import com.javaweb.view.theme.ThemeChangeListener;
 import com.javaweb.view.theme.ThemeManager;
 
 import javax.swing.*;
@@ -15,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class RecentSearchDropdown extends ListThemeablePanel {
+public class RecentSearchDropdown extends JPanel implements ThemeChangeListener {
     private final JList<SongDTO> songList;
     private final DefaultListModel<SongDTO> listModel;
     private final JScrollPane scrollPane;
@@ -27,32 +28,40 @@ public class RecentSearchDropdown extends ListThemeablePanel {
     private int hoveredIndex = -1;
     private JLabel noteIcon;
     private final JButton clearButton;
+    private Color textColor;
+    private Color backgroundColor;
+    private Color accentColor;
 
     @Override
     public void onThemeChanged(Color backgroundColor, Color textColor, Color accentColor) {
-        super.onThemeChanged(backgroundColor, textColor, accentColor);
+        this.backgroundColor = backgroundColor;
+        this.textColor = textColor;
+        this.accentColor = accentColor;
 
-        headerLabel.setForeground(textColor);
-        GuiUtil.changeLabelIconColor(historyLabel);
-        clearButton.setForeground(textColor);
+        GuiUtil.updatePanelColors(this, backgroundColor, textColor, accentColor);
+        setBackground(GuiUtil.darkenColor(backgroundColor, 0.1));
+
+        songList.repaint();
     }
 
     public RecentSearchDropdown(JTextField parent, List<SongDTO> recentSongs, Consumer<SongDTO> onSongSelected) {
+        this.textColor = ThemeManager.getInstance().getTextColor();
+        this.backgroundColor = ThemeManager.getInstance().getBackgroundColor();
+        this.accentColor = ThemeManager.getInstance().getAccentColor();
 
         this.parentTextField = parent;
 
         setLayout(new BorderLayout());
+        setBackground(GuiUtil.darkenColor(backgroundColor, 0.1));
 
-        // Create visually appealing header with icon
+
         JPanel headerPanel = GuiUtil.createPanel(new BorderLayout());
         headerPanel.setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 10));
 
-        // Add recent icon
         historyLabel = new JLabel(GuiUtil.createImageIcon(AppConstant.HISTORY_ICON_PATH, 16, 16));
         historyLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 10));
         headerPanel.add(historyLabel, BorderLayout.WEST);
 
-        // Create styled header label
         headerLabel = new JLabel("Recent Songs");
         headerLabel.setFont(FontUtil.getSpotifyFont(Font.BOLD, 14));
         headerLabel.setForeground(textColor);
@@ -90,7 +99,7 @@ public class RecentSearchDropdown extends ListThemeablePanel {
         });
         songList.setCellRenderer(new ModernSongCellRenderer());
         songList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        songList.setFixedCellHeight(100); // Fixed height for each row
+        songList.setFixedCellHeight(100);
 
         // Remove default selection border
         songList.setFocusable(false);
@@ -130,6 +139,7 @@ public class RecentSearchDropdown extends ListThemeablePanel {
                 }
             }
         });
+
 
         // Add scrollpane to make list scrollable
         scrollPane = GuiUtil.createStyledScrollPane(songList);
@@ -223,7 +233,6 @@ public class RecentSearchDropdown extends ListThemeablePanel {
         // Remove any existing global listener to prevent duplicate listeners
         if (clickOutsideListener != null) {
             Toolkit.getDefaultToolkit().removeAWTEventListener(clickOutsideListener);
-            clickOutsideListener = null;
         }
 
         // Setup and add the global listener
@@ -324,10 +333,10 @@ public class RecentSearchDropdown extends ListThemeablePanel {
             SongDTO song = (SongDTO) value;
 
             // Create a panel for each cell with more complex layout
-            JPanel cellPanel = GuiUtil.createPanel();
-            cellPanel.setOpaque(true);
-            cellPanel.setLayout(new BorderLayout(12, 0));
+            JPanel cellPanel = GuiUtil.createPanel(new BorderLayout(12, 0));
 
+            cellPanel.setOpaque(true);
+            cellPanel.setBackground(GuiUtil.darkenColor(backgroundColor, 0.1));
             // Set background based on selection/hover state
             boolean isHovered = (index == hoveredIndex);
 
@@ -371,14 +380,14 @@ public class RecentSearchDropdown extends ListThemeablePanel {
             // Song title
             JLabel titleLabel = new JLabel(song.getSongTitle());
             titleLabel.setFont(FontUtil.getSpotifyFont(Font.BOLD, 14));
-            titleLabel.setForeground(isSelected ? backgroundColor : textColor);
+            titleLabel.setForeground(isSelected ? accentColor : textColor);
             titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
             // Song artist
             JLabel artistLabel = new JLabel(song.getSongArtist());
             artistLabel.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 12));
             artistLabel.setForeground(isSelected ?
-                    GuiUtil.darkenColor(backgroundColor, 0.1f) :
+                    GuiUtil.darkenColor(accentColor, 0.1f) :
                     GuiUtil.darkenColor(textColor, 0.2f));
             artistLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
@@ -387,7 +396,7 @@ public class RecentSearchDropdown extends ListThemeablePanel {
             JLabel albumLabel = new JLabel(albumName);
             albumLabel.setFont(FontUtil.getSpotifyFont(Font.ITALIC, 11));
             albumLabel.setForeground(isSelected ?
-                    GuiUtil.darkenColor(backgroundColor, 0.15f) :
+                    GuiUtil.darkenColor(accentColor, 0.15f) :
                     GuiUtil.darkenColor(textColor, 0.3f));
             albumLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
@@ -407,7 +416,7 @@ public class RecentSearchDropdown extends ListThemeablePanel {
             JLabel lengthLabel = new JLabel(formattedLength);
             lengthLabel.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 10));
             lengthLabel.setForeground(isSelected ?
-                    GuiUtil.darkenColor(backgroundColor, 0.2f) :
+                    GuiUtil.darkenColor(accentColor, 0.2f) :
                     GuiUtil.darkenColor(textColor, 0.4f));
 
             JPanel lengthPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
@@ -418,7 +427,7 @@ public class RecentSearchDropdown extends ListThemeablePanel {
             JLabel playCountLabel = new JLabel(playCount);
             playCountLabel.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 10));
             playCountLabel.setForeground(isSelected ?
-                    GuiUtil.darkenColor(backgroundColor, 0.2f) :
+                    GuiUtil.darkenColor(accentColor, 0.2f) :
                     GuiUtil.darkenColor(textColor, 0.4f));
 
 

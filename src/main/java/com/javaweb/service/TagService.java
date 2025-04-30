@@ -1,0 +1,13 @@
+package com.javaweb.service;
+
+import com.javaweb.entity.SongEntity;
+import com.javaweb.entity.TagEntity;
+
+import java.util.List;
+import java.util.Set;
+
+public interface TagService {
+    Set<TagEntity> generateTagsForSong(SongEntity song);
+
+    void autoTagSongs(List<Long> songIds);
+}

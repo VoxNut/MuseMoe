@@ -1,9 +1,6 @@
 package com.javaweb.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -18,10 +15,19 @@ public class TagEntity extends BaseEntity {
     @Column(name = "name")
     private String name;
 
+    @Column(name = "tag_type")
+    @Enumerated(EnumType.STRING)
+    private TagType tagtype;
+
     @Column(name = "description")
     private String description;
 
 
     @ManyToMany(mappedBy = "tags")
     private Set<SongEntity> songs;
+
+
+    public enum TagType {
+        GENRE, MOOD, INSTRUMENT, THEME, TEMPO, ATMOSPHERE, CONTEXT, ERA, LANGUAGE
+    }
 }

@@ -252,98 +252,43 @@ public class EnhancedSpectrumVisualizer extends JPanel implements ThemeChangeLis
      * Update demo visualization with wave-like animation when CAVA is not running
      */
     private void updateDemoVisualization() {
-        demoPhase += 35; // Slower phase advancement for smoother wave motion
-
-        // Create multiple wave components for a more complex, natural look
-        float baseFrequency = 1.0f;
-        float secondaryFrequency = 2.3f;
-        float tertiaryFrequency = 3.7f;
-
-        // Create a pulsing effect for overall amplitude modulation
-        float pulseRate = 0.4f;
-        float pulseDepth = 0.2f;
+        demoPhase += 100;
         float timeSeconds = demoPhase / 1000.0f;
+
+        float pulseRate = 0.3f;
+        float pulseDepth = 0.4f;
         float pulseAmount = 1.0f + pulseDepth * (float) Math.sin(timeSeconds * pulseRate);
 
-        // Wave propagation effect
-        float waveSpeed = timeSeconds * 2.0f;
-        float waveLength = 1.2f;
-
-        // Create a ripple effect that travels across the bands
-        float ripplePosition = (timeSeconds % 5) / 5.0f; // 0 to 1 every 5 seconds
-        float rippleWidth = 0.2f;
-
+        // More dynamic behavior for bars
         for (int i = 0; i < numberOfBands; i++) {
-            float normalizedPos = (float) i / numberOfBands;
+            // Create more variation in bar heights
+            float baseFrequency = 0.8f + (i / (float) numberOfBands) * 1.0f;
+            float baseValue = 0.35f + 0.3f * (float) Math.sin(timeSeconds * baseFrequency + i * 0.2f);
 
-            // Base amplitude varies by frequency range
-            float baseAmplitude;
-            if (normalizedPos < 0.3f) {          // Bass (low frequencies)
-                baseAmplitude = 0.5f;
-            } else if (normalizedPos < 0.7f) {   // Mid frequencies
-                baseAmplitude = 0.4f;
-            } else {                             // Treble (high frequencies)
-                baseAmplitude = 0.3f;
+            // Add slightly more randomization
+            baseValue += 0.05f * (float) Math.random();
+
+            // Apply pulse effect
+            float value = baseValue * pulseAmount;
+
+            // Less influence from neighbors for more independent bars
+            if (i > 0) {
+                value = value * 0.9f + demoData[i - 1] * 0.1f;
             }
 
-            // Create primary wave component
-            float primaryWave = (float) Math.sin(
-                    normalizedPos * Math.PI * waveLength + waveSpeed
-            );
-
-            // Create secondary wave component with different phase
-            float secondaryWave = 0.5f * (float) Math.sin(
-                    normalizedPos * Math.PI * secondaryFrequency + waveSpeed * 1.5f
-            );
-
-            // Create tertiary wave component with even different phase
-            float tertiaryWave = 0.25f * (float) Math.sin(
-                    normalizedPos * Math.PI * tertiaryFrequency + waveSpeed * 0.7f
-            );
-
-            // Combine wave components
-            float combinedWave = baseAmplitude * (primaryWave + secondaryWave + tertiaryWave) / 1.75f;
-
-            // Add ripple effect
-            float distanceFromRipple = Math.abs(normalizedPos - ripplePosition);
-            if (distanceFromRipple < rippleWidth) {
-                float rippleIntensity = (rippleWidth - distanceFromRipple) / rippleWidth;
-                combinedWave += 0.3f * rippleIntensity * (float) Math.sin(timeSeconds * 10.0f);
+            // Increase chance of random jumps for more dynamic visualization
+            if (Math.random() < 0.03) { // Increased from 0.01
+                value += 0.2f * (float) Math.random();
             }
 
-            // Add frequency-specific small oscillations for more detail
-            float detailFrequency;
-            if (normalizedPos < 0.3f) {          // Bass has slower oscillations
-                detailFrequency = 3.0f;
-            } else if (normalizedPos < 0.7f) {   // Mid has medium oscillations
-                detailFrequency = 5.0f;
-            } else {                             // Treble has faster oscillations
-                detailFrequency = 8.0f;
-            }
-
-            float detailWave = 0.15f * (float) Math.sin(timeSeconds * detailFrequency + normalizedPos * 20.0f);
-
-            // Apply pulsing effect
-            float value = 0.3f + (combinedWave + detailWave) * pulseAmount;
-
-            // Add subtle random noise for natural variation (reduced from 0.05 to 0.03)
-            value += 0.03f * (float) Math.random();
-
-            // Adjacent bars shouldn't vary too wildly - smooth between neighbors
-            if (i > 0 && i < numberOfBands - 1) {
-                float leftNeighbor = demoData[i - 1];
-                float neighborAvg = leftNeighbor;
-                if (i < numberOfBands - 1) {
-                    neighborAvg = (leftNeighbor + demoData[Math.min(i + 1, numberOfBands - 1)]) / 2.0f;
-                }
-                value = value * 0.7f + neighborAvg * 0.3f;
-            }
+            // Moderate inertia - balance between responsive and smooth
+            demoData[i] = demoData[i] * 0.7f + value * 0.3f;
 
             // Ensure values stay in valid range
-            demoData[i] = Math.max(0.05f, Math.min(0.95f, value));
+            demoData[i] = Math.max(0.05f, Math.min(0.95f, demoData[i]));
         }
 
-        // Smooth the final shape to prevent jarring transitions
+        // Smooth the bars to prevent jarring transitions
         smoothBarValues();
 
         // Apply demo data to the visualization bands

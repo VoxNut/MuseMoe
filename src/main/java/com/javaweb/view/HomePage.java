@@ -1037,10 +1037,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     }
 
     private void refreshLikedSongsPanel() {
-        // Find the existing liked songs expandable card panel
         ExpandableCardPanel likedSongsCard = null;
 
-        // Look through the components in the library panel to find the liked songs card
         for (Component component : GuiUtil.findComponentsByType(libraryPanel, ExpandableCardPanel.class)) {
             if (component instanceof ExpandableCardPanel card &&
                     card.getTitle().equals("Liked")) {
@@ -1050,13 +1048,10 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         }
 
         if (likedSongsCard != null) {
-            // Create a new liked songs content panel
             JPanel updatedLikedSongsPanel = createLikedSongsPanel();
 
-            // Update the content of the expandable card
             likedSongsCard.setContent(updatedLikedSongsPanel);
 
-            // Maintain the expanded state
             boolean wasExpanded = likedSongsCard.isExpanded();
             if (wasExpanded) {
                 likedSongsCard.expandPanel();
@@ -1390,6 +1385,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                             20, 20
                     ));
 
+                    GuiUtil.changeButtonIconColor(heartButton);
+
                     GuiUtil.showSuccessMessageDialog(HomePage.this, "Removed from liked songs");
                     refreshLikedSongsPanel();
                 } else {
@@ -1406,7 +1403,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                     GuiUtil.showSuccessMessageDialog(HomePage.this, "Added to liked songs");
                     refreshLikedSongsPanel();
                 } else {
-                    GuiUtil.showSuccessMessageDialog(HomePage.this, "Failed to like song");
+                    GuiUtil.showErrorMessageDialog(HomePage.this, "Failed to like song");
                 }
             }
         });

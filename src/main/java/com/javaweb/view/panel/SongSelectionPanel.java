@@ -3,6 +3,7 @@ package com.javaweb.view.panel;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
+import com.javaweb.view.theme.ThemeChangeListener;
 import com.javaweb.view.theme.ThemeManager;
 
 import javax.swing.*;
@@ -10,19 +11,26 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.util.List;
 
-public class SongSelectionPanel extends ListThemeablePanel {
+public class SongSelectionPanel extends JPanel implements ThemeChangeListener {
     private final JList<SongDTO> songList;
     private final DefaultListModel<SongDTO> listModel;
     private final JLabel titleLabel;
     private final JButton selectButton;
     private final JButton cancelButton;
     private final JPanel buttonPanel;
-
+    private Color textColor;
+    private Color backgroundColor;
+    private Color accentColor;
 
     public SongSelectionPanel(List<SongDTO> songs) {
+        this.textColor = ThemeManager.getInstance().getTextColor();
+        this.backgroundColor = ThemeManager.getInstance().getBackgroundColor();
+        this.accentColor = ThemeManager.getInstance().getAccentColor();
+
+        setBackground(backgroundColor);
+
         setLayout(new BorderLayout());
         setPreferredSize(new Dimension(400, 300));
-
         // Title
         titleLabel = new JLabel("Select a Song");
         titleLabel.setFont(FontUtil.getSpotifyFont(Font.BOLD, 16));
@@ -62,18 +70,15 @@ public class SongSelectionPanel extends ListThemeablePanel {
         buttonPanel.add(cancelButton);
         add(buttonPanel, BorderLayout.SOUTH);
 
+        ThemeManager.getInstance().addThemeChangeListener(this);
+
         // Apply initial theme
         onThemeChanged(backgroundColor, textColor, accentColor);
     }
 
     @Override
     public void onThemeChanged(Color backgroundColor, Color textColor, Color accentColor) {
-        super.onThemeChanged(backgroundColor, textColor, accentColor);
-
-        titleLabel.setForeground(textColor);
-        // Style the buttons
-        buttonPanel.setBackground(backgroundColor);
-
+        GuiUtil.updatePanelColors(this, backgroundColor, textColor, accentColor);
     }
 
 

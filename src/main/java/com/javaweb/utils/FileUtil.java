@@ -7,6 +7,10 @@ import java.nio.file.Paths;
 public class FileUtil {
     public static int getFileSize(String url) {
         File file = new File(url);
+        return getFileSize(file);
+    }
+
+    public static int getFileSize(File file) {
         if (file.exists()) {
             long fileSizeInBytes = file.length();
             double fileSizeInKB = (double) fileSizeInBytes / 1024;

@@ -9,8 +9,6 @@ import lombok.Setter;
 @Setter
 public class SongRequestDTO extends AbstractDTO<SongRequestDTO> {
 
-
-    private String songTitle;
     private String file_url;
     private AlbumRequestDTO albumRequestDTO;
 

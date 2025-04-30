@@ -25,7 +25,7 @@ public class SongLikesApiClientImpl implements SongLikesApiClient {
     @Override
     public Boolean createNewSongLikes(Long songId) {
         try {
-            String url = apiConfig.buildSongLikesUrl("/song_id/");
+            String url = apiConfig.buildSongLikesUrl("/song_id");
             String response = apiClient.postWithFormParam(url, "songId", songId);
             return Boolean.parseBoolean(response);
 

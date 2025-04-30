@@ -1,6 +1,7 @@
 package com.javaweb.entity;
 
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -23,9 +24,6 @@ public class SongEntity extends BaseEntity {
 
     @Column(nullable = false)
     private Integer duration;
-
-    @Column(length = 50)
-    private String genre;
 
     @Column(name = "release_date")
     @Temporal(TemporalType.DATE)
@@ -66,9 +64,45 @@ public class SongEntity extends BaseEntity {
     private Double averageRating;
 
 
-    public void incrementPlayCount() {
-        this.playCount++;
+    @Builder(toBuilder = true)
+    public SongEntity(AlbumEntity album, String title, Integer duration,
+                      Date releaseDate, MediaEntity audioFile, Set<ArtistEntity> artists,
+                      Set<TagEntity> tags, LyricsEntity lyrics) {
+        this.album = album;
+        this.title = title;
+        this.duration = duration;
+        this.releaseDate = releaseDate;
+        this.audioFile = audioFile;
+        this.artists = artists != null ? artists : new HashSet<>();
+        this.tags = tags != null ? tags : new HashSet<>();
+        this.lyrics = lyrics;
+        this.playCount = 0;
+        this.explicitContent = 0;
     }
 
+    public SongEntity() {
+        this.playCount = 0;
+        this.explicitContent = 0;
+        this.artists = new HashSet<>();
+        this.tags = new HashSet<>();
+    }
+
+    public synchronized void incrementPlayCount() {
+        this.playCount = (this.playCount == null) ? 1 : this.playCount + 1;
+    }
+
+    public void addArtist(ArtistEntity artist) {
+        if (artist != null) {
+            this.artists.add(artist);
+            artist.getSongs().add(this);
+        }
+    }
+
+    public void addTag(TagEntity tag) {
+        if (tag != null) {
+            this.tags.add(tag);
+            tag.getSongs().add(this);
+        }
+    }
 
 }

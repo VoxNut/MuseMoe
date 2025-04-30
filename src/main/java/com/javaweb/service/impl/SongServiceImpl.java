@@ -8,12 +8,9 @@ import com.javaweb.model.dto.SongDTO;
 import com.javaweb.model.request.SongRequestDTO;
 import com.javaweb.repository.SongRepository;
 import com.javaweb.service.SongService;
+import com.javaweb.service.TagService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.ModelMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,9 +28,7 @@ public class SongServiceImpl implements SongService {
 
     private final SongConverter songConverter;
 
-    private final Logger logger = LoggerFactory.getLogger(SongServiceImpl.class);
-    private final LocalContainerEntityManagerFactoryBean entityManagerFactory;
-    private final ModelMapper modelMapper;
+    private final TagService tagService;
 
     @Override
     public SongDTO findOneByTitle(String title) {
@@ -57,7 +52,7 @@ public class SongServiceImpl implements SongService {
         return songConverter.toDTO(songRepository
                 .findById(id)
                 .orElseThrow(() -> {
-                            logger.warn("Song with id: {} not found", id);
+                            log.warn("Song with id: {} not found", id);
                             return new RuntimeException("Failed to find song");
                         }
                 ));
@@ -82,7 +77,8 @@ public class SongServiceImpl implements SongService {
     public boolean createSong(SongRequestDTO songRequestDTO) {
         SongEntity song = songConverter.toEntity(songRequestDTO);
         try {
-            songRepository.save(song);
+            SongEntity res = songRepository.save(song);
+            tagService.generateTagsForSong(res);
             return true;
         } catch (Exception e) {
             return false;

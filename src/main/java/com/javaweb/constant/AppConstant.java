@@ -117,7 +117,8 @@ public class AppConstant {
             "Harmony in Shades of Sound!"
     };
 
-    public static final String GITHUB_TOKEN = "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";
+    public static final String GITHUB_TOKEN = System.getenv("GITHUB_TOKEN") != null ?
+            System.getenv("GITHUB_TOKEN") : "";
 
     //ADS
     public static final String MUSE_MOE_AD = "src/main/java/com/javaweb/view/mini_musicplayer/advertisement/museMoe.mp3";

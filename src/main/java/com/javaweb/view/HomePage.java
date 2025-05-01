@@ -391,7 +391,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         // Search bar with wrapper for styling
         JPanel searchBarWrapper = GuiUtil.createPanel(new BorderLayout());
         searchBarWrapper.setBorder(GuiUtil.createCompoundBorder(2));
-        searchBarWrapper.setPreferredSize(new Dimension(0, 40)); // Height only, width will be determined by layout
+        searchBarWrapper.setPreferredSize(new Dimension(0, 40));
 
         // Search icon
         JButton lookupIcon = GuiUtil.changeButtonIconColor(AppConstant.LOOKUP_ICON_PATH, 20, 20);
@@ -1613,9 +1613,11 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         String asciiArt = generateFigletArt(selectedMessage);
 
         JTextArea asciiArtTextArea = GuiUtil.createTextArea(asciiArt, Font.BOLD, 15);
+        asciiArtTextArea.setPreferredSize(asciiArtTextArea.getPreferredSize());
 
         JPanel asciiArtPanel = GuiUtil.createPanel(new MigLayout("fill, insets 0"));
         asciiArtPanel.add(asciiArtTextArea, "left, top, growx");
+        asciiArtPanel.setPreferredSize(asciiArtPanel.getPreferredSize());
 
         mainContent.add(asciiArtPanel, "cell 0 0, growx, aligny top");
 
@@ -1627,7 +1629,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
     private JPanel createCommitPanel() {
         JPanel panel = GuiUtil.createPanel(new BorderLayout());
-        panel.setBorder(GuiUtil.createTitledBorder("Recent Development Activity", TitledBorder.LEFT));
 
         JPanel headerPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.LEFT));
 
@@ -1639,7 +1640,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         // Content panel for commits with scrolling
         JPanel commitsContent = GuiUtil.createPanel();
         commitsContent.setLayout(new BoxLayout(commitsContent, BoxLayout.Y_AXIS));
-        commitsContent.setPreferredSize(new Dimension(800, 600));
+        commitsContent.setPreferredSize(new Dimension(800, getHeight()));
 
         // Loading placeholder
         JLabel loadingLabel = GuiUtil.createLabel("Loading commits...", Font.ITALIC, 12);
@@ -1758,27 +1759,30 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     }
 
     private JPanel createCommitItemPanel(CommitInfo commit) {
-        // Use MigLayout for finer control of component positioning
-        JPanel itemPanel = GuiUtil.createPanel(new MigLayout("fillx, insets 3 5 3 5", "[100]5[grow]5[150]", "[]"));
+        JPanel itemPanel = GuiUtil.createPanel(new MigLayout("fillx, insets 3 5 3 5", "[100]5[grow, center]5[150]", "[]"));
         itemPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0,
                 GuiUtil.darkenColor(ThemeManager.getInstance().getBackgroundColor(), 0.1f)));
 
         // Create hash and branch labels
         String shortSha = commit.sha.substring(0, 7);
-        JLabel shaLabel = GuiUtil.createLabel(shortSha, Font.BOLD, 12);
+        JLabel shaLabel = GuiUtil.createLabel(shortSha, Font.BOLD, 14);
 
-        JLabel branchLabel = GuiUtil.createLabel("[" + commit.branch + "]", Font.ITALIC, 11);
+        JLabel branchLabel = GuiUtil.createLabel("[" + commit.branch + "]", Font.ITALIC, 13);
 
         JPanel leftPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         leftPanel.add(shaLabel);
         leftPanel.add(branchLabel);
 
-        // Create message label with ellipsis for overflow text
-        JLabel messageLabel = GuiUtil.createLabel(commit.message, Font.PLAIN, 12);
+        // Create message label with center alignment
+        JLabel messageLabel = GuiUtil.createLabel(commit.message, Font.PLAIN, 14);
+        messageLabel.setHorizontalAlignment(SwingConstants.CENTER); // Set horizontal text alignment to center
+
+        // Format the date for Vietnam timezone
+        String formattedDate = DateUtil.formatIsoDateToVietnamTime(commit.date);
 
         // Create author and date labels
-        JLabel authorLabel = GuiUtil.createLabel(commit.author, Font.ITALIC, 11);
-        JLabel dateLabel = GuiUtil.createLabel(commit.date, Font.PLAIN, 10);
+        JLabel authorLabel = GuiUtil.createLabel(commit.author, Font.ITALIC, 13);
+        JLabel dateLabel = GuiUtil.createLabel(formattedDate, Font.PLAIN, 12);
         dateLabel.setForeground(GuiUtil.darkenColor(ThemeManager.getInstance().getTextColor(), 0.3f));
 
         // Create info panel for author and date
@@ -1788,7 +1792,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         // Add all components to the item panel
         itemPanel.add(leftPanel, "cell 0 0");
-        itemPanel.add(messageLabel, "cell 1 0, growx");
+        itemPanel.add(messageLabel, "cell 1 0, growx, center");
         itemPanel.add(infoPanel, "cell 2 0, right");
 
         // Add hover effect
@@ -1796,7 +1800,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         return itemPanel;
     }
-
 
     private record CommitInfo(String sha, String author, String date, String message, String branch) {
 

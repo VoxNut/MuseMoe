@@ -6,6 +6,8 @@ import javax.swing.*;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -86,5 +88,21 @@ public class DateUtil {
         calendar.set(Calendar.SECOND, timeCal.get(Calendar.SECOND));
 
         return calendar.getTime();
+    }
+
+
+    public static String formatIsoDateToVietnamTime(String isoDateString) {
+        try {
+            ZonedDateTime utcDateTime = ZonedDateTime.parse(isoDateString, DateTimeFormatter.ISO_DATE_TIME);
+
+            // Convert to Vietnam timezone (UTC+7)
+            ZonedDateTime vietnamDateTime = utcDateTime.withZoneSameInstant(ZoneId.of("Asia/Ho_Chi_Minh"));
+
+            // Format the date as desired: "dd/MM/yyyy HH:mm"
+            DateTimeFormatter vietnamFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+            return vietnamDateTime.format(vietnamFormatter);
+        } catch (Exception e) {
+            return isoDateString;
+        }
     }
 }

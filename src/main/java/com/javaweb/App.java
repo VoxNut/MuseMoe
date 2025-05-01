@@ -6,6 +6,8 @@ import com.javaweb.constant.AppConstant;
 import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
 import com.javaweb.view.LoginPage;
+
+import io.github.cdimascio.dotenv.Dotenv;
 import lombok.Getter;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -26,6 +28,8 @@ public class App {
 
 
     public static void main(String[] args) {
+
+
         System.setProperty("java.awt.headless", "false");
 
         applicationContext = new SpringApplicationBuilder(App.class)
@@ -53,8 +57,8 @@ public class App {
         LafManager.setDecorationsEnabled(true);
 
         // Configure UI manager properties
-        UIManager.put("Component.arc", 100);
-        UIManager.put("TextComponent.arc", 100);
+//        UIManager.put("Component.arc", 100);
+//        UIManager.put("TextComponent.arc", 100);
         UIManager.put("TitlePane.iconSize", new Dimension(24, 24));
         UIManager.put("Button.focusWidth", 0);
         UIManager.put("Button.focusColor", new Color(0, 0, 0, 0));

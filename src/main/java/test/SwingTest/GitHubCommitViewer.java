@@ -1,15 +1,14 @@
 package test.SwingTest;
 
+import com.javaweb.utils.DateUtil;
 import org.kohsuke.github.*;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.*;
 import java.util.List;
-import java.util.Set;
 
 public class GitHubCommitViewer extends JFrame {
     private JTextField repoField;
@@ -62,7 +61,7 @@ public class GitHubCommitViewer extends JFrame {
 
             // Lưu trữ commit không trùng lặp
             Set<String> seenCommits = new HashSet<>();
-            List<GHCommit> allCommits = new ArrayList<>();
+            List<CommitInfo> allCommits = new ArrayList<>();
 
             // Lấy commit từ mỗi branch
             for (GHBranch branch : branches) {
@@ -71,17 +70,16 @@ public class GitHubCommitViewer extends JFrame {
                     String sha = commit.getSHA1();
                     if (!seenCommits.contains(sha)) {
                         seenCommits.add(sha);
-                        allCommits.add(commit);
+                        allCommits.add(new CommitInfo(commit.getSHA1(), commit.getAuthor().getName(), DateUtil.formatIsoDateToVietnamTime(commit.getCommitDate().toString()), commit.getCommitShortInfo().getMessage()));
                     }
                 }
             }
 
+            allCommits.sort(Comparator.comparing(CommitInfo::date).reversed());
+
             // Thêm commit vào bảng
-            for (GHCommit commit : allCommits) {
-                String author = commit.getAuthor() != null ? commit.getAuthor().getLogin() : "Unknown";
-                String date = commit.getCommitDate().toString();
-                String message = commit.getCommitShortInfo().getMessage();
-                tableModel.addRow(new Object[]{commit.getSHA1(), author, date, message});
+            for (CommitInfo commit : allCommits) {
+                tableModel.addRow(new Object[]{commit.sha, commit.author, commit.date, commit.message});
             }
 
             JOptionPane.showMessageDialog(this, "Đã lấy " + allCommits.size() + " commit.");
@@ -89,6 +87,10 @@ public class GitHubCommitViewer extends JFrame {
             System.out.println(ex.getMessage());
             JOptionPane.showMessageDialog(this, "Lỗi: " + ex.getMessage());
         }
+    }
+
+    private record CommitInfo(String sha, String author, String date, String message) {
+
     }
 
     public static void main(String[] args) {

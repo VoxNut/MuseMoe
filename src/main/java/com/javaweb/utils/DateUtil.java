@@ -99,10 +99,18 @@ public class DateUtil {
             ZonedDateTime vietnamDateTime = utcDateTime.withZoneSameInstant(ZoneId.of("Asia/Ho_Chi_Minh"));
 
             // Format the date as desired: "dd/MM/yyyy HH:mm"
-            DateTimeFormatter vietnamFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+            DateTimeFormatter vietnamFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
             return vietnamDateTime.format(vietnamFormatter);
         } catch (Exception e) {
-            return isoDateString;
+            // Try parsing as a standard date format if ISO format fails
+            try {
+                SimpleDateFormat inputFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy");
+                Date date = inputFormat.parse(isoDateString);
+                SimpleDateFormat outputFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+                return outputFormat.format(date);
+            } catch (Exception ex) {
+                return isoDateString;
+            }
         }
     }
 }

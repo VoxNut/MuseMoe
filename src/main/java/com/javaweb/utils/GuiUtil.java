@@ -1,16 +1,93 @@
 package com.javaweb.utils;
 
-import com.javaweb.constant.AppConstant;
-import com.javaweb.model.dto.ArtistDTO;
-import com.javaweb.model.dto.UserDTO;
-import com.javaweb.view.custom.spinner.DateLabelFormatter;
-import com.javaweb.view.custom.table.BorderedHeaderRenderer;
-import com.javaweb.view.custom.table.BorderedTableCellRenderer;
-import com.javaweb.view.theme.ThemeManager;
-import de.androidpit.colorthief.ColorThief;
-import net.coobird.thumbnailator.Thumbnails;
-import net.coobird.thumbnailator.geometry.Positions;
-import net.coobird.thumbnailator.resizers.configurations.Antialiasing;
+import java.awt.AlphaComposite;
+import java.awt.BasicStroke;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Frame;
+import java.awt.GradientPaint;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.Insets;
+import java.awt.LayoutManager;
+import java.awt.RadialGradientPaint;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Point2D;
+import java.awt.geom.RoundRectangle2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.imageio.ImageIO;
+import javax.swing.BorderFactory;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JPopupMenu;
+import javax.swing.JProgressBar;
+import javax.swing.JScrollPane;
+import javax.swing.JSlider;
+import javax.swing.JSpinner;
+import javax.swing.JTable;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.JToolBar;
+import javax.swing.SpinnerDateModel;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.Timer;
+import javax.swing.UIManager;
+import javax.swing.border.Border;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.LineBorder;
+import javax.swing.border.MatteBorder;
+import javax.swing.border.TitledBorder;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
+import javax.swing.plaf.basic.BasicComboBoxUI;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
+import javax.swing.text.JTextComponent;
+
 import org.jdatepicker.impl.JDatePanelImpl;
 import org.jdatepicker.impl.JDatePickerImpl;
 import org.jdatepicker.impl.SqlDateModel;
@@ -31,33 +108,18 @@ import org.jfree.chart.util.Rotation;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.general.DefaultPieDataset;
 
-import javax.imageio.ImageIO;
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.table.JTableHeader;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumn;
-import javax.swing.text.JTextComponent;
-import java.awt.*;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Ellipse2D;
-import java.awt.geom.Point2D;
-import java.awt.geom.RoundRectangle2D;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.javaweb.constant.AppConstant;
+import com.javaweb.model.dto.ArtistDTO;
+import com.javaweb.model.dto.UserDTO;
+import com.javaweb.view.custom.spinner.DateLabelFormatter;
+import com.javaweb.view.custom.table.BorderedHeaderRenderer;
+import com.javaweb.view.custom.table.BorderedTableCellRenderer;
+import com.javaweb.view.theme.ThemeManager;
+
+import de.androidpit.colorthief.ColorThief;
+import net.coobird.thumbnailator.Thumbnails;
+import net.coobird.thumbnailator.geometry.Positions;
+import net.coobird.thumbnailator.resizers.configurations.Antialiasing;
 
 
 public class GuiUtil {
@@ -144,6 +206,9 @@ public class GuiUtil {
 
 
     public static JButton createButton(String text) {
+        Color backgroundColor = ThemeManager.getInstance().getBackgroundColor();
+        Color textColor = ThemeManager.getInstance().getTextColor();
+        Color accentColor = ThemeManager.getInstance().getAccentColor();
         JButton button = new JButton(text);
         button.setFocusPainted(false);
         button.setBorderPainted(false);
@@ -151,7 +216,7 @@ public class GuiUtil {
         button.setOpaque(false);
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         button.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
-        button.setForeground(ThemeManager.getInstance().getTextColor());
+        button.setForeground(textColor);
 
         button.putClientProperty("JButton.focusedBackground", button.getBackground());
         button.setHorizontalAlignment(SwingConstants.LEFT);
@@ -159,38 +224,11 @@ public class GuiUtil {
         button.setIconTextGap(8);
         button.setMargin(new Insets(5, 10, 5, 10));
 
-        // Default background
-        Color baseColor = GuiUtil.darkenColor(ThemeManager.getInstance().getBackgroundColor(), 0.1f);
-        Color hoverColor = GuiUtil.darkenColor(baseColor, 0.15f);
-        Color pressColor = GuiUtil.darkenColor(baseColor, 0.25f);
 
-        button.setBackground(baseColor);
+        button.setBackground(backgroundColor);
 
-        button.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                button.setBackground(hoverColor);
-            }
+        styleButton(button, backgroundColor, textColor, accentColor);
 
-            @Override
-            public void mouseExited(MouseEvent e) {
-                button.setBackground(baseColor);
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                button.setBackground(pressColor);
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                if (button.getBounds().contains(e.getPoint())) {
-                    button.setBackground(hoverColor);
-                } else {
-                    button.setBackground(baseColor);
-                }
-            }
-        });
 
         return button;
     }
@@ -355,6 +393,7 @@ public class GuiUtil {
         textField.setForeground(ThemeManager.getInstance().getTextColor());
         textField.setBackground(ThemeManager.getInstance().getBackgroundColor());
         textField.setCaretColor(ThemeManager.getInstance().getTextColor());
+
         return textField;
     }
 
@@ -398,19 +437,99 @@ public class GuiUtil {
 
 
     public static JComboBox<String> createComboBox(String[] contents) {
-        JComboBox<String> comboBox = new JComboBox<>(contents);
-        comboBox.setBackground(AppConstant.TEXTFIELD_BACKGROUND_COLOR);
-        comboBox.setForeground(AppConstant.TEXT_COLOR);
+        JComboBox<String> comboBox = createComboBox();
+        Arrays.stream(contents).forEach(comboBox::addItem);
+        return comboBox;
+    }
+
+    public static JComboBox<String> createComboBox() {
+        Color backgroundColor = ThemeManager.getInstance().getBackgroundColor();
+        Color textColor = ThemeManager.getInstance().getTextColor();
+        Color accentColor = ThemeManager.getInstance().getAccentColor();
+
+        JComboBox<String> comboBox = new JComboBox<>();
+        comboBox.setBackground(darkenColor(backgroundColor, 0.1f));
+        comboBox.setForeground(textColor);
+        comboBox.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
+
+        // Focus customization
+        comboBox.setFocusable(false);
+
+        comboBox.setUI(new BasicComboBoxUI() {
+            @Override
+            protected JButton createArrowButton() {
+                JButton button = changeButtonIconColor(AppConstant.CHEVRON_DOWN_ICON_PATH, 14, 14);
+                button.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
+                return button;
+            }
+
+            @Override
+            public void paintCurrentValueBackground(Graphics g, Rectangle bounds, boolean hasFocus) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setColor(darkenColor(backgroundColor, 0.1f));
+                g2d.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
+                g2d.dispose();
+            }
+
+        });
+
+        comboBox.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(darkenColor(accentColor, 0.2f), 1),
+                BorderFactory.createEmptyBorder(3, 5, 3, 5)
+        ));
+
+        // Style the dropdown
+        comboBox.addPopupMenuListener(new PopupMenuListener() {
+            @Override
+            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+                JComboBox<?> box = (JComboBox<?>) e.getSource();
+                Object comp = box.getUI().getAccessibleChild(box, 0);
+                if (comp instanceof JPopupMenu) {
+                    JPopupMenu popup = (JPopupMenu) comp;
+                    popup.setBorder(BorderFactory.createLineBorder(accentColor, 1));
+                    popup.setBackground(backgroundColor);
+                    popup.setForeground(textColor);
+                }
+            }
+
+            @Override
+            public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+            }
+
+            @Override
+            public void popupMenuCanceled(PopupMenuEvent e) {
+            }
+        });
+
+        // Add renderer to style individual items
+        comboBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (isSelected) {
+                    c.setBackground(accentColor);
+                    c.setForeground(calculateContrast(accentColor, textColor) > 4.5 ? textColor : backgroundColor);
+                } else {
+                    c.setBackground(backgroundColor);
+                    c.setForeground(textColor);
+                }
+                c.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
+                return c;
+            }
+        });
+
         return comboBox;
     }
 
     public static JTextArea createTextArea(int rows, int columns) {
         JTextArea textArea = new JTextArea(rows, columns);
-        textArea.setForeground(AppConstant.TEXT_COLOR);
-        textArea.setLineWrap(true);
-        textArea.setWrapStyleWord(true);
+        textArea.setLineWrap(false);
+        textArea.setWrapStyleWord(false);
+
         textArea.setBackground(AppConstant.TEXTFIELD_BACKGROUND_COLOR);
         textArea.setCaretColor(AppConstant.TEXT_COLOR);
+        textArea.setForeground(AppConstant.TEXT_COLOR);
+
 
         return textArea;
     }
@@ -430,11 +549,12 @@ public class GuiUtil {
 
     public static JTextArea createTextArea(String content, int fontStyle, int fontSize) {
         JTextArea textArea = new JTextArea(content);
-        textArea.setFont(FontUtil.getMonoSpacedFont(fontStyle, fontSize));
-        textArea.setForeground(ThemeManager.getInstance().getTextColor());
         textArea.setEditable(false);
         textArea.setOpaque(false);
         textArea.setFocusable(false);
+        textArea.setFont(FontUtil.getMonoSpacedFont(fontStyle, fontSize));
+        textArea.setForeground(ThemeManager.getInstance().getTextColor());
+
         return textArea;
     }
 
@@ -1615,7 +1735,6 @@ public class GuiUtil {
 
         // Update the container's own properties if it's a JComponent
         if (container instanceof JComponent jComponent) {
-
             // Handle different types of borders
             if (jComponent.getBorder() instanceof TitledBorder titledBorder) {
                 titledBorder.setTitleColor(textColor);
@@ -1685,17 +1804,98 @@ public class GuiUtil {
                 if (!(textComponent instanceof JTextArea)) {
                     textComponent.setBackground(darkenColor(backgroundColor, 0.1f));
                 }
-                // Slider
-            } else if (component instanceof JSlider slider) {
+            }
+            // Slider
+            else if (component instanceof JSlider slider) {
                 slider.setBackground(GuiUtil.lightenColor(backgroundColor, 0.1f));
                 slider.setForeground(accentColor);
-                //List
-            } else if (component instanceof JList<?> list) {
+            }
+            // List
+            else if (component instanceof JList<?> list) {
                 list.setBackground(backgroundColor);
                 list.setForeground(textColor);
                 list.setSelectionBackground(accentColor);
                 list.setSelectionForeground(
                         calculateContrast(accentColor, textColor) > 4.5 ? textColor : backgroundColor);
+            } else if (component instanceof JComboBox<?> comboBox) {
+                comboBox.setBackground(darkenColor(backgroundColor, 0.1f));
+                comboBox.setForeground(textColor);
+                comboBox.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
+
+                // Replace the entire UI to properly style the arrow button
+                comboBox.setUI(new BasicComboBoxUI() {
+                    @Override
+                    protected JButton createArrowButton() {
+                        JButton button = changeButtonIconColor(AppConstant.CHEVRON_DOWN_ICON_PATH, 14, 14);
+                        button.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
+                        return button;
+                    }
+
+                    @Override
+                    public void paintCurrentValueBackground(Graphics g, Rectangle bounds, boolean hasFocus) {
+                        Graphics2D g2d = (Graphics2D) g.create();
+                        g2d.setColor(darkenColor(backgroundColor, 0.1f));
+                        g2d.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
+                        g2d.dispose();
+                    }
+                });
+
+                // Apply border
+                comboBox.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(darkenColor(backgroundColor, 0.2f), 1),
+                        BorderFactory.createEmptyBorder(3, 5, 3, 5)
+                ));
+
+                // Update the renderer for items
+                comboBox.setRenderer(new DefaultListCellRenderer() {
+                    @Override
+                    public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                                  boolean isSelected, boolean cellHasFocus) {
+                        Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                        if (isSelected) {
+                            c.setBackground(accentColor);
+                            c.setForeground(calculateContrast(accentColor, textColor) > 4.5 ? textColor : backgroundColor);
+                        } else {
+                            c.setBackground(backgroundColor);
+                            c.setForeground(textColor);
+                        }
+                        c.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
+                        return c;
+                    }
+                });
+
+                // Add popup listener if not already present
+                boolean hasPopupListener = false;
+                for (PopupMenuListener listener : comboBox.getPopupMenuListeners()) {
+                    if (listener.getClass().getName().contains("GuiUtil")) {
+                        hasPopupListener = true;
+                        break;
+                    }
+                }
+
+                if (!hasPopupListener) {
+                    comboBox.addPopupMenuListener(new PopupMenuListener() {
+                        @Override
+                        public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+                            JComboBox<?> box = (JComboBox<?>) e.getSource();
+                            Object comp = box.getUI().getAccessibleChild(box, 0);
+                            if (comp instanceof JPopupMenu) {
+                                JPopupMenu popup = (JPopupMenu) comp;
+                                popup.setBorder(BorderFactory.createLineBorder(accentColor, 1));
+                                popup.setBackground(backgroundColor);
+                                popup.setForeground(textColor);
+                            }
+                        }
+
+                        @Override
+                        public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+                        }
+
+                        @Override
+                        public void popupMenuCanceled(PopupMenuEvent e) {
+                        }
+                    });
+                }
             }
             // ToolBar
             else if (component instanceof JToolBar toolBar) {
@@ -1811,6 +2011,8 @@ public class GuiUtil {
         scrollPane.getViewport().setOpaque(false);
         scrollPane.setOpaque(false);
         scrollPane.getViewport().setBackground(ThemeManager.getInstance().getBackgroundColor());
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
         applyModernScrollBar(scrollPane);
         return scrollPane;
     }

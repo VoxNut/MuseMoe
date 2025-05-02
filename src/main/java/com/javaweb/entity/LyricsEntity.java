@@ -1,9 +1,6 @@
 package com.javaweb.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,8 +12,21 @@ import lombok.Setter;
 public class LyricsEntity extends BaseEntity {
 
     @OneToOne
-    @JoinColumn(name = "song_id")
+    @JoinColumn(name = "song_id", nullable = false)
     private SongEntity song;
 
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
+
+    @Column(length = 10)
+    private String language = "en";
+
+    public LyricsEntity(String content) {
+        this.content = content;
+    }
+
+    public LyricsEntity() {
+    }
+
+
 }

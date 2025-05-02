@@ -40,6 +40,8 @@ public class WebSecurityConfig {
                         .requestMatchers("/api/user/**").permitAll()
                         .requestMatchers("/api/playlists/**").permitAll()
                         .requestMatchers("/api/tags/**").permitAll()
+                        .requestMatchers("/api/artists/**").permitAll()
+                        .requestMatchers("/api/albums/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(login -> login

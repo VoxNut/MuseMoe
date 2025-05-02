@@ -104,6 +104,7 @@ public class TagServiceImpl implements TagService {
     private Set<TagEntity> processAndSaveTags(String tagString) {
         Set<TagEntity> resultTags = new HashSet<>();
 
+
         // Pattern to match category:tag format (e.g., "GENRE:rock")
         Pattern pattern = Pattern.compile("(\\w+)\\s*:\\s*([\\w\\s-]+)");
         Matcher matcher = pattern.matcher(tagString);
@@ -179,7 +180,6 @@ public class TagServiceImpl implements TagService {
         // Default to THEME if we can't determine
         TagType inferredType = TagType.THEME;
 
-        // Check against our keyword lists
         for (Map.Entry<TagType, List<String>> entry : TAG_TYPE_KEYWORDS.entrySet()) {
             if (entry.getValue().stream().anyMatch(keyword ->
                     tagName.equals(keyword) || tagName.startsWith(keyword + " ") ||

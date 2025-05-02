@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -39,14 +40,15 @@ public class UserConverter implements EntityConverter<UserEntity, UserRequestDTO
 
     public UserEntity toEntity(UserRequestDTO userRequestDTO) {
         UserEntity result = modelMapper.map(userRequestDTO, UserEntity.class);
-        MediaEntity media = new MediaEntity();
-        media.setFileType(MediaType.IMAGE);
 
-        if (userRequestDTO.getAvatar() == null) {
+        if (userRequestDTO.getAvatarPath() == null) {
             result.setAvatar(
                     mediaRepository.findByFileUrl(AppConstant.DEFAULT_ARTIST_PROFILE_PATH)
                             .orElse(null)
             );
+        } else {
+            File file = new File(userRequestDTO.getAvatarPath());
+            result.setAvatar(new MediaEntity(userRequestDTO.getAvatarPath(), MediaType.IMAGE, FileUtil.getFileSize(file)));
         }
 
         if (userRequestDTO.getRequestRoles() != null && !userRequestDTO.getRequestRoles().isEmpty()) {
@@ -56,9 +58,6 @@ public class UserConverter implements EntityConverter<UserEntity, UserRequestDTO
                     .filter(Objects::nonNull)
                     .collect(Collectors.toCollection(HashSet::new));
             result.setRoles(roleEntities);
-            media.setFileSize(FileUtil.getFileSize(userRequestDTO.getAvatar()));
-            media.setFileUrl(userRequestDTO.getAvatar());
-            result.setAvatar(media);
         } else {
             RoleEntity roleEntity = roleRepository.findOneByCode(RoleType.FREE);
             result.setRoles(Collections.singleton(roleEntity));

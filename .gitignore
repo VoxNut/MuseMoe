@@ -3,3 +3,4 @@
 target
 spring-root.iml
 .gitignore
+src/main/resources

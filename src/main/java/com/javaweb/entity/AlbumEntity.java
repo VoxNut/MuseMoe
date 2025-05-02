@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -25,11 +24,10 @@ public class AlbumEntity {
     @Column(nullable = false, length = 100)
     private String title;
 
-    @Column(name = "release_date")
-    @Temporal(TemporalType.DATE)
-    private Date releaseDate;
+    @Column(name = "release_year")
+    private Integer release_year;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     @JoinColumn(name = "cover_art_id")
     private MediaEntity coverArt;
 

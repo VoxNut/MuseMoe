@@ -1,15 +1,14 @@
 package com.javaweb.converter;
 
-import com.javaweb.entity.ArtistEntity;
-import com.javaweb.entity.MediaEntity;
-import com.javaweb.entity.SongEntity;
-import com.javaweb.entity.UserEntity;
+import com.javaweb.entity.*;
 import com.javaweb.enums.MediaType;
+import com.javaweb.exception.EntityNotFoundException;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.model.request.SongRequestDTO;
-import com.javaweb.repository.UserRepository;
+import com.javaweb.repository.AlbumRepository;
+import com.javaweb.repository.ArtistRepository;
+import com.javaweb.repository.MediaRepository;
 import com.javaweb.utils.FileUtil;
-import com.javaweb.utils.SecurityUtils;
 import com.javaweb.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +20,6 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -31,7 +29,9 @@ import java.util.stream.Collectors;
 public class SongConverter implements EntityConverter<SongEntity, SongRequestDTO, SongDTO> {
 
     private final ModelMapper modelMapper;
-    private final UserRepository userRepository;
+    private final AlbumRepository albumRepository;
+    private final ArtistRepository artistRepository;
+    private final MediaRepository mediaRepository;
 
     @Override
     public SongDTO toDTO(SongEntity entity) {
@@ -65,13 +65,12 @@ public class SongConverter implements EntityConverter<SongEntity, SongRequestDTO
 
             // Handle the audio file
             if (request.getFile_url() != null) {
-                MediaEntity mediaEntity = new MediaEntity();
-                mediaEntity.setFileUrl(request.getFile_url());
-                mediaEntity.setFileType(MediaType.AUDIO);
+                MediaEntity mediaEntity;
 
                 File file = new File(request.getFile_url());
                 if (file.exists()) {
-                    mediaEntity.setFileSize(FileUtil.getFileSize(file));
+
+                    mediaEntity = new MediaEntity(request.getFile_url(), MediaType.AUDIO, FileUtil.getFileSize(file));
 
                     // Extract metadata from file
                     AudioFile audioFile = AudioFileIO.read(file);
@@ -82,13 +81,12 @@ public class SongConverter implements EntityConverter<SongEntity, SongRequestDTO
 
                     try {
                         String year = getTagValue(tag, FieldKey.YEAR, null);
-                        if (year != null && !year.isEmpty()) {
-                            SimpleDateFormat sdf = new SimpleDateFormat("yyyy");
-                            entity.setReleaseDate(sdf.parse(year));
-                        }
+                        entity.setReleaseYear(Integer.valueOf(year));
                     } catch (Exception e) {
                         log.warn("Could not parse year from tag", e);
                     }
+
+                    entity.setLyrics(new LyricsEntity(getTagValue(tag, FieldKey.LYRICS, "")));
 
                     entity.setDuration(audioFile.getAudioHeader().getTrackLength());
 
@@ -100,14 +98,21 @@ public class SongConverter implements EntityConverter<SongEntity, SongRequestDTO
             entity.setPlayCount(0);
             entity.setExplicitContent(0);
 
-            //Find Artist
-            Long userId = SecurityUtils.getPrincipal().getId();
-            UserEntity user = userRepository.findById(userId)
-                    .orElseGet(null);
 
-            if (user != null) {
-                ArtistEntity artist = user.getArtist();
-                entity.setArtists(Set.of(artist));
+            if (request.getArtistRequestDTOS() != null) {
+                Set<ArtistEntity> artists = request.getArtistRequestDTOS()
+                        .stream()
+                        .map(artistRequestDTO ->
+                                artistRepository.findById(artistRequestDTO.getId())
+                                        .orElseGet(null))
+                        .collect(Collectors.toSet());
+                entity.setArtists(artists);
+            }
+
+            if (request.getAlbumRequestDTO() != null) {
+                AlbumEntity album = albumRepository.findById(request.getAlbumRequestDTO().getId())
+                        .orElseThrow(() -> new EntityNotFoundException("Album Not Found!"));
+                entity.setAlbum(album);
             }
 
 

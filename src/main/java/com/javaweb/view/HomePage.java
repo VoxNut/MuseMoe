@@ -76,6 +76,7 @@ import com.javaweb.view.mini_musicplayer.event.PlayerEventListener;
 import com.javaweb.view.panel.CommitPanel;
 import com.javaweb.view.panel.EnhancedSpectrumVisualizer;
 import com.javaweb.view.panel.ExpandableCardPanel;
+import com.javaweb.view.panel.InstructionPanel;
 import com.javaweb.view.panel.RecentSearchDropdown;
 import com.javaweb.view.theme.ThemeChangeListener;
 import com.javaweb.view.theme.ThemeManager;
@@ -86,6 +87,7 @@ import net.miginfocom.swing.MigLayout;
 
 @Slf4j
 public class HomePage extends JFrame implements PlayerEventListener, ThemeChangeListener {
+
     private static final Dimension FRAME_SIZE = new Dimension(1024, 768);
 
     private JLabel spinningDisc;
@@ -120,35 +122,30 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private JPanel libraryPanel;
     private JPanel centerCardPanel;
 
-
     private EnhancedSpectrumVisualizer visualizerPanel;
     private boolean visualizerActive = false;
     private boolean commitPanelActive = false;
+    private boolean instructionPanelActive = false;
 
     public HomePage() {
         initializeFrame();
 
         showLoadingOverlay("Loading MuseMoe...");
 
-
         playerFacade = MusicPlayerFacade.getInstance();
         MusicPlayerMediator.getInstance().subscribeToPlayerEvents(this);
         ThemeManager.getInstance().addThemeChangeListener(this);
 
-
         miniMuseMoeIcon = GuiUtil.createImageIcon(AppConstant.MUSE_MOE_LOGO_PATH, 30, 30);
         GuiUtil.changeIconColor(miniMuseMoeIcon, ThemeManager.getInstance().getTextColor());
         setIconImage(miniMuseMoeIcon.getImage());
-
 
         JPanel initialPanel = createInitialPanel();
         add(initialPanel);
 
         SwingUtilities.invokeLater(this::startProgressiveLoading);
 
-
     }
-
 
     private void initializeFrame() {
         //Set up for frame size
@@ -225,7 +222,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             JPanel contentPanel = GuiUtil.createPanel();
             contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
             contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
-
 
             // Create a logo or app icon at the top
             ImageIcon logoIcon = GuiUtil.createImageIcon(AppConstant.MUSE_MOE_LOGO_PATH, 300, 300);
@@ -365,7 +361,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         }.execute();
     }
 
-
     private JPanel createMainPanel() {
         JPanel mainPanel = GuiUtil.createPanel(new BorderLayout(0, 10));
 
@@ -374,7 +369,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 GuiUtil.lightenColor(ThemeManager.getInstance().getBackgroundColor(), 0.1f),
                 GuiUtil.darkenColor(ThemeManager.getInstance().getBackgroundColor(), 0.4f),
                 0.5f, 0.5f, 0.8f);
-
 
         mainPanel.add(createHeaderPanel(), BorderLayout.NORTH);
         mainPanel.add(createCombinedPanel(), BorderLayout.CENTER);
@@ -399,16 +393,14 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         return combinedPanel;
     }
 
-
     private JPanel createHeaderPanel() {
         JPanel headerPanel = GuiUtil.createPanel(new BorderLayout());
         headerPanel.setBorder(GuiUtil.createTitledBorder("Search", TitledBorder.LEFT));
 
-
         JPanel headerContent = GuiUtil.createPanel(new MigLayout(
                 "insets 5, fillx",
                 "[left]20[grow, fill]20[right]", // Three columns: left, center (growing), right
-                "[center]"  // One row, centered vertically
+                "[center]" // One row, centered vertically
         ));
 
         // ---------- LEFT SECTION (Date) ----------
@@ -440,6 +432,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         // Home button
         JButton homeIcon = GuiUtil.changeButtonIconColor(AppConstant.HOME_ICON_PATH, 20, 20);
+        homeIcon.addActionListener(e -> toggleHome());
         homeIcon.setToolTipText("Home");
         centerPanel.add(homeIcon, "");
 
@@ -452,8 +445,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         JButton lookupIcon = GuiUtil.changeButtonIconColor(AppConstant.LOOKUP_ICON_PATH, 20, 20);
         lookupIcon.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
         lookupIcon.addActionListener(e -> {
-            if (!searchField.getText().isEmpty() &&
-                    !searchField.getText().equals("What do you want to muse?...")) {
+            if (!searchField.getText().isEmpty()
+                    && !searchField.getText().equals("What do you want to muse?...")) {
                 performSearch(searchField.getText());
             }
         });
@@ -488,8 +481,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 if (e.getKeyCode() == KeyEvent.VK_ESCAPE && recentSearchDropdown != null) {
                     recentSearchDropdown.hidePopup();
                 } else if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    if (!searchField.getText().isEmpty() &&
-                            !searchField.getText().equals("What do you want to muse?...")) {
+                    if (!searchField.getText().isEmpty()
+                            && !searchField.getText().equals("What do you want to muse?...")) {
                         performSearch(searchField.getText());
                     }
                 }
@@ -497,9 +490,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
             @Override
             public void keyReleased(KeyEvent e) {
-                if (recentSearchDropdown != null &&
-                        !searchField.getText().isEmpty() &&
-                        !searchField.getText().equals("What do you want to muse?...")) {
+                if (recentSearchDropdown != null
+                        && !searchField.getText().isEmpty()
+                        && !searchField.getText().equals("What do you want to muse?...")) {
                     recentSearchDropdown.hidePopup();
                 }
             }
@@ -508,8 +501,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         searchField.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (searchField.getText().equals("What do you want to muse?...") ||
-                        searchField.getText().isEmpty()) {
+                if (searchField.getText().equals("What do you want to muse?...")
+                        || searchField.getText().isEmpty()) {
                     if (NetworkChecker.isNetworkAvailable()) {
                         loadRecentSearches();
                     } else {
@@ -540,8 +533,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         // User info display
         String userRole = determineUserRole(getCurrentUser().getRoles());
-        JLabel fullNameLabel = GuiUtil.createLabel(getCurrentUser().getFullName() != null ?
-                getCurrentUser().getFullName() + " - " + userRole : "??? - " + userRole);
+        JLabel fullNameLabel = GuiUtil.createLabel(getCurrentUser().getFullName() != null
+                ? getCurrentUser().getFullName() + " - " + userRole : "??? - " + userRole);
         rightPanel.add(fullNameLabel, "");
 
         // User avatar with menu
@@ -646,7 +639,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 playerFacade.pauseSong();
             }
 
-
             @Override
             public void mouseReleased(MouseEvent e) {
 
@@ -670,7 +662,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             public void mouseDragged(MouseEvent e) {
                 playbackSlider.setValueIsAdjusting(true);
 
-                if (playerFacade.isHavingAd()) return;
+                if (playerFacade.isHavingAd()) {
+                    return;
+                }
 
                 // Calculate the value based on drag position
                 int width = playbackSlider.getWidth();
@@ -717,7 +711,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         JButton pauseButton = GuiUtil.changeButtonIconColor(AppConstant.PAUSE_ICON_PATH, 20, 20);
         pauseButton.setVisible(false);
         pauseButton.addActionListener(e -> {
-            if (playerFacade.isHavingAd()) return;
+            if (playerFacade.isHavingAd()) {
+                return;
+            }
             playerFacade.pauseSong();
         });
 
@@ -730,7 +726,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         controlButtonsPanel.add(playButton);
         controlButtonsPanel.add(pauseButton);
         controlButtonsPanel.add(nextButton);
-
 
         // Create layout for player elements
         JPanel spinAndTextPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
@@ -745,7 +740,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         controlsWrapper.add(spinAndTextPanel);
         controlsWrapper.add(sliderPanel);
         controlsWrapper.add(playerControlsPanel);
-
 
         miniMusicPlayerPanel.add(controlsWrapper, BorderLayout.CENTER);
 
@@ -828,7 +822,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             }
         }
 
-
     }
 
     private void handleRecentSongSelected(SongDTO song) {
@@ -836,13 +829,12 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         Optional<PlaylistDTO> playlistWithSong = playlists.stream()
                 .filter(playlist -> playlist.getSongs().stream()
-                        .anyMatch(playlistSong -> playlistSong.getId().equals(song.getId())))
+                .anyMatch(playlistSong -> playlistSong.getId().equals(song.getId())))
                 .findFirst();
 
         playerFacade.setCurrentPlaylist(playlistWithSong.orElse(null));
         playerFacade.loadSong(song);
         searchField.setText(song.getSongTitle() + " - " + (song.getSongArtist() != null ? song.getSongArtist() : "Unknown"));
-
 
     }
 
@@ -859,7 +851,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 java.util.List<PlaylistDTO> playlists = CommonApiUtil.fetchAllPlaylists();
                 Optional<PlaylistDTO> playlistWithSong = playlists.stream()
                         .filter(playlist -> playlist.getSongs().stream()
-                                .anyMatch(playlistSong -> playlistSong.getId().equals(songDTO.getId())))
+                        .anyMatch(playlistSong -> playlistSong.getId().equals(songDTO.getId())))
                         .findFirst();
 
                 playerFacade.setCurrentPlaylist(playlistWithSong.orElse(null));
@@ -901,7 +893,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         return labelsPanel;
     }
-
 
     public void updatePlaybackSlider(SongDTO song) {
         // Set slider range based on total frames instead of milliseconds
@@ -999,7 +990,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
     }
 
-
     public String determineUserRole(Set<String> roles) {
         if (roles.contains(AppConstant.ADMIN_ROLE)) {
             return "Admin";
@@ -1037,7 +1027,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         libraryNav.setBorder(GuiUtil.createTitledBorder("Library", TitledBorder.LEFT));
         libraryNav.setPreferredSize(new Dimension(230, getHeight()));
         libraryNav.setMaximumSize(new Dimension(230, getHeight()));
-
 
         // Content panel with MigLayout
         JPanel contentPanel = GuiUtil.createPanel(new MigLayout("fillx, wrap 1, insets 0", "[fill]", "[]0[]"));
@@ -1084,7 +1073,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         return panel;
     }
 
-
     private JPanel createPlaylistsPanel() {
         JPanel panel = GuiUtil.createPanel(new BorderLayout());
 
@@ -1100,8 +1088,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         ExpandableCardPanel likedSongsCard = null;
 
         for (Component component : GuiUtil.findComponentsByType(libraryPanel, ExpandableCardPanel.class)) {
-            if (component instanceof ExpandableCardPanel card &&
-                    card.getTitle().equals("Liked")) {
+            if (component instanceof ExpandableCardPanel card
+                    && card.getTitle().equals("Liked")) {
                 likedSongsCard = card;
                 break;
             }
@@ -1122,19 +1110,16 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private JPanel createLikedSongsPanel() {
         JPanel panel = GuiUtil.createPanel(new BorderLayout());
 
-
         JPanel likedSongsListPanel = GuiUtil.createPanel(new MigLayout("fillx, wrap 1, insets 0", "[fill]", "[]0[]"));
 
         loadLikedSongs(likedSongsListPanel);
         panel.add(likedSongsListPanel, BorderLayout.CENTER);
-
 
         return panel;
     }
 
     private JPanel createDownloadedSongsPanel() {
         JPanel panel = GuiUtil.createPanel(new BorderLayout());
-
 
         JPanel downloadedSongsListPanel = GuiUtil.createPanel(new MigLayout("fillx, wrap 1, insets 0", "[fill]", "[]0[]"));
 
@@ -1172,7 +1157,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             GuiUtil.createErrorLabel("Failed to load playlists!");
         }
     }
-
 
     private void loadFollowedArtists(JPanel container) {
         try {
@@ -1272,7 +1256,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 return;
             }
 
-
             JPanel recentLabelPanel = GuiUtil.createPanel(new BorderLayout());
             recentLabelPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
             recentLabelPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
@@ -1314,8 +1297,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel countLabel = GuiUtil.createLabel(
-                likedSongsPlaylist.getSongs().size() + " song" +
-                        (likedSongsPlaylist.getSongs().size() != 1 ? "s" : ""),
+                likedSongsPlaylist.getSongs().size() + " song"
+                + (likedSongsPlaylist.getSongs().size() != 1 ? "s" : ""),
                 Font.PLAIN, 12
         );
         countLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -1352,8 +1335,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         playlistPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
 
         JLabel coverLabel;
-        if (playlist.getSongs() != null && !playlist.getSongs().isEmpty() &&
-                playlist.getSongs().getFirst().getSongImage() != null) {
+        if (playlist.getSongs() != null && !playlist.getSongs().isEmpty()
+                && playlist.getSongs().getFirst().getSongImage() != null) {
             coverLabel = GuiUtil.createRoundedCornerImageLabel(
                     playlist.getSongs().getFirst().getSongImage(), 15, 40, 40);
         } else {
@@ -1396,7 +1379,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         return playlistPanel;
     }
-
 
     private JPanel createSongPanel(SongDTO song) {
         JPanel songPanel = GuiUtil.createPanel(new BorderLayout(10, 0));
@@ -1493,7 +1475,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         return songPanel;
     }
 
-
     private JPanel createArtistPanel(ArtistDTO artist) {
         JPanel artistPanel = GuiUtil.createPanel(new BorderLayout(10, 0));
 
@@ -1509,14 +1490,12 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         infoPanel.add(Box.createVerticalGlue());
 
-
         JLabel stageNameLabel = GuiUtil.createLabel(artist.getStageName(), Font.BOLD, 12);
         stageNameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         infoPanel.add(stageNameLabel);
 
         infoPanel.add(Box.createVerticalGlue());
-
 
         artistPanel.add(avatarLabel, BorderLayout.WEST);
         artistPanel.add(infoPanel, BorderLayout.CENTER);
@@ -1527,13 +1506,13 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         return artistPanel;
     }
 
-
     private JLabel createUserProfileAvatar() {
         JMenuItem profileItem = GuiUtil.createMenuItem("Account");
         JMenuItem logoutItem = GuiUtil.createMenuItem("Log out");
 
         logoutItem.addActionListener(e -> logout());
-        profileItem.addActionListener(e -> {/* navigate to profile */});
+        profileItem.addActionListener(e -> {/* navigate to profile */
+        });
 
         return GuiUtil.createInteractiveUserAvatar(
                 getCurrentUser(),
@@ -1586,6 +1565,10 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         commitPanel.setName("commits");
         centerCardPanel.add(commitPanel, "commits");
 
+        InstructionPanel instructionPanel = new InstructionPanel();
+        instructionPanel.setName("instructions");
+        centerCardPanel.add(instructionPanel, "instructions");
+
         // Add global keyboard listener for toggling between views
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(e -> {
             if (e.getID() == KeyEvent.KEY_PRESSED) {
@@ -1605,13 +1588,17 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                     toggleVisualizerBands();
                     return true;
                 }
+
+                if (e.getKeyCode() == KeyEvent.VK_SLASH && e.isShiftDown()) {
+                    toggleInstructionPanel();
+                    return true;
+                }
             }
             return false;
         });
 
         return centerCardPanel;
     }
-
 
     private void toggleCommitPanel() {
         commitPanelActive = !commitPanelActive;
@@ -1627,6 +1614,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 visualizerActive = false;
                 playerFacade.notifyToggleCava(false);
             }
+            if (instructionPanelActive) {
+                instructionPanelActive = false;
+            }
             cardLayout.show(centerCardPanel, "commits");
             log.info("Commit panel activated");
             GuiUtil.showToast(this, "Commit panel activated");
@@ -1637,6 +1627,42 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         }
     }
 
+    private void toggleInstructionPanel() {
+        instructionPanelActive = !instructionPanelActive;
+
+        if (centerCardPanel == null) {
+            return;
+        }
+
+        CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
+
+        if (instructionPanelActive) {
+            if (visualizerActive) {
+                visualizerActive = false;
+                playerFacade.notifyToggleCava(false);
+            }
+            if (commitPanelActive) {
+                commitPanelActive = false;
+            }
+
+            cardLayout.show(centerCardPanel, "instructions");
+            log.info("Instruction panel activated");
+            GuiUtil.showToast(this, "Help panel activated");
+        } else {
+            cardLayout.show(centerCardPanel, "home");
+            log.info("Instruction panel deactivated");
+            GuiUtil.showToast(this, "Help panel deactivated");
+        }
+    }
+
+    private void toggleHome() {
+        visualizerActive = false;
+        commitPanelActive = false;
+        instructionPanelActive = false;
+        CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
+        cardLayout.show(centerCardPanel, "home");
+        GuiUtil.showToast(this, "Home activated");
+    }
 
     private void toggleVisualizer() {
         visualizerActive = !visualizerActive;
@@ -1653,6 +1679,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             if (commitPanelActive) {
                 commitPanelActive = false;
             }
+            if (instructionPanelActive) {
+                instructionPanelActive = false;
+            }
 
             playerFacade.notifyToggleCava(true);
             cardLayout.show(centerCardPanel, "visualizer");
@@ -1666,7 +1695,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     }
 
     private void toggleVisualizerBands() {
-        if (visualizerPanel == null) return;
+        if (visualizerPanel == null) {
+            return;
+        }
 
         int[] bandOptions = {10, 16, 24, 32, 48, 64, 98, 128, 256, 512};
         int currentBands = visualizerPanel.getNumberOfBands();
@@ -1707,40 +1738,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         mainContent.add(asciiArtPanel, "growx, wrap");
 
-        JPanel instructionPanel = createInstructionPanel();
-        mainContent.add(instructionPanel, "grow");
-
         return mainContent;
     }
-
-    private JPanel createInstructionPanel() {
-        JPanel panel = GuiUtil.createPanel(new MigLayout("fillx, insets 10", "[grow]", "[]10[]10[]"));
-
-        JLabel titleLabel = GuiUtil.createLabel("Keyboard Shortcuts", Font.BOLD, 18);
-
-        String[][] shortcuts = {
-                {"Shift + V", "Toggle audio visualizer"},   
-                {"Shift + C", "Toggle commit history view"},
-                {"B", "Change visualizer bands (when active)"}
-        };
-
-        JPanel shortcutsPanel = GuiUtil.createPanel(new MigLayout("fillx, wrap 2, insets 5", "[][grow]", ""));
-
-        for (String[] shortcut : shortcuts) {
-            JLabel keyLabel = GuiUtil.createLabel(shortcut[0], Font.BOLD, 14);
-            JLabel descLabel = GuiUtil.createLabel(shortcut[1], Font.PLAIN, 14);
-
-            shortcutsPanel.add(keyLabel, "");
-            shortcutsPanel.add(descLabel, "growx");
-        }
-
-        panel.add(titleLabel, "growx, wrap");
-        panel.add(shortcutsPanel, "growx, wrap");
-
-
-        return panel;
-    }
-
 
     private String generateFigletArt(String text) {
         try {
@@ -1765,7 +1764,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private Process getProcess(String text) throws IOException {
         File folder = new File("D:\\figlet\\usr\\share\\figlet");
         File[] files = folder.listFiles();
-
 
         if (files == null || files.length == 0) {
             log.error(".flf files not found!.");
@@ -1811,8 +1809,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         SwingUtilities.invokeLater(this::repaint);
     }
 
-
     private class ScrollingLabel extends JLabel {
+
         @Override
         protected void paintComponent(Graphics g) {
             Graphics2D g2d = (Graphics2D) g.create();
@@ -1837,7 +1835,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         }
     }
 
-
     @Override
     public void onPlayerEvent(PlayerEvent event) {
         SwingUtilities.invokeLater(() -> {
@@ -1852,12 +1849,11 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                     enablePauseButtonDisablePlayButton();
                 }
 
+                case PLAYBACK_STARTED ->
+                    enablePauseButtonDisablePlayButton();
 
-                case PLAYBACK_STARTED -> enablePauseButtonDisablePlayButton();
-
-
-                case PLAYBACK_PAUSED -> enablePlayButtonDisablePauseButton();
-
+                case PLAYBACK_PAUSED ->
+                    enablePlayButtonDisablePauseButton();
 
                 case PLAYBACK_PROGRESS -> {
                     int[] data = (int[]) event.data();
@@ -1865,13 +1861,14 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                         setPlaybackSliderValue(data[0]);
                         updateSongTimeLabel(data[1]);
 
-
                     }
                 }
                 // Starting to show the playback slider in the Home Page.
-                case HOME_PAGE_SLIDER_CHANGED -> showPlaybackSlider();
+                case HOME_PAGE_SLIDER_CHANGED ->
+                    showPlaybackSlider();
 
-                case SLIDER_CHANGED -> setPlaybackSliderValue((int) event.data());
+                case SLIDER_CHANGED ->
+                    setPlaybackSliderValue((int) event.data());
 
                 case SLIDER_DRAGGING -> {
                     int[] data = (int[]) event.data();
@@ -1883,7 +1880,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                     updateSongTimeLabel(data[1]);
                 }
 
-                case SONG_LIKED_CHANGED -> refreshLikedSongsPanel();
+                case SONG_LIKED_CHANGED ->
+                    refreshLikedSongsPanel();
 
                 case TOGGLE_CAVA -> {
                     if (visualizerActive && visualizerPanel != null) {
@@ -1906,6 +1904,5 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private UserDTO getCurrentUser() {
         return UserSessionManager.getInstance().getCurrentUser();
     }
-
 
 }

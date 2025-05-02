@@ -18,7 +18,7 @@ public class UserRequestDTO extends AbstractDTO<UserRequestDTO> {
     private String fullName;
     private String phone;
     private Integer status;
-    private String avatar;
+    private String avatarPath;
     private Date createdDate;
     private Date modifiedDate;
     private String createdBy;

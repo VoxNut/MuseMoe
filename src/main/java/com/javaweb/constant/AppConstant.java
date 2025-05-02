@@ -1,7 +1,6 @@
 package com.javaweb.constant;
 
-import java.awt.Color;
-import java.awt.Dimension;
+import java.awt.*;
 
 public class AppConstant {
     //COLOR
@@ -117,6 +116,7 @@ public class AppConstant {
             "Songs That Color Your Heart!",
             "Harmony in Shades of Sound!"
     };
+    public static final String CREDENTIALS_FILE_PATH = "src/main/resources/credentials.json";
 
     //ADS
     public static final String MUSE_MOE_AD = "src/main/java/com/javaweb/view/mini_musicplayer/advertisement/museMoe.mp3";

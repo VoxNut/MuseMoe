@@ -90,6 +90,18 @@ public class DateUtil {
         return calendar.getTime();
     }
 
+    public static Date parseDate(String dateString) {
+        try {
+            if (dateString == null || dateString.isEmpty()) {
+                return null;
+            }
+            SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy");
+            return inputFormat.parse(dateString);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
 
     public static String formatIsoDateToVietnamTime(String isoDateString) {
         try {

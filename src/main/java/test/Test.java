@@ -107,68 +107,6 @@ public class Test {
 
 
     public static void main(String[] args) throws CannotReadException, TagException, InvalidAudioFrameException, ReadOnlyFileException, IOException, CannotWriteException {
-//        AudioFile audioFile1 = AudioFileIO.read(new File("src/main/java/com/javaweb/view/mini_musicplayer/audio/Lost Umbrella.mp3"));
-//        Tag tag1 = audioFile1.getTag();
-//
-//        tag1.setField(FieldKey.LYRICS, """
-//                Boku wo tsuretette shinmi konde shimau mae ni
-//                Mienai mama tsukamitai toka douse kanawanai kara sa
-//                Aa te wa zutto nurete ite itsuka otoshiteshimau koto
-//                Mada kizuitenakatta
-//
-//                Komakai ame ga me ni shimiru no mo
-//                Shimetta iki ga nodo ni tsumaru no mo
-//                Katachi ni naranai mono wo seotta boku wa
-//                Angai rakudatta no kamo shin naina
-//
-//                Koe ni narenakattabun dake me no mae de jama shiteiru kirisame ni
-//                Kasa wo kazashite nigemadoitaiyo
-//
-//                Boku wo tsuretette shinmi konde shimau mae ni
-//                Mienai mama yararechau to ka douni mo dekinaikarasa
-//                Hanasenai te wa zutto nurete ite itsuka otoshiteshimau koto
-//                Mada kizuitenakatta
-//
-//                Hitaru itsuka no kajikanda tе mo kuwazugirai no amedama mo
-//                Madogoshi no sanjou mo mitenai koto ni shita mama
-//                Douka dokka tooi toko e karеta hana ga saku toko e
-//                Wakaranai mama sou yatte oiteiku kokoro no oto
-//
-//                Tsumetai ame ga me ni shimiru no mo
-//                Shimetta iki ga hoo ni butsukaru no mo
-//                Zenbu zenbu wakaranai mama no boku wa
-//                Kokoro no hibi wo mitashiteiku nda
-//                See upcoming pop shows
-//                Get tickets for your favorite artists
-//                You might also like
-//                The Tortured Poets Department
-//                Taylor Swift
-//                Down Bad
-//                Taylor Swift
-//                Family Matters
-//                Drake
-//                Mizutamari ga dekinai uchi ni
-//                Kasa wo kazashite sekai wo bokasouyo
-//
-//                Boku wo tsuretette shinmi kondeshimau mae ni
-//                Mienai mama tsukamitai to ka douse kanawanaikarasa
-//                Aa te wa zutto nurete ite itsuka otoshiteshimau koto
-//                Zutto kitsuke nakatta
-//
-//                Boku wo tsuretette shinmi kondeshimau mae ni
-//                Mienai mama yararechau to ka dounimo dekinaikarasa
-//                Hanasenai te wa zutto nureteite itsuka nakushite shimau koto
-//                Ima, kizukitakatta
-//
-//                Komakai ame ga me ni himiru no mo
-//                Shimetta iki ga nodo ni tsumaru no mo
-//                Zenbu zenbu wakaranai mama no boku ga
-//                Kokoro no hibi wo makasekitta sei da
-//                """);
-//
-//        audioFile1.commit();
-
-
         // Specify the package/directory path
         disableJaudiotaggerLogging();
         String packagePath = "src/main/java/com/javaweb/view/mini_musicplayer/audio";

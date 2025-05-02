@@ -1,93 +1,16 @@
 package com.javaweb.utils;
 
-import java.awt.AlphaComposite;
-import java.awt.BasicStroke;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Cursor;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Frame;
-import java.awt.GradientPaint;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Image;
-import java.awt.Insets;
-import java.awt.LayoutManager;
-import java.awt.RadialGradientPaint;
-import java.awt.Rectangle;
-import java.awt.RenderingHints;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Ellipse2D;
-import java.awt.geom.Point2D;
-import java.awt.geom.RoundRectangle2D;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import javax.imageio.ImageIO;
-import javax.swing.BorderFactory;
-import javax.swing.DefaultListCellRenderer;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JComponent;
-import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JPasswordField;
-import javax.swing.JPopupMenu;
-import javax.swing.JProgressBar;
-import javax.swing.JScrollPane;
-import javax.swing.JSlider;
-import javax.swing.JSpinner;
-import javax.swing.JTable;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.JToolBar;
-import javax.swing.SpinnerDateModel;
-import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
-import javax.swing.Timer;
-import javax.swing.UIManager;
-import javax.swing.border.Border;
-import javax.swing.border.CompoundBorder;
-import javax.swing.border.LineBorder;
-import javax.swing.border.MatteBorder;
-import javax.swing.border.TitledBorder;
-import javax.swing.event.PopupMenuEvent;
-import javax.swing.event.PopupMenuListener;
-import javax.swing.plaf.basic.BasicComboBoxUI;
-import javax.swing.table.JTableHeader;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumn;
-import javax.swing.text.JTextComponent;
-
+import com.javaweb.constant.AppConstant;
+import com.javaweb.model.dto.ArtistDTO;
+import com.javaweb.model.dto.UserDTO;
+import com.javaweb.view.custom.spinner.DateLabelFormatter;
+import com.javaweb.view.custom.table.BorderedHeaderRenderer;
+import com.javaweb.view.custom.table.BorderedTableCellRenderer;
+import com.javaweb.view.theme.ThemeManager;
+import de.androidpit.colorthief.ColorThief;
+import net.coobird.thumbnailator.Thumbnails;
+import net.coobird.thumbnailator.geometry.Positions;
+import net.coobird.thumbnailator.resizers.configurations.Antialiasing;
 import org.jdatepicker.impl.JDatePanelImpl;
 import org.jdatepicker.impl.JDatePickerImpl;
 import org.jdatepicker.impl.SqlDateModel;
@@ -108,18 +31,34 @@ import org.jfree.chart.util.Rotation;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.general.DefaultPieDataset;
 
-import com.javaweb.constant.AppConstant;
-import com.javaweb.model.dto.ArtistDTO;
-import com.javaweb.model.dto.UserDTO;
-import com.javaweb.view.custom.spinner.DateLabelFormatter;
-import com.javaweb.view.custom.table.BorderedHeaderRenderer;
-import com.javaweb.view.custom.table.BorderedTableCellRenderer;
-import com.javaweb.view.theme.ThemeManager;
-
-import de.androidpit.colorthief.ColorThief;
-import net.coobird.thumbnailator.Thumbnails;
-import net.coobird.thumbnailator.geometry.Positions;
-import net.coobird.thumbnailator.resizers.configurations.Antialiasing;
+import javax.imageio.ImageIO;
+import javax.swing.*;
+import javax.swing.Timer;
+import javax.swing.border.*;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
+import javax.swing.plaf.basic.BasicComboBoxUI;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
+import javax.swing.text.JTextComponent;
+import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Point2D;
+import java.awt.geom.RoundRectangle2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 public class GuiUtil {
@@ -2183,27 +2122,24 @@ public class GuiUtil {
     }
 
     public static void showErrorMessageDialog(Component parentComponent, String message) {
-        Color errorColor = new Color(231, 76, 60); // A more refined red
         showCustomMessageDialog(parentComponent, message, "Error", JOptionPane.ERROR_MESSAGE
-                , errorColor);
+                , ThemeManager.getInstance().getAccentColor());
     }
 
     public static void showSuccessMessageDialog(Component parentComponent, String message) {
         Color successColor = new Color(46, 204, 113); // Emerald green
         showCustomMessageDialog(parentComponent, message, "Success", JOptionPane.PLAIN_MESSAGE,
-                successColor);
+                ThemeManager.getInstance().getAccentColor());
     }
 
     public static void showWarningMessageDialog(Component parentComponent, String message) {
-        Color warningColor = new Color(241, 196, 15); // Vibrant yellow
         showCustomMessageDialog(parentComponent, message, "Warning", JOptionPane.WARNING_MESSAGE,
-                warningColor);
+                ThemeManager.getInstance().getAccentColor());
     }
 
     public static void showInfoMessageDialog(Component parentComponent, String message) {
-        Color infoColor = new Color(52, 152, 219); // Light blue
         showCustomMessageDialog(parentComponent, message, "Information", JOptionPane.INFORMATION_MESSAGE,
-                infoColor);
+                ThemeManager.getInstance().getAccentColor());
     }
 
     public static int showCustomConfirmDialog(Component parent, String message, String title,
@@ -2213,12 +2149,12 @@ public class GuiUtil {
 
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(parent), title, true);
 
-        JPanel mainPanel = new JPanel(new BorderLayout(20, 20));
-
-        setGradientBackground(mainPanel, bgColor, darkenColor(bgColor, 0.2f), 0.5f, 0.5f, 0.5f);
+        JPanel mainPanel = createPanel(new BorderLayout(20, 20));
+        mainPanel.setOpaque(true);
+        mainPanel.setBackground(bgColor);
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        styleDialog(dialog, darkenColor(bgColor, 0.1f), textColor);
+        styleDialog(dialog, bgColor, textColor);
 
         JLabel messageLabel = new JLabel("<html><div style='text-align: center;'>" + message + "</div></html>");
         messageLabel.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
@@ -2284,7 +2220,7 @@ public class GuiUtil {
 
     public static int showConfirmMessageDialog(Component parentComponent, String message, String title) {
         return showCustomConfirmDialog(parentComponent, message, title,
-                ThemeManager.getInstance().getBackgroundColor(), ThemeManager.getInstance().getTextColor(), new Color(52, 152, 219));
+                ThemeManager.getInstance().getBackgroundColor(), ThemeManager.getInstance().getTextColor(), ThemeManager.getInstance().getAccentColor());
     }
 
 
@@ -2473,12 +2409,12 @@ public class GuiUtil {
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(parent), title, true);
 
         // Create main panel with gradient background
-        JPanel mainPanel = GuiUtil.createPanel(new BorderLayout(20, 20));
-        setGradientBackground(mainPanel, bgColor, darkenColor(bgColor, 0.2f), 0.5f, 0.5f, 0.5f);
+        JPanel mainPanel = createPanel(new BorderLayout(20, 20));
+        mainPanel.setOpaque(true);
+        mainPanel.setBackground(bgColor);
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
         // Add title bar styling
-        styleDialog(dialog, darkenColor(bgColor, 0.1f), textColor);
+        styleDialog(dialog, bgColor, textColor);
 
         // Create message label with proper styling
         JLabel messageLabel = new JLabel("<html><div style='text-align: center;'>" + message + "</div></html>");

@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -25,11 +24,10 @@ public class SongEntity extends BaseEntity {
     @Column(nullable = false)
     private Integer duration;
 
-    @Column(name = "release_date")
-    @Temporal(TemporalType.DATE)
-    private Date releaseDate;
+    @Column(name = "release_year")
+    private Integer releaseYear;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
     @JoinColumn(name = "audio_file_id", nullable = false)
     private MediaEntity audioFile;
 
@@ -46,9 +44,9 @@ public class SongEntity extends BaseEntity {
             joinColumns = @JoinColumn(name = "song_id"),
             inverseJoinColumns = @JoinColumn(name = "tag_id")
     )
-    private Set<TagEntity> tags = new HashSet<>();
+    private Set<TagEntity> tags;
 
-    @OneToOne
+    @OneToOne(mappedBy = "song", cascade = CascadeType.ALL, orphanRemoval = true)
     private LyricsEntity lyrics;
 
     @OneToMany(mappedBy = "song")
@@ -66,12 +64,12 @@ public class SongEntity extends BaseEntity {
 
     @Builder(toBuilder = true)
     public SongEntity(AlbumEntity album, String title, Integer duration,
-                      Date releaseDate, MediaEntity audioFile, Set<ArtistEntity> artists,
+                      Integer releaseYear, MediaEntity audioFile, Set<ArtistEntity> artists,
                       Set<TagEntity> tags, LyricsEntity lyrics) {
         this.album = album;
         this.title = title;
         this.duration = duration;
-        this.releaseDate = releaseDate;
+        this.releaseYear = releaseYear;
         this.audioFile = audioFile;
         this.artists = artists != null ? artists : new HashSet<>();
         this.tags = tags != null ? tags : new HashSet<>();
@@ -103,6 +101,13 @@ public class SongEntity extends BaseEntity {
             this.tags.add(tag);
             tag.getSongs().add(this);
         }
+    }
+
+    public void setLyrics(LyricsEntity lyrics) {
+        if (lyrics != null) {
+            lyrics.setSong(this);
+        }
+        this.lyrics = lyrics;
     }
 
 }

@@ -22,5 +22,15 @@ public class MediaEntity extends BaseEntity {
     @Column(name = "file_size")
     private Integer fileSize;
 
+    public MediaEntity() {
+
+    }
+
+    public MediaEntity(String fileUrl, MediaType fileType, Integer fileSize) {
+        this.fileUrl = fileUrl;
+        this.fileType = fileType;
+        this.fileSize = fileSize;
+    }
+
 
 }

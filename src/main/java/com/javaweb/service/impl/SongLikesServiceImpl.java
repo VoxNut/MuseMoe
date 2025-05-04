@@ -34,16 +34,21 @@ public class SongLikesServiceImpl implements SongLikesService {
 
     @Override
     public List<SongLikesDTO> findAllByUser() {
-        Long userId = Objects.requireNonNull(SecurityUtils.getPrincipal()).getId();
-        UserEntity currentUser = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("User Not Found!"));
-        List<SongLikesDTO> songLikesDTOS =
-                songLikesRepository.findAllByUser(currentUser)
-                        .stream()
-                        .map(songLikesConverter::toDTO)
-                        .toList();
+        try {
+            Long userId = Objects.requireNonNull(SecurityUtils.getPrincipal()).getId();
+            UserEntity currentUser = userRepository.findById(userId)
+                    .orElseThrow(() -> new EntityNotFoundException("User Not Found!"));
+            List<SongLikesDTO> songLikesDTOS =
+                    songLikesRepository.findAllByUser(currentUser)
+                            .stream()
+                            .map(songLikesConverter::toDTO)
+                            .toList();
 
-        return songLikesDTOS;
+            return songLikesDTOS;
+        } catch (Exception e) {
+            return List.of();
+        }
+
     }
 
     @Override

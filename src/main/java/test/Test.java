@@ -11,6 +11,7 @@ import org.jaudiotagger.audio.exceptions.CannotReadException;
 import org.jaudiotagger.audio.exceptions.CannotWriteException;
 import org.jaudiotagger.audio.exceptions.InvalidAudioFrameException;
 import org.jaudiotagger.audio.exceptions.ReadOnlyFileException;
+import org.jaudiotagger.audio.mp3.MP3AudioHeader;
 import org.jaudiotagger.tag.FieldKey;
 import org.jaudiotagger.tag.Tag;
 import org.jaudiotagger.tag.TagException;
@@ -111,6 +112,7 @@ public class Test {
         disableJaudiotaggerLogging();
         String packagePath = "src/main/java/com/javaweb/view/mini_musicplayer/audio";
 //        String packagePath = "src/main/java/com/javaweb/view/imgs/artist_profile";
+//        String packagePath = "src/main/java/com/javaweb/view/mini_musicplayer/advertisement";
         File directory = new File(packagePath);
 
         if (!directory.exists() || !directory.isDirectory()) {
@@ -133,6 +135,7 @@ public class Test {
                         if (isAudioFile(file.getName())) {
                             try {
                                 AudioFile audioFile = AudioFileIO.read(file);
+                                MP3AudioHeader audioHeader = (MP3AudioHeader) audioFile.getAudioHeader();
                                 Tag tag = audioFile.getTag();
 
                                 if (tag != null) {
@@ -144,6 +147,7 @@ public class Test {
                                     String originalYear = tag.getFirst(FieldKey.ORIGINAL_YEAR);
                                     String lyrics = tag.getFirst(FieldKey.LYRICS);
                                     String genre = tag.getFirst(FieldKey.GENRE);
+                                    String rating = tag.getFirst(FieldKey.RATING);
                                     // Print metadata with fallbacks for empty values
                                     System.out.println("Title: " + (title.isEmpty() ? "[No Title]" : title));
                                     System.out.println("Artist: " + (artist.isEmpty() ? "[Unknown Artist]" : artist));
@@ -153,6 +157,7 @@ public class Test {
                                     System.out.println("Original Year: " + (originalYear.isEmpty() ? "[Unknown Original Year]" : originalYear));
                                     System.out.println("Lyrics: " + (lyrics.isEmpty() ? "[Unknown lyrics]" : lyrics));
                                     System.out.println("Genre: " + (genre.isEmpty() ? "[Unknown Genre]" : genre));
+                                    System.out.println("Rating: " + (rating.isEmpty() ? "[Unknown Rating]" : rating));
 
                                     // Check for artwork
                                     Artwork artwork = tag.getFirstArtwork();
@@ -166,6 +171,8 @@ public class Test {
                                 System.out.println("Bit Rate: " + audioFile.getAudioHeader().getBitRate() + " kbps");
 //                                System.out.println("Channels: " + audioFile.getAudioHeader().getChannels());
                                 System.out.println("Length: " + audioFile.getAudioHeader().getTrackLength());
+                                System.out.println("Number of frames: " + audioHeader.getNumberOfFrames());
+                                System.out.println("Number of bit rates: " + audioHeader.getBitRateAsNumber());
 
                             } catch (Exception e) {
                                 System.err.println("Error processing audio file: " + e.getMessage());

@@ -3,56 +3,28 @@ package com.javaweb.view.mini_musicplayer.event;
 import com.javaweb.enums.RepeatMode;
 import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
-import com.javaweb.utils.CommonApiUtil;
-import com.javaweb.utils.GuiUtil;
-import com.javaweb.view.MiniMusicPlayerGUI;
+import com.javaweb.utils.ImageMediaUtil;
 import com.javaweb.view.MusicPlayer;
-import com.javaweb.view.theme.ThemeManager;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
-import java.awt.*;
 import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
 
-//Replay, pause, play current, cycle repeat, set column
+@Component
+@RequiredArgsConstructor
 public class MusicPlayerFacade {
 
-    private static MusicPlayerFacade instance;
     private final MusicPlayer player;
+    @Getter
+    private final ImageMediaUtil imageMediaUtil;
+
+    @Getter
     private final MusicPlayerMediator mediator;
-
-
-    private MusicPlayerFacade() {
-        this.player = new MusicPlayer();
-        this.mediator = MusicPlayerMediator.getInstance();
-    }
-
-    public static synchronized MusicPlayerFacade getInstance() {
-        if (instance == null) {
-            instance = new MusicPlayerFacade();
-        }
-        return instance;
-    }
-
-    private void updateThemeFromSong(SongDTO song) {
-        if (song != null && song.getSongImage() != null) {
-            try {
-                MiniMusicPlayerGUI.getInstance();
-                Color[] themeColors = GuiUtil.extractThemeColors(song.getSongImage());
-                ThemeManager.getInstance().setThemeColors(
-                        themeColors[0],
-                        themeColors[1],
-                        themeColors[2]
-                );
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
 
 
     public void loadSong(SongDTO song) {
         try {
-            updateThemeFromSong(song);
             player.loadSong(song);
         } catch (IOException iOE) {
             iOE.printStackTrace();
@@ -85,7 +57,6 @@ public class MusicPlayerFacade {
     public void nextSong() {
         try {
             player.nextSong();
-            updateThemeFromSong(getCurrentSong());
         } catch (IOException ioException) {
             ioException.printStackTrace();
         }
@@ -94,7 +65,6 @@ public class MusicPlayerFacade {
     public void prevSong() {
         try {
             player.prevSong();
-            updateThemeFromSong(getCurrentSong());
         } catch (IOException ioException) {
             ioException.printStackTrace();
         }
@@ -112,7 +82,6 @@ public class MusicPlayerFacade {
     public void shufflePlaylist() {
         try {
             player.shufflePlaylist();
-            updateThemeFromSong(getCurrentSong());
         } catch (IOException ioException) {
             ioException.printStackTrace();
         }
@@ -133,61 +102,19 @@ public class MusicPlayerFacade {
     }
 
 
-    public int getCurrentTimeInMilli() {
-        return player.getCurrentTimeInMilli();
-    }
-
-    public int getCurrentFrame() {
-        return player.getCurrentFrame();
-    }
-
     public boolean isPaused() {
         return player.isPaused();
     }
 
     public void setCurrentPlaylist(PlaylistDTO playlist) {
         player.setCurrentPlaylist(playlist);
-
-        // Preload the next few songs if we have a playlist
-        if (playlist != null && !playlist.getSongs().isEmpty()) {
-            int currentIndex = 0;
-            int playlistSize = playlist.size();
-
-            // Preload up to 3 songs ahead in a background thread
-            CompletableFuture.runAsync(() -> {
-                for (int i = 0; i < 3 && i < playlistSize; i++) {
-                    SongDTO songToPreload = playlist.getSongAt((currentIndex + i) % playlistSize);
-
-                    // Only enrich if not already processed
-                    if (songToPreload.getMp3File() == null) {
-                        try {
-                            SongDTO fullSong = CommonApiUtil.fetchSongById(songToPreload.getId());
-                            // Update the playlist song with the enriched data
-                            updatePlaylistSong(playlist, currentIndex + i, fullSong);
-                        } catch (Exception e) {
-                            // Just log and continue
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            });
-        }
     }
 
-
-    private void updatePlaylistSong(PlaylistDTO playlist, int index, SongDTO updatedSong) {
-        if (index < playlist.getSongs().size()) {
-            playlist.getSongs().set(index, updatedSong);
-        }
-    }
 
     public SongDTO getCurrentSong() {
         return player.getCurrentSong();
     }
 
-    public PlaylistDTO getCurrentPlaylist() {
-        return player.getCurrentPlaylist();
-    }
 
     public RepeatMode getRepeatMode() {
         return player.getRepeatMode();
@@ -198,7 +125,7 @@ public class MusicPlayerFacade {
     }
 
     public int getCalculatedFrame() {
-        return player.getCalculatedFrame();
+        return (int) player.getCalculatedFrame();
     }
 
     public void setCurrentTimeInMilli(int timeInMilli) {
@@ -219,6 +146,19 @@ public class MusicPlayerFacade {
 
     public void notifyToggleCava(boolean isToggle) {
         mediator.notifyToggleCava(isToggle);
+    }
+
+    public void subscribeToPlayerEvents(PlayerEventListener listener) {
+        mediator.getEventPublisher().addObserver(listener);
+    }
+
+
+    public void unsubscribeFromPlayerEvents(PlayerEventListener listener) {
+        mediator.getEventPublisher().removeObserver(listener);
+    }
+
+    public void notifySliderDragging(int value, int timeInMillis) {
+        mediator.notifySliderDragging(value, timeInMillis);
     }
 
 

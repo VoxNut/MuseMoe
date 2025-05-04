@@ -7,7 +7,7 @@ import java.nio.file.Paths;
 public class FileUtil {
     public static int getFileSize(String url) {
         File file = new File(url);
-        return getFileSize(file);
+        return getFileSizeInBytes(file);
     }
 
     public static int getFileSize(File file) {
@@ -15,6 +15,14 @@ public class FileUtil {
             long fileSizeInBytes = file.length();
             double fileSizeInKB = (double) fileSizeInBytes / 1024;
             return (int) fileSizeInKB;
+        }
+        return 0;
+    }
+
+    public static int getFileSizeInBytes(File file) {
+        if (file.exists()) {
+            long fileSizeInBytes = file.length();
+            return (int) fileSizeInBytes;
         }
         return 0;
     }

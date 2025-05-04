@@ -1,5 +1,6 @@
 package com.javaweb.view;
 
+import com.javaweb.App;
 import com.javaweb.constant.AppConstant;
 import com.javaweb.enums.RepeatMode;
 import com.javaweb.model.dto.PlaylistDTO;
@@ -9,7 +10,6 @@ import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
 import com.javaweb.utils.NetworkChecker;
 import com.javaweb.view.mini_musicplayer.event.MusicPlayerFacade;
-import com.javaweb.view.mini_musicplayer.event.MusicPlayerMediator;
 import com.javaweb.view.mini_musicplayer.event.PlayerEvent;
 import com.javaweb.view.mini_musicplayer.event.PlayerEventListener;
 import com.javaweb.view.panel.PlaylistPanel;
@@ -31,7 +31,6 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
     public static MiniMusicPlayerGUI instance;
     private JLabel songTitle, songArtist, songImageLabel;
     private JPanel playbackBtns;
-
 
     @Getter
     private JSlider playbackSlider;
@@ -72,11 +71,13 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
 
     private MiniMusicPlayerGUI() {
         super("MuseMoe Miniplayer");
+
+
         initializeFrame();
 
         // Register for events
-        playerFacade = MusicPlayerFacade.getInstance();
-        MusicPlayerMediator.getInstance().subscribeToPlayerEvents(this);
+        playerFacade = App.getBean(MusicPlayerFacade.class);
+        playerFacade.subscribeToPlayerEvents(this);
         ThemeManager.getInstance().addThemeChangeListener(this);
 
         // Mini muse icon setup
@@ -494,7 +495,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
 
     // Method to update the song title and artist
     public void updateSongTitleAndArtist(SongDTO song) {
-        songTitle.setText(song.getSongTitle());
+        songTitle.setText(song.getTitle());
         songArtist.setText(song.getSongArtist());
     }
 
@@ -505,8 +506,8 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
 
     public void updatePlaybackSlider(SongDTO song) {
         // Set slider range based on total frames instead of milliseconds
-        int totalFrames = song.getMp3File().getFrameCount();
-        playbackSlider.setMaximum(totalFrames);
+        long totalFrames = song.getFrame();
+        playbackSlider.setMaximum((int) totalFrames);
 
         labelEnd.setText(song.getSongLength());
         // Turn on or off this for octagon/ball thumb
@@ -530,10 +531,8 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
             GuiUtil.changeButtonIconColor(outLineHeartButton);
             playerFacade.notifySongLiked();
         } else {
-            GuiUtil.showErrorMessageDialog(this, "An error has occurred when removed : " + playerFacade.getCurrentSong().getSongTitle() + "from liked songs!");
+            GuiUtil.showErrorMessageDialog(this, "An error has occurred when removed : " + playerFacade.getCurrentSong().getTitle() + "from liked songs!");
         }
-
-
     }
 
     private void toggleOutlineHeartButton() {
@@ -543,7 +542,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
             GuiUtil.changeButtonIconColor(heartButton);
             playerFacade.notifySongLiked();
         } else {
-            GuiUtil.showErrorMessageDialog(this, "An error has occurred when added : " + playerFacade.getCurrentSong().getSongTitle() + "to liked songs!");
+            GuiUtil.showErrorMessageDialog(this, "An error has occurred when added : " + playerFacade.getCurrentSong().getTitle() + "to liked songs!");
         }
     }
 
@@ -571,6 +570,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
 
     // Method to update the song image
     public void updateSongImage(SongDTO song) {
+        playerFacade.getImageMediaUtil().populateSongImage(song);
         if (song.getSongImage() != null) {
             songImageLabel.setIcon(GuiUtil.createRoundedCornerImageIcon(song.getSongImage(), 10, 300, 300));
         } else {
@@ -681,7 +681,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
                     int timeInMillis = (int) (value / frameRate);
                     updateSongTimeLabel(timeInMillis);
 
-                    MusicPlayerMediator.getInstance().notifySliderDragging(value, timeInMillis);
+                    playerFacade.notifySliderDragging(value, timeInMillis);
                 }
                 SwingUtilities.invokeLater(() -> playbackSlider.setValueIsAdjusting(false));
             }

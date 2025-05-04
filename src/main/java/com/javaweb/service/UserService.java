@@ -5,6 +5,7 @@ import com.javaweb.model.dto.UserDTO;
 import com.javaweb.model.request.UserRequestDTO;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Set;
 
@@ -37,5 +38,5 @@ public interface UserService {
 
     UserDTO findUserByEmail(String email);
 
-    void updateLastLoginTime();
+    void updateLastLoginTime(LocalDateTime lastLoginTime);
 }

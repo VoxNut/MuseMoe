@@ -5,8 +5,10 @@ import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
+import com.javaweb.utils.ImageMediaUtil;
 import com.javaweb.view.theme.ThemeChangeListener;
 import com.javaweb.view.theme.ThemeManager;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -15,6 +17,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
 
+@org.springframework.stereotype.Component
 public class PlaylistSelectionPanel extends JPanel implements ThemeChangeListener {
     private final JList<PlaylistDTO> playlistList;
     private final DefaultListModel<PlaylistDTO> listModel;
@@ -22,6 +25,8 @@ public class PlaylistSelectionPanel extends JPanel implements ThemeChangeListene
     private final JButton selectButton;
     private final JButton cancelButton;
     private final JPanel buttonPanel;
+    @Autowired
+    private ImageMediaUtil imageMediaUtil;
     private Color textColor;
     private Color backgroundColor;
     private Color accentColor;
@@ -131,11 +136,14 @@ public class PlaylistSelectionPanel extends JPanel implements ThemeChangeListene
             }
 
             List<SongDTO> songs = playlist.getSongs();
-
-            JLabel imageLabel = !songs.isEmpty() ?
-                    GuiUtil.createRoundedCornerImageLabel(songs.getFirst().getSongImage(), 15, 40, 40)
-                    : GuiUtil.createRoundedCornerImageLabel(AppConstant.DEFAULT_COVER_PATH, 15, 40, 40);
-
+            SongDTO firstSong = songs.isEmpty() ? null : songs.getFirst();
+            imageMediaUtil.populateSongImage(firstSong);
+            JLabel imageLabel;
+            if (firstSong.getSongImage() != null) {
+                imageLabel = GuiUtil.createRoundedCornerImageLabel(firstSong.getSongImage(), 15, 40, 40);
+            } else {
+                imageLabel = GuiUtil.createRoundedCornerImageLabel(AppConstant.DEFAULT_COVER_PATH, 15, 40, 40);
+            }
             // Add the icon panel
             cellPanel.add(imageLabel, BorderLayout.WEST);
 

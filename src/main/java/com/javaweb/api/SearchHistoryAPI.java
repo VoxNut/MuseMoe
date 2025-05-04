@@ -1,5 +1,6 @@
 package com.javaweb.api;
 
+import com.javaweb.model.dto.SearchHistoryDTO;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.service.SearchHistoryService;
 import lombok.RequiredArgsConstructor;
@@ -17,10 +18,9 @@ public class SearchHistoryAPI {
     private final SearchHistoryService searchHistoryService;
 
     @PostMapping("/log")
-    public ResponseEntity<Boolean> logSearchHistory(@RequestParam("songId") Long songId,
-                                                    @RequestParam("searchTerm") String searchTerm) {
+    public ResponseEntity<Boolean> logSearchHistory(@RequestBody SearchHistoryDTO searchHistoryDTO) {
         try {
-            boolean result = searchHistoryService.logSearchHistory(songId, searchTerm);
+            boolean result = searchHistoryService.logSearchHistory(searchHistoryDTO.getSongId(), searchHistoryDTO.getSearchTerm());
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             e.printStackTrace();

@@ -1,261 +1,272 @@
 package com.javaweb.client.impl;
 
-import com.javaweb.utils.HttpDeleteWithBody;
-import org.apache.http.HttpEntity;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.*;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.CollectionType;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.javaweb.model.dto.SongDTO;
+import com.javaweb.view.user.UserSessionManager;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.*;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
-import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+public class ApiClient {
 
-// Update the ApiClient interface
-public interface ApiClient {
-    String get(String url) throws IOException;
+    private final WebClient webClient;
+    private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
 
-    String post(String url, String jsonBody) throws IOException;
+    public ApiClient(WebClient webClient) {
+        this.webClient = webClient;
+        this.restTemplate = new RestTemplate();
+        this.objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
 
-    String put(String url, String jsonBody) throws IOException;
+    }
 
-    String putSimple(String url) throws IOException;
+    private WebClient.RequestHeadersSpec<?> addAuthHeader(WebClient.RequestHeadersSpec<?> spec) {
+        String token = UserSessionManager.getInstance().getAuthToken();
+        if (token != null && !token.isEmpty()) {
+            return spec.header(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+        }
+        return spec;
+    }
 
-    String putWithParams(String url, Map<String, Object> params) throws IOException;
+    private HttpEntity<?> createAuthenticatedEntity(Object body) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
 
-    String delete(String url) throws IOException;
-
-    String deleteWithBody(String url, String jsonBody) throws IOException;
-
-    String postWithFormParam(String url, String paramName, Object value) throws IOException;
-
-
-    String putWithFormParams(String url, Map<String, Object> params) throws IOException;
-
-    String postWithFormParams(String url, Map<String, Object> params) throws IOException;
-
-
-}
-
-
-class HttpApiClient implements ApiClient {
-    private final CloseableHttpClient httpClient;
-
-    @Override
-    public String postWithFormParams(String url, Map<String, Object> params) throws IOException {
-        HttpPost httpPost = new HttpPost(url);
-        httpPost.setHeader("Accept", "application/json");
-        httpPost.setHeader("Content-Type", "application/x-www-form-urlencoded");
-
-        if (params != null && !params.isEmpty()) {
-            List<NameValuePair> nameValuePairs = new ArrayList<>(params.size());
-            for (Map.Entry<String, Object> entry : params.entrySet()) {
-                nameValuePairs.add(new BasicNameValuePair(entry.getKey(), String.valueOf(entry.getValue())));
-            }
-
-            httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs, StandardCharsets.UTF_8));
+        String token = UserSessionManager.getInstance().getAuthToken();
+        if (token != null && !token.isEmpty()) {
+            headers.set(HttpHeaders.AUTHORIZATION, "Bearer " + token);
         }
 
-        try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
-            int statusCode = response.getStatusLine().getStatusCode();
-            String responseBody = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+        return new HttpEntity<>(body, headers);
+    }
 
-            if (statusCode >= 200 && statusCode < 300) {
-                return responseBody;
-            } else {
-                throw new IOException("HTTP Request failed with status: " + statusCode +
-                        ", response: " + responseBody);
+    public <T> T get(String url, Class<T> responseType) {
+        return addAuthHeader(webClient.get().uri(url))
+                .retrieve()
+                .bodyToMono(responseType)
+                .onErrorResume(e -> {
+                    e.printStackTrace();
+                    return Mono.empty();
+                })
+                .block();
+    }
+
+    public <T> List<T> getList(String url, Class<T> elementType) {
+        try {
+            String response = addAuthHeader(webClient.get().uri(url))
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .onErrorResume(e -> {
+                        e.printStackTrace();
+                        return Mono.empty();
+                    })
+                    .block();
+
+            if (response == null) {
+                return new ArrayList<>();
             }
+
+            CollectionType listType = objectMapper.getTypeFactory()
+                    .constructCollectionType(List.class, elementType);
+
+            return objectMapper.readValue(response, listType);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
         }
     }
 
-    @Override
-    public String putSimple(String url) throws IOException {
-        HttpPut httpPut = new HttpPut(url);
-        httpPut.setHeader("Accept", "application/json");
-
-        try (CloseableHttpResponse response = httpClient.execute(httpPut)) {
-            int statusCode = response.getStatusLine().getStatusCode();
-            HttpEntity entity = response.getEntity();
-            String responseBody = entity != null ? EntityUtils.toString(entity, StandardCharsets.UTF_8) : "";
-
-            if (statusCode >= 200 && statusCode < 300) {
-                return responseBody;
-            } else {
-                throw new IOException("HTTP Request failed with status: " + statusCode +
-                        ", response: " + responseBody);
-            }
-        }
+    public <T> T post(String url, Object body, Class<T> responseType) {
+        return addAuthHeader(webClient.post()
+                .uri(url)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(body))
+                .retrieve()
+                .bodyToMono(responseType)
+                .onErrorResume(e -> {
+                    e.printStackTrace();
+                    return Mono.empty();
+                })
+                .block();
     }
 
-    @Override
-    public String putWithFormParams(String url, Map<String, Object> params) throws IOException {
-        HttpPut httpPut = new HttpPut(url);
-        httpPut.setHeader("Accept", "application/json");
-        httpPut.setHeader("Content-Type", "application/x-www-form-urlencoded");
-
-        if (params != null && !params.isEmpty()) {
-            List<NameValuePair> nameValuePairs = new ArrayList<>(params.size());
-            for (Map.Entry<String, Object> entry : params.entrySet()) {
-                nameValuePairs.add(new BasicNameValuePair(entry.getKey(), String.valueOf(entry.getValue())));
-            }
-
-            httpPut.setEntity(new UrlEncodedFormEntity(nameValuePairs, StandardCharsets.UTF_8));
-        }
-
-        try (CloseableHttpResponse response = httpClient.execute(httpPut)) {
-            int statusCode = response.getStatusLine().getStatusCode();
-            String responseBody = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-
-            if (statusCode >= 200 && statusCode < 300) {
-                return responseBody;
-            } else {
-                throw new IOException("HTTP Request failed with status: " + statusCode +
-                        ", response: " + responseBody);
-            }
-        }
+    public <T> T put(String url, Object body, Class<T> responseType) {
+        return addAuthHeader(webClient.put()
+                .uri(url)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(body))
+                .retrieve()
+                .bodyToMono(responseType)
+                .onErrorResume(e -> {
+                    e.printStackTrace();
+                    return Mono.empty();
+                })
+                .block();
     }
 
-    public HttpApiClient(CloseableHttpClient httpClient) {
-        this.httpClient = httpClient;
+    public <T> T delete(String url, Object jsonBody, Class<T> responseType) {
+        return addAuthHeader(webClient.method(HttpMethod.DELETE)
+                .uri(url)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(jsonBody))
+                .retrieve()
+                .bodyToMono(responseType)
+                .onErrorResume(e -> {
+                    e.printStackTrace();
+                    return Mono.empty();
+                })
+                .block();
     }
 
-    @Override
-    public String putWithParams(String url, Map<String, Object> params) throws IOException {
-        // Build URL with parameters
-        StringBuilder urlWithParams = new StringBuilder(url);
+    public <T> T delete(String url, Class<T> responseType) {
+        return addAuthHeader(webClient.delete()
+                .uri(url))
+                .retrieve()
+                .bodyToMono(responseType)
+                .onErrorResume(e -> {
+                    e.printStackTrace();
+                    return Mono.empty();
+                })
+                .block();
+    }
 
-        if (params != null && !params.isEmpty()) {
-            urlWithParams.append("?");
-            boolean first = true;
+    public <T> T postMultipart(String url, Map<String, Object> parts, Class<T> responseType) {
+        MultiValueMap<String, Object> multipartData = new LinkedMultiValueMap<>();
+        parts.forEach(multipartData::add);
 
-            for (Map.Entry<String, Object> entry : params.entrySet()) {
-                if (!first) {
-                    urlWithParams.append("&");
+        // For multipart requests, we need to use RestTemplate as WebClient has issues with file uploads
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        // Add authentication token
+        String token = UserSessionManager.getInstance().getAuthToken();
+        if (token != null && !token.isEmpty()) {
+            headers.set(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+        }
+
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(multipartData, headers);
+        ResponseEntity<T> response = restTemplate.exchange(
+                url,
+                HttpMethod.POST,
+                requestEntity,
+                responseType
+        );
+
+        return response.getBody();
+    }
+
+    public SongDTO uploadSong(String url, Map<String, Object> songData, File audioFile, File imageFile) {
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+
+        // Add files
+        if (audioFile != null) {
+            body.add("audioFile", new FileSystemResource(audioFile));
+        }
+
+        if (imageFile != null) {
+            body.add("imageFile", new FileSystemResource(imageFile));
+        }
+
+        // Add other song data
+        if (songData != null) {
+            songData.forEach((key, value) -> {
+                if (value != null) {
+                    body.add(key, value.toString());
                 }
-                urlWithParams.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8));
-                urlWithParams.append("=");
-                urlWithParams.append(URLEncoder.encode(String.valueOf(entry.getValue()), StandardCharsets.UTF_8));
-                first = false;
-            }
+            });
         }
 
-        HttpPut httpPut = new HttpPut(urlWithParams.toString());
-        httpPut.setHeader("Accept", "application/json");
+        // Create headers with authentication
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
-        try (CloseableHttpResponse response = httpClient.execute(httpPut)) {
-            int statusCode = response.getStatusLine().getStatusCode();
-            String responseBody = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-
-            if (statusCode >= 200 && statusCode < 300) {
-                return responseBody;
-            } else {
-                throw new IOException("HTTP Request failed with status: " + statusCode +
-                        ", response: " + responseBody);
-            }
+        String token = UserSessionManager.getInstance().getAuthToken();
+        if (token != null && !token.isEmpty()) {
+            headers.set(HttpHeaders.AUTHORIZATION, "Bearer " + token);
         }
+
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+        ResponseEntity<SongDTO> response = restTemplate.exchange(
+                url,
+                HttpMethod.POST,
+                requestEntity,
+                SongDTO.class
+        );
+
+        return response.getBody();
     }
 
-    @Override
-    public String get(String url) throws IOException {
-        HttpGet httpGet = new HttpGet(url);
-        httpGet.setHeader("Accept", "application/json");
-
-        try (CloseableHttpResponse response = httpClient.execute(httpGet)) {
-            return EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-        }
+    public String get(String url) {
+        return addAuthHeader(webClient.get().uri(url))
+                .retrieve()
+                .bodyToMono(String.class)
+                .onErrorResume(e -> {
+                    e.printStackTrace();
+                    return Mono.empty();
+                })
+                .block();
     }
 
-    @Override
-    public String post(String url, String jsonBody) throws IOException {
-        HttpPost httpPost = new HttpPost(url);
-        httpPost.setHeader("Content-Type", "application/json");
-        httpPost.setHeader("Accept", "application/json");
-
-        if (jsonBody != null && !jsonBody.isEmpty()) {
-            HttpEntity entity = new StringEntity(jsonBody, StandardCharsets.UTF_8);
-            httpPost.setEntity(entity);
-        }
-
-        try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
-            return EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-        }
+    public String post(String url, String jsonBody) {
+        return addAuthHeader(webClient.post()
+                .uri(url)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(jsonBody))
+                .retrieve()
+                .bodyToMono(String.class)
+                .onErrorResume(e -> {
+                    e.printStackTrace();
+                    return Mono.empty();
+                })
+                .block();
     }
 
-    @Override
-    public String put(String url, String jsonBody) throws IOException {
-        HttpPut httpPut = new HttpPut(url);
-        httpPut.setHeader("Content-Type", "application/json");
-        httpPut.setHeader("Accept", "application/json");
-
-        if (jsonBody != null && !jsonBody.isEmpty()) {
-            HttpEntity entity = new StringEntity(jsonBody, StandardCharsets.UTF_8);
-            httpPut.setEntity(entity);
-        }
-
-        try (CloseableHttpResponse response = httpClient.execute(httpPut)) {
-            return EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-        }
+    public String put(String url, String jsonBody) {
+        return addAuthHeader(webClient.put()
+                .uri(url)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(jsonBody))
+                .retrieve()
+                .bodyToMono(String.class)
+                .onErrorResume(e -> {
+                    e.printStackTrace();
+                    return Mono.empty();
+                })
+                .block();
     }
 
-    @Override
-    public String delete(String url) throws IOException {
-        HttpDelete httpDelete = new HttpDelete(url);
-        httpDelete.setHeader("Accept", "application/json");
-
-        try (CloseableHttpResponse response = httpClient.execute(httpDelete)) {
-            return EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-        }
+    public String delete(String url) {
+        return addAuthHeader(webClient.delete()
+                .uri(url))
+                .retrieve()
+                .bodyToMono(String.class)
+                .onErrorResume(e -> {
+                    e.printStackTrace();
+                    return Mono.empty();
+                })
+                .block();
     }
 
-    @Override
-    public String deleteWithBody(String url, String jsonBody) throws IOException {
-        //Custom HttpDeleteWithBody
-
-        HttpDeleteWithBody httpDelete = new HttpDeleteWithBody(url);
-        httpDelete.setHeader("Content-Type", "application/json");
-        httpDelete.setHeader("Accept", "application/json");
-
-        if (jsonBody != null && !jsonBody.isEmpty()) {
-            HttpEntity entity = new StringEntity(jsonBody, StandardCharsets.UTF_8);
-            httpDelete.setEntity(entity);
-        }
-
-        try (CloseableHttpResponse response = httpClient.execute(httpDelete)) {
-            return EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-        }
+    public byte[] getAsByteArray(String url) {
+        return addAuthHeader(webClient.get().uri(url))
+                .retrieve()
+                .bodyToMono(byte[].class)
+                .onErrorResume(e -> {
+                    e.printStackTrace();
+                    return Mono.empty();
+                })
+                .block();
     }
-
-    @Override
-    public String postWithFormParam(String url, String paramName, Object value) throws IOException {
-        HttpPost httpPost = new HttpPost(url);
-        httpPost.setHeader("Accept", "application/json");
-        httpPost.setHeader("Content-Type", "application/x-www-form-urlencoded");
-
-        // Create form parameters
-        List<NameValuePair> params = new ArrayList<>();
-        params.add(new BasicNameValuePair(paramName, String.valueOf(value)));
-        httpPost.setEntity(new UrlEncodedFormEntity(params));
-
-        try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
-            int statusCode = response.getStatusLine().getStatusCode();
-            String responseBody = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-
-            if (statusCode >= 200 && statusCode < 300) {
-                return responseBody;
-            } else {
-                throw new IOException("HTTP Request failed with status: " + statusCode +
-                        ", response: " + responseBody);
-            }
-        }
-    }
-
-
 }

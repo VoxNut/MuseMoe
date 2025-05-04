@@ -5,23 +5,28 @@ import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.model.dto.UserDTO;
 import com.javaweb.utils.CommonApiUtil;
+import com.javaweb.utils.GuiUtil;
+import com.javaweb.utils.ImageMediaUtil;
+import com.javaweb.utils.StreamingAudioPlayer;
 import com.javaweb.view.mini_musicplayer.advertisement.AdvertisementManager;
-import com.javaweb.view.mini_musicplayer.event.MusicPlayerFacade;
 import com.javaweb.view.mini_musicplayer.event.MusicPlayerMediator;
+import com.javaweb.view.theme.ThemeManager;
 import com.javaweb.view.user.UserSessionManager;
 import javazoom.jl.player.AudioDevice;
-import javazoom.jl.player.FactoryRegistry;
 import javazoom.jl.player.JavaSoundAudioDevice;
 import javazoom.jl.player.advanced.AdvancedPlayer;
 import javazoom.jl.player.advanced.PlaybackEvent;
 import javazoom.jl.player.advanced.PlaybackListener;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.SourceDataLine;
 import javax.swing.*;
+import java.awt.*;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -31,15 +36,16 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Slf4j
+@Component
+@RequiredArgsConstructor
 public class MusicPlayer extends PlaybackListener {
-    // this will be used to update isPaused more synchronously
+
+    private final StreamingAudioPlayer streamingPlayer;
+    private final ImageMediaUtil imageMediaUtil;
     private static final Object playSignal = new Object();
     private final MusicPlayerMediator mediator;
 
-    // need reference so that we can update the gui in this class
 
-    // we will need a way to store our song's details, so we will be creating a song
-    // class
     @Getter
     @Setter
     private SongDTO currentSong;
@@ -48,7 +54,6 @@ public class MusicPlayer extends PlaybackListener {
     @Setter
     private PlaylistDTO currentPlaylist;
 
-    // we will need to keep track the index we are in the playlist
     private int currentPlaylistIndex;
 
     // use JLayer library to create an AdvancedPlayer obj which will handle playing
@@ -94,7 +99,7 @@ public class MusicPlayer extends PlaybackListener {
 
 
     @Getter
-    int calculatedFrame;
+    long calculatedFrame;
 
     @Getter
     private boolean havingAd;
@@ -106,14 +111,8 @@ public class MusicPlayer extends PlaybackListener {
     private float currentVolumeGain = 0.0f;
 
 
-    // constructor
-    public MusicPlayer() {
-        this.adManager = AdvertisementManager.getInstance();
-        this.mediator = MusicPlayerMediator.getInstance();
-    }
-
     public void loadSong(SongDTO song) throws IOException {
-        if (adManager.shouldShowAd(getCurrentUser()) || (song != null && song.getMp3File() != null)) {
+        if (adManager.shouldShowAd(getCurrentUser()) || song != null) {
             processLoadSong(song);
             return;
         }
@@ -124,15 +123,10 @@ public class MusicPlayer extends PlaybackListener {
         // Load song in background
         CompletableFuture.supplyAsync(() -> {
             try {
-                // If we only have basic song info, fetch complete song data
-                assert song != null;
-                if (song.getMp3File() == null) {
-                    return CommonApiUtil.fetchSongById(song.getId());
-                }
-                return song;
+                return CommonApiUtil.fetchSongById(song.getId());
             } catch (Exception e) {
                 e.printStackTrace();
-                return song; // Return original song as fallback
+                return song;
             }
         }).thenAccept(loadedSong -> {
             // Back on UI thread
@@ -164,8 +158,8 @@ public class MusicPlayer extends PlaybackListener {
             }
             havingAd = true;
             //get random ad url
-            String randomAdUrl = adManager.getAdvertisements()[(int) (Math.random() * adManager.getAdvertisements().length)];
-            currentSong = CommonApiUtil.fetchSongByUrl(randomAdUrl);
+            String driveId = adManager.getAdvertisements()[(int) (Math.random() * adManager.getAdvertisements().length)];
+            currentSong = CommonApiUtil.fetchSongByUrl(driveId);
             mediator.notifyAdOn();
         } else {
             havingAd = false;
@@ -329,23 +323,17 @@ public class MusicPlayer extends PlaybackListener {
         try {
             volumeControl = null;
 
-            fileInputStream = new FileInputStream(currentSong.getAudioFilePath());
-            bufferedInputStream = new BufferedInputStream(fileInputStream);
-            this.device = FactoryRegistry.systemRegistry().createAudioDevice();
-            advancedPlayer = new AdvancedPlayer(bufferedInputStream, device);
-
-            advancedPlayer.setPlayBackListener(this);
+            // Create player from streaming service instead of file system
+            advancedPlayer = streamingPlayer.createPlayer(currentSong, this);
+            this.device = streamingPlayer.getDevice();
 
             setVolume(currentVolumeGain);
 
-
-            SwingUtilities.invokeLater(
-                    () -> {
-                        mediator.notifyToggleCava(true);
-                        startMusicThread();
-                        startPlaybackSliderThread();
-                    }
-            );
+            SwingUtilities.invokeLater(() -> {
+                mediator.notifyToggleCava(true);
+                startMusicThread();
+                startPlaybackSliderThread();
+            });
 
 
         } catch (Exception e) {
@@ -395,17 +383,16 @@ public class MusicPlayer extends PlaybackListener {
                 final SongDTO currentSongCopy = currentSong;
                 if (currentSongCopy == null) return;
 
-                final int totalFrames = currentSongCopy.getMp3File().getFrameCount();
+                final long totalFrames = currentSongCopy.getFrame();
                 final double frameRate = currentSongCopy.getFrameRatePerMilliseconds();
-                final long songDurationMs = currentSongCopy.getMp3File().getLengthInMilliseconds();
+                final long songDurationMs = currentSongCopy.getLengthInMilliseconds();
 
-                // Handle pause state correctly (with timeout to prevent deadlock)
                 if (isPaused) {
                     synchronized (playSignal) {
                         try {
-                            playSignal.wait(5000); // Wait up to 5 seconds
+                            playSignal.wait(5000);
                         } catch (InterruptedException e) {
-                            return; // Exit if interrupted
+                            return;
                         }
                     }
                 }
@@ -436,7 +423,7 @@ public class MusicPlayer extends PlaybackListener {
 
                     if (!Thread.currentThread().isInterrupted() && !isPaused &&
                             !songFinished && advancedPlayer != null) {
-                        mediator.notifyPlaybackProgress(calculatedFrame, currentTimeInMilli);
+                        mediator.notifyPlaybackProgress((int) calculatedFrame, currentTimeInMilli);
                     }
 
                     // Exit if we've reached the end
@@ -496,7 +483,11 @@ public class MusicPlayer extends PlaybackListener {
             // This user is initialized through login. So no need to fetch from db again.
             adManager.resetUserCounter(getCurrentUser().getId());
             currentSong = adManager.getLastSongDTO();
-            MusicPlayerFacade.getInstance().loadSong(currentSong);
+            try {
+                loadSong(currentSong);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         } else {
             if (isPaused) {
                 // If paused, update the current frame for resuming later
@@ -512,7 +503,7 @@ public class MusicPlayer extends PlaybackListener {
                 return;
             }
 
-            int totalFrames = currentSong.getMp3File().getFrameCount();
+            long totalFrames = currentSong.getFrame();
             int threshold = (int) (totalFrames * 0.95);
 
             //Naturally end
@@ -572,10 +563,10 @@ public class MusicPlayer extends PlaybackListener {
         } else {
             if (repeatMode == RepeatMode.REPEAT_ONE) {
                 // Repeat the current song
-                MusicPlayerFacade.getInstance().loadSong(currentSong);
+                loadSong(currentSong);
             } else {
                 try {
-                    MusicPlayerFacade.getInstance().nextSong();
+                    nextSong();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -696,6 +687,8 @@ public class MusicPlayer extends PlaybackListener {
     }
 
     private void updateGUI() {
+        imageMediaUtil.populateSongImage(currentSong);
+        updateThemeFromSong(currentSong);
         mediator.notifySongLoaded(currentSong);
         if (currentPlaylist != null) {
             mediator.notifyPlaylistLoaded(currentPlaylist);
@@ -706,5 +699,21 @@ public class MusicPlayer extends PlaybackListener {
         return UserSessionManager.getInstance().getCurrentUser();
     }
 
+
+    private void updateThemeFromSong(SongDTO song) {
+        if (song != null && song.getSongImage() != null) {
+            try {
+                MiniMusicPlayerGUI.getInstance();
+                Color[] themeColors = GuiUtil.extractThemeColors(song.getSongImage());
+                ThemeManager.getInstance().setThemeColors(
+                        themeColors[0],
+                        themeColors[1],
+                        themeColors[2]
+                );
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
 }

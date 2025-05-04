@@ -6,6 +6,7 @@ import com.javaweb.model.dto.MyUserDetail;
 import com.javaweb.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,6 +19,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CustomUserDetailsService implements UserDetailsService {
     private final UserRepository userRepository;
 
@@ -26,7 +28,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         UserEntity userEntity = userRepository.findOneByUsernameAndAccountStatus(username, AccountStatus.ACTIVE);
         if (userEntity == null) {
-            throw new UsernameNotFoundException("Username not found");
+            log.error("username not found!");
         }
 
         List<GrantedAuthority> authorities = new ArrayList<>();
@@ -42,7 +44,6 @@ public class CustomUserDetailsService implements UserDetailsService {
                 authorities
         );
 
-        // Copy remaining properties
         myUserDetail.setId(userEntity.getId());
         myUserDetail.setFullName(userEntity.getFullName());
 

@@ -1,5 +1,7 @@
 package com.javaweb.view;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.javaweb.constant.AppConstant;
 import com.javaweb.enums.AccountStatus;
 import com.javaweb.model.dto.UserDTO;
@@ -7,12 +9,10 @@ import com.javaweb.utils.*;
 import com.javaweb.view.theme.ThemeManager;
 import com.javaweb.view.user.UserSessionManager;
 import lombok.Getter;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.message.BasicNameValuePair;
 
 import javax.swing.*;
 import java.awt.*;
@@ -20,8 +20,9 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.Base64;
 import java.util.UUID;
 
 public class LoginPage extends JFrame {
@@ -553,40 +554,50 @@ public class LoginPage extends JFrame {
             return;
         }
 
-        UserDTO user = CommonApiUtil.fetchUserByUsername(username);
-        if (user == null || user.getAccountStatus().equals(AccountStatus.INACTIVE)) {
-            GuiUtil.showErrorMessageDialog(this, "User not existed or deleted");
-            return;
-        }
-
-        HttpPost httpPost = new HttpPost("http://localhost:8081/login");
-        ArrayList<NameValuePair> params = new ArrayList<>();
-        params.add(new BasicNameValuePair("username", username));
-        params.add(new BasicNameValuePair("password", password));
-        httpPost.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
-
         try {
+            String url = "http://localhost:8081/api/auth/login";
+            HttpPost httpPost = new HttpPost(url);
+
+            // Create JSON for body
+            String jsonBody = "{\"username\":\"" + username + "\",\"password\":\"" + password + "\"}";
+            StringEntity entity = new StringEntity(jsonBody);
+            httpPost.setEntity(entity);
+            httpPost.setHeader("Content-type", "application/json");
+
             CloseableHttpClient httpClient = HttpClientProvider.getHttpClient();
             CloseableHttpResponse response = httpClient.execute(httpPost);
+
             int statusCode = response.getStatusLine().getStatusCode();
 
             if (statusCode == 200) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+                String responseBody = reader.readLine();
+
+                // Extract the token from the response
+                String token = responseBody.split("\"token\":\"")[1].split("\"")[0];
+
+                // Extract user info from JWT token payload
+                UserDTO user = extractUserFromToken(token);
+
+                if (user == null || user.getAccountStatus().equals(AccountStatus.INACTIVE)) {
+                    GuiUtil.showErrorMessageDialog(this, "User not existed or deleted");
+                    return;
+                }
+
+                // Store token in UserSessionManager
+                UserSessionManager.getInstance().initializeSession(user, token);
+
                 GuiUtil.showSuccessMessageDialog(this, "Login successfully!");
-                CommonApiUtil.updateLastLoginTime();
-                // Authentication successful
-                this.dispose();
-                //Init user
-                UserSessionManager.getInstance().initializeSession(user);
+                dispose();
 
                 HomePage homePage = new HomePage();
                 UIManager.put("TitlePane.iconSize", new Dimension(24, 24));
                 homePage.setIconImage(GuiUtil.createImageIcon(AppConstant.MUSE_MOE_LOGO_PATH, 512, 512).getImage());
                 homePage.setVisible(true);
+
             } else if (statusCode == 401) {
-                // Authentication failed
                 GuiUtil.showErrorMessageDialog(this, "Username or Password incorrect!");
             } else {
-                // Other error
                 GuiUtil.showErrorMessageDialog(this, "An error occurred during login: Status " + statusCode);
             }
             response.close();
@@ -596,4 +607,34 @@ public class LoginPage extends JFrame {
         }
     }
 
+
+    private UserDTO extractUserFromToken(String token) {
+        try {
+            // Get the payload part of the JWT (second part)
+            String[] parts = token.split("\\.");
+            if (parts.length < 2) {
+                return null;
+            }
+
+            // Decode base64 payload
+            String payload = new String(Base64.getUrlDecoder().decode(parts[1]));
+
+            // Parse JSON
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode payloadJson = mapper.readTree(payload);
+
+            // Create user from claims
+            UserDTO user = new UserDTO();
+            user.setId(payloadJson.has("id") ? payloadJson.get("id").asLong() : null);
+            user.setUsername(payloadJson.has("sub") ? payloadJson.get("sub").asText() : null);
+            user.setFullName(payloadJson.has("fullName") ? payloadJson.get("fullName").asText() : null);
+
+            user.setAccountStatus(AccountStatus.ACTIVE);
+
+            return user;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 }

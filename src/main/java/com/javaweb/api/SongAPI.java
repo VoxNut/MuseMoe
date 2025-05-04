@@ -3,15 +3,16 @@ package com.javaweb.api;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.model.request.SongRequestDTO;
 import com.javaweb.service.SongService;
+import com.javaweb.service.impl.GoogleDriveService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.repository.query.Param;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 
 @RestController
@@ -21,35 +22,35 @@ import java.util.List;
 public class SongAPI {
 
     private final SongService songService;
-    private final Logger logger = LoggerFactory.getLogger(SongAPI.class);
+    private final GoogleDriveService googleDriveService;
 
     @GetMapping("/title/{title}")
     public ResponseEntity<SongDTO> findByTitle(@PathVariable String title) {
-        logger.info("Fetching song with title: {}", title);
+        log.info("Fetching song with title: {}", title);
         try {
             SongDTO song = songService.findOneByTitle(title);
             return ResponseEntity.ok(song);
         } catch (Exception e) {
-            logger.error("Failed to fetch song with title: {}", title, e);
+            log.error("Failed to fetch song with title: {}", title, e);
             return ResponseEntity.notFound().build();
         }
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<SongDTO> findById(@PathVariable Long id) {
-        logger.info("Fetching song with ID: {}", id);
+        log.info("Fetching song with ID: {}", id);
         try {
             SongDTO song = songService.findById(id);
             return ResponseEntity.ok(song);
         } catch (Exception e) {
-            logger.error("Failed to fetch song with ID: {}", id, e);
+            log.error("Failed to fetch song with ID: {}", id, e);
             return ResponseEntity.notFound().build();
         }
     }
 
     @GetMapping("/songs_like")
     public ResponseEntity<List<SongDTO>> findAllSongsLike(@Param("title") String title) {
-        logger.info("Find songs like: {}", title);
+        log.info("Find songs like: {}", title);
         try {
             List<SongDTO> songDTOSet = songService.findAllSongsLike(title);
             return ResponseEntity.ok(songDTOSet);
@@ -78,13 +79,41 @@ public class SongAPI {
         }
     }
 
-    @PostMapping("/create")
-    public ResponseEntity<Boolean> createSong(@RequestBody SongRequestDTO songRequestDTO) {
+
+    @PostMapping("/import-from-drive")
+    public ResponseEntity<Integer> importSongsFromDrive() {
+        log.info("Starting import of songs from Google Drive");
         try {
-            Boolean res = songService.createSong(songRequestDTO);
-            return ResponseEntity.ok(res);
+            int importedCount = songService.importSongsFromGoogleDrive();
+            return ResponseEntity.ok(importedCount);
         } catch (Exception e) {
-            return ResponseEntity.notFound().build();
+            log.error("Failed to import songs from Google Drive", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(0);
+        }
+    }
+
+    @PostMapping("/create")
+    public ResponseEntity<?> createSong(@ModelAttribute SongRequestDTO songRequestDTO) {
+        try {
+            boolean result = songService.createSong(songRequestDTO);
+            if (result) {
+                return ResponseEntity.ok().body(Map.of(
+                        "success", true,
+                        "message", "Song uploaded successfully"
+                ));
+            } else {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "success", false,
+                        "message", "Failed to create song entry"
+                ));
+            }
+
+        } catch (Exception e) {
+            log.error("Error uploading song: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "success", false,
+                    "message", "Error uploading song: " + e.getMessage()
+            ));
         }
     }
 }

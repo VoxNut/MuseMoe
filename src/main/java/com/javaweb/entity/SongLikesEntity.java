@@ -15,12 +15,12 @@ public class SongLikesEntity {
     @EmbeddedId
     private SongLikesId id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @MapsId("userId")
     @JoinColumn(name = "user_id")
     private UserEntity user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @MapsId("songId")
     @JoinColumn(name = "song_id")
     private SongEntity song;

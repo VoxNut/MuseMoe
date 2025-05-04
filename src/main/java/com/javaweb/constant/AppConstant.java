@@ -116,11 +116,11 @@ public class AppConstant {
             "Songs That Color Your Heart!",
             "Harmony in Shades of Sound!"
     };
-    public static final String CREDENTIALS_FILE_PATH = "src/main/resources/credentials.json";
-
+    public static final String CREDENTIALS_FILE_PATH = "D:\\My WorkSpace\\MuseMoe\\src\\main\\resources\\credentials.json";
+    public static final String TOKENS_DIRECTORY_PATH = "src/main/resources/tokens";
     //ADS
-    public static final String MUSE_MOE_AD = "src/main/java/com/javaweb/view/mini_musicplayer/advertisement/museMoe.mp3";
-    public static final String STUDY_SMART_AD = "src/main/java/com/javaweb/view/mini_musicplayer/advertisement/studySmart.mp3";
-    public static final String BREW_SPOT_AD = "src/main/java/com/javaweb/view/mini_musicplayer/advertisement/theBrewSpot.mp3";
-    public static final String INSPIRATION_AD = "src/main/java/com/javaweb/view/mini_musicplayer/advertisement/truyenCamHung.mp3";
+    public static final String MUSE_MOE_AD = "https://drive.google.com/uc?id=1V-UlJy6yG60GZPB0Ro-ZWvRg__JCcxz_&export=download";
+    public static final String STUDY_SMART_AD = "https://drive.google.com/uc?id=1ra1NtQDV2Q0rjAywJkX4l-nslTRh5P9Y&export=download";
+    public static final String BREW_SPOT_AD = "https://drive.google.com/uc?id=19oHeqO0CdfzqrbBfsA_AvMfohR5ecspC&export=download";
+    public static final String INSPIRATION_AD = "https://drive.google.com/uc?id=1vY5I6n4zcQLwkS7bYWULxLcgAn2wzgtn&export=download";
 }

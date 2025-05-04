@@ -1,16 +1,17 @@
 package com.javaweb.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
-import java.util.HashSet;
 import java.util.Set;
 
 @Entity
 @Table(name = "album")
 @Getter
 @Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class AlbumEntity {
 
     @Id
@@ -25,12 +26,13 @@ public class AlbumEntity {
     private String title;
 
     @Column(name = "release_year")
-    private Integer release_year;
+    private Integer releaseYear;
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "cover_art_id")
-    private MediaEntity coverArt;
+    private StreamingMediaEntity coverArt;
 
     @OneToMany(mappedBy = "album", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<SongEntity> songs = new HashSet<>();
+    private Set<SongEntity> songs;
+
 }

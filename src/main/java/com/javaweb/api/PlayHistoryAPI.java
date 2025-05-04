@@ -1,6 +1,7 @@
 package com.javaweb.api;
 
 
+import com.javaweb.model.dto.PlayHistoryDTO;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.service.PlayHistoryService;
 import lombok.RequiredArgsConstructor;
@@ -20,9 +21,9 @@ public class PlayHistoryAPI {
     private final PlayHistoryService playHistoryService;
 
     @PostMapping("/create")
-    public ResponseEntity<Boolean> createNewPlayHistory(@RequestParam("songId") Long songId) {
+    public ResponseEntity<Boolean> createNewPlayHistory(@RequestBody PlayHistoryDTO playHistoryDTO) {
         try {
-            boolean res = playHistoryService.createNewPlayHistory(songId);
+            boolean res = playHistoryService.createNewPlayHistory(playHistoryDTO.getSongId());
             return ResponseEntity.ok(res);
         } catch (Exception e) {
             e.printStackTrace();

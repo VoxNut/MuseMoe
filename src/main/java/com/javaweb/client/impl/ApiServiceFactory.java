@@ -1,43 +1,30 @@
 package com.javaweb.client.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.javaweb.client.ApiConfig;
 import com.javaweb.client.client_service.*;
-import com.javaweb.utils.HttpClientProvider;
-import com.javaweb.utils.Mp3Util;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClient;
 
 @Component
+@RequiredArgsConstructor
 public class ApiServiceFactory {
     private final ApiConfig apiConfig;
-    private final ObjectMapper objectMapper;
-    private final Mp3Util mp3Util;
+    private final WebClient webClient;
 
-    public ApiServiceFactory(ApiConfig apiConfig, Mp3Util mp3Util) {
-        this.apiConfig = apiConfig;
-        this.mp3Util = mp3Util;
-        objectMapper = new ObjectMapper();
-    }
-
-    //Factory methods
     public UserApiClient createUserApiClient() {
         return new UserApiClientImpl(
                 createApiClient(),
                 createUrlEncoder(),
-                createResponseParser(),
                 apiConfig
-        ) {
-        };
+        );
     }
-
 
     public SongApiClient createSongApiClient() {
         return new SongApiClientImpl(
                 createApiClient(),
                 createUrlEncoder(),
-                createResponseParser(),
-                apiConfig,
-                mp3Util
+                apiConfig
         );
     }
 
@@ -45,30 +32,22 @@ public class ApiServiceFactory {
         return new PlaylistApiClientImpl(
                 createApiClient(),
                 createUrlEncoder(),
-                createResponseParser(),
-                apiConfig,
-                mp3Util
+                apiConfig
         );
     }
 
     public UserDownloadApiClient createUserDownloadApiClient() {
         return new UserDownloadApiClientImpl(
                 createApiClient(),
-                createUrlEncoder(),
-                createResponseParser(),
-                apiConfig,
-                mp3Util
+                apiConfig
         );
     }
-
 
     public SongLikesApiClient createSonglikesdApiClient() {
         return new SongLikesApiClientImpl(
                 createApiClient(),
                 createUrlEncoder(),
-                createResponseParser(),
-                apiConfig,
-                mp3Util
+                apiConfig
         );
     }
 
@@ -76,9 +55,7 @@ public class ApiServiceFactory {
         return new PlayHistoryApiClientImpl(
                 createApiClient(),
                 createUrlEncoder(),
-                createResponseParser(),
-                apiConfig,
-                mp3Util
+                apiConfig
         );
     }
 
@@ -86,9 +63,7 @@ public class ApiServiceFactory {
         return new SearchHistoryApiClientImpl(
                 createApiClient(),
                 createUrlEncoder(),
-                createResponseParser(),
-                apiConfig,
-                mp3Util
+                apiConfig
         );
     }
 
@@ -96,22 +71,15 @@ public class ApiServiceFactory {
         return new UserArtistFollowApiClientImpl(
                 createApiClient(),
                 createUrlEncoder(),
-                createResponseParser(),
-                apiConfig,
-                mp3Util
+                apiConfig
         );
     }
 
-
     private ApiClient createApiClient() {
-        return new HttpApiClient(HttpClientProvider.getHttpClient());
+        return new ApiClient(webClient);
     }
 
     private UrlEncoder createUrlEncoder() {
         return new StandardUrlEncoder();
-    }
-
-    private ResponseParser createResponseParser() {
-        return new JsonResponseParser(objectMapper);
     }
 }

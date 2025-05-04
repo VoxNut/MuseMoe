@@ -13,7 +13,7 @@ import java.util.Set;
 @Setter
 public class ArtistEntity extends BaseEntity {
 
-    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "user_id", unique = true, nullable = false)
     private UserEntity user;
 
@@ -23,13 +23,15 @@ public class ArtistEntity extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String bio;
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "profile_pic_id")
-    private MediaEntity profilePic;
+    private StreamingMediaEntity profilePic;
 
     @OneToMany(mappedBy = "artist", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AlbumEntity> albums = new HashSet<>();
 
     @ManyToMany(mappedBy = "artists")
     private Set<SongEntity> songs = new HashSet<>();
+
+
 }

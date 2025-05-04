@@ -6,8 +6,6 @@ import com.javaweb.constant.AppConstant;
 import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
 import com.javaweb.view.LoginPage;
-
-import io.github.cdimascio.dotenv.Dotenv;
 import lombok.Getter;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -68,9 +66,7 @@ public class App {
 
     }
 
-    /**
-     * Open the login page with proper security context
-     */
+
     private static void openLoginPage() {
         // Create a new security context for this instance
         SecurityContext securityContext = new SecurityContextImpl();
@@ -79,16 +75,12 @@ public class App {
         LoginPage loginPage = new LoginPage();
 
         loginPage.setIconImage(GuiUtil.createImageIcon(AppConstant.MUSE_MOE_LOGO_PATH, 512, 512).getImage());
-
         loginPage.setVisible(true);
 
 
     }
 
 
-    /**
-     * Get a bean from the Spring context
-     */
     public static <T> T getBean(Class<T> beanClass) {
         return applicationContext.getBean(beanClass);
     }

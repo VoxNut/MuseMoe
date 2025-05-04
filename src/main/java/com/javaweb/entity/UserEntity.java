@@ -29,7 +29,7 @@ public class UserEntity extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "avatar_id")
-    private MediaEntity avatar;
+    private StreamingMediaEntity avatar;
 
     @Column(name = "last_login")
     private LocalDateTime lastLogin;

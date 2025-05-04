@@ -24,18 +24,24 @@ public class SongEntity extends BaseEntity {
     @Column(nullable = false)
     private Integer duration;
 
+    @Column(name = "frame")
+    private Long frame;
+
+    @Column(name = "bitrate")
+    private Long bitrate;
+
     @Column(name = "release_year")
     private Integer releaseYear;
 
-    @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
+    @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinColumn(name = "audio_file_id", nullable = false)
-    private MediaEntity audioFile;
+    private StreamingMediaEntity streamingMedia;
 
     @ManyToMany
     @JoinTable(name = "song_artist"
             , joinColumns = @JoinColumn(name = "song_id")
             , inverseJoinColumns = @JoinColumn(name = "artist_id"))
-    private Set<ArtistEntity> artists = new HashSet<>();
+    private Set<ArtistEntity> artists;
 
 
     @ManyToMany
@@ -64,13 +70,13 @@ public class SongEntity extends BaseEntity {
 
     @Builder(toBuilder = true)
     public SongEntity(AlbumEntity album, String title, Integer duration,
-                      Integer releaseYear, MediaEntity audioFile, Set<ArtistEntity> artists,
+                      Integer releaseYear, StreamingMediaEntity streamingMedia, Set<ArtistEntity> artists,
                       Set<TagEntity> tags, LyricsEntity lyrics) {
         this.album = album;
         this.title = title;
         this.duration = duration;
         this.releaseYear = releaseYear;
-        this.audioFile = audioFile;
+        this.streamingMedia = streamingMedia;
         this.artists = artists != null ? artists : new HashSet<>();
         this.tags = tags != null ? tags : new HashSet<>();
         this.lyrics = lyrics;

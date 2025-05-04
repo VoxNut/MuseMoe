@@ -8,6 +8,8 @@ public class UserSessionManager {
     private static UserSessionManager instance;
 
     private UserDTO currentUser;
+    private String authToken;
+
 
     private UserSessionManager() {
     }
@@ -19,16 +21,18 @@ public class UserSessionManager {
         return instance;
     }
 
-    public void initializeSession(UserDTO user) {
+    public void initializeSession(UserDTO user, String token) {
         this.currentUser = user;
+        this.authToken = token;
     }
 
     public boolean isLoggedIn() {
-        return currentUser != null;
+        return currentUser != null && authToken != null;
     }
 
 
     public void clearSession() {
+        this.authToken = null;
         this.currentUser = null;
     }
 

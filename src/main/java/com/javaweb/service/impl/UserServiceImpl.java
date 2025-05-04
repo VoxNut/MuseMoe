@@ -12,7 +12,8 @@ import com.javaweb.repository.UserRepository;
 import com.javaweb.service.PasswordService;
 import com.javaweb.service.UserService;
 import com.javaweb.utils.SecurityUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,20 +24,15 @@ import java.util.Set;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
+@Slf4j
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordService passwordService;
     private final UserConverter userConverter;
-
-    @Autowired
-    public UserServiceImpl(UserRepository userRepository, RoleRepository roleRepository, PasswordService passwordService, UserConverter userConverter) {
-        this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
-        this.passwordService = passwordService;
-        this.userConverter = userConverter;
-    }
+    private final GoogleDriveService googleDriveService;
 
 
     @Override
@@ -95,18 +91,27 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void updateLastLoginTime() {
+    public void updateLastLoginTime(LocalDateTime lastLogin) {
         Long currentUserId = Objects.requireNonNull(SecurityUtils.getPrincipal()).getId();
         UserEntity user = userRepository.findById(currentUserId)
                 .orElseThrow(() -> new EntityNotFoundException("User with not found!"));
 
-        user.setLastLogin(LocalDateTime.now());
+        user.setLastLogin(lastLogin);
         userRepository.save(user);
     }
 
     @Override
     public Boolean saveSignUpUser(UserRequestDTO userRequestDTO) {
         try {
+            if (userRequestDTO.getUserAvatar() != null && !userRequestDTO.getUserAvatar().isEmpty()) {
+                String driveFileId = googleDriveService.uploadImageFile(
+                        userRequestDTO.getUserAvatar(),
+                        GoogleDriveService.AVATAR_FOLDER_ID
+                );
+                userRequestDTO.setGoogleDriveFileId(driveFileId);
+                log.info("Uploaded artist profile image to Google Drive with ID: {}", driveFileId);
+            }
+
             userRequestDTO.setPassword(passwordService.encodePassword(userRequestDTO.getPassword()));
             UserEntity UserEntity = userConverter.toEntity(userRequestDTO);
             userRepository.save(UserEntity);

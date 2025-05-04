@@ -378,7 +378,7 @@ public class RecentSearchDropdown extends JPanel implements ThemeChangeListener 
             infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
 
             // Song title
-            JLabel titleLabel = new JLabel(song.getSongTitle());
+            JLabel titleLabel = new JLabel(song.getTitle());
             titleLabel.setFont(FontUtil.getSpotifyFont(Font.BOLD, 14));
             titleLabel.setForeground(isSelected ? accentColor : textColor);
             titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -392,7 +392,7 @@ public class RecentSearchDropdown extends JPanel implements ThemeChangeListener 
             artistLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
             // Song album - NEW
-            String albumName = song.getAlbum() != null ? song.getAlbum() : "Unknown Album";
+            String albumName = song.getSongAlbum() != null ? song.getSongAlbum() : "Unknown Album";
             JLabel albumLabel = new JLabel(albumName);
             albumLabel.setFont(FontUtil.getSpotifyFont(Font.ITALIC, 11));
             albumLabel.setForeground(isSelected ?

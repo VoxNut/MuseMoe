@@ -1,26 +1,23 @@
 package com.javaweb.converter;
 
+import com.google.api.services.drive.model.File;
 import com.javaweb.entity.*;
-import com.javaweb.enums.MediaType;
-import com.javaweb.exception.EntityNotFoundException;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.model.request.SongRequestDTO;
 import com.javaweb.repository.AlbumRepository;
 import com.javaweb.repository.ArtistRepository;
-import com.javaweb.repository.MediaRepository;
-import com.javaweb.utils.FileUtil;
-import com.javaweb.utils.StringUtils;
+import com.javaweb.service.StreamingMediaService;
+import com.javaweb.service.impl.GoogleDriveService;
+import com.javaweb.utils.SecurityUtils;
+import com.javaweb.utils.StreamingAudioPlayer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jaudiotagger.audio.AudioFile;
-import org.jaudiotagger.audio.AudioFileIO;
-import org.jaudiotagger.tag.FieldKey;
-import org.jaudiotagger.tag.Tag;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
 
-import java.io.File;
-import java.util.Set;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Component
@@ -28,10 +25,14 @@ import java.util.stream.Collectors;
 @Slf4j
 public class SongConverter implements EntityConverter<SongEntity, SongRequestDTO, SongDTO> {
 
+
     private final ModelMapper modelMapper;
     private final AlbumRepository albumRepository;
     private final ArtistRepository artistRepository;
-    private final MediaRepository mediaRepository;
+    private final GoogleDriveService googleDriveService;
+    private final StreamingAudioPlayer streamingPlayer;
+    private final StreamingMediaService streamingMediaService;
+
 
     @Override
     public SongDTO toDTO(SongEntity entity) {
@@ -40,19 +41,34 @@ public class SongConverter implements EntityConverter<SongEntity, SongRequestDTO
         }
         SongDTO dto = modelMapper.map(entity, SongDTO.class);
 
-        dto.setSongTitle(entity.getTitle());
-        dto.setAudioFilePath(entity.getAudioFile().getFileUrl());
-        if (entity.getAlbum() != null) {
-            dto.setAlbum(entity.getAlbum().getTitle());
+        if (entity.getStreamingMedia() != null) {
+            dto.setDriveFileId(entity.getStreamingMedia().getGoogleDriveId());
+            dto.setWebContentLink(entity.getStreamingMedia().getWebContentLink());
         }
+
+        if (entity.getAlbum() != null) {
+            dto.setSongAlbum(entity.getAlbum().getTitle());
+            StreamingMediaEntity coverArt = entity.getAlbum().getCoverArt();
+            if (entity.getAlbum().getCoverArt() != null) {
+                dto.setAlbumArtId(coverArt.getGoogleDriveId());
+            }
+        }
+
         if (entity.getArtists() != null) {
             dto.setSongArtist(entity.getArtists().stream()
                     .map(ArtistEntity::getStageName)
                     .collect(Collectors.joining(", ")));
         }
 
+        if (entity.getFrame() != null && entity.getDuration() != null) {
+            dto.setSongLength(formatDuration(dto));
+            dto.setLengthInMilliseconds(dto.getDuration() * 1000);
+            dto.setFrameRatePerMilliseconds(getFrameRatePerMilliseconds(dto));
+        }
+
         return dto;
     }
+
 
     @Override
     public SongEntity toEntity(SongRequestDTO request) {
@@ -64,33 +80,42 @@ public class SongConverter implements EntityConverter<SongEntity, SongRequestDTO
             SongEntity entity = new SongEntity();
 
             // Handle the audio file
-            if (request.getFile_url() != null) {
-                MediaEntity mediaEntity;
+            if (request.getGoogleDriveFileId() != null) {
 
-                File file = new File(request.getFile_url());
-                if (file.exists()) {
+                File driveFile = googleDriveService.getFileMetadata(request.getGoogleDriveFileId());
 
-                    mediaEntity = new MediaEntity(request.getFile_url(), MediaType.AUDIO, FileUtil.getFileSize(file));
+                StreamingMediaEntity mediaEntity = streamingMediaService.getOrCreateStreamingMedia(
+                        driveFile.getId(),
+                        driveFile.getName(),
+                        driveFile.getMimeType(),
+                        driveFile.getSize(),
+                        driveFile.getWebContentLink()
+                );
 
-                    // Extract metadata from file
-                    AudioFile audioFile = AudioFileIO.read(file);
-                    Tag tag = audioFile.getTag();
+                entity.setStreamingMedia(mediaEntity);
 
-                    // Set song metadata from ID3 tags
-                    entity.setTitle(getTagValue(tag, FieldKey.TITLE, "Untitled"));
+                SongDTO tempSongDTO = new SongDTO();
+                tempSongDTO.setDriveFileId(driveFile.getId());
 
-                    try {
-                        String year = getTagValue(tag, FieldKey.YEAR, null);
-                        entity.setReleaseYear(Integer.valueOf(year));
-                    } catch (Exception e) {
-                        log.warn("Could not parse year from tag", e);
+                try {
+                    streamingPlayer.extractMetadata(tempSongDTO);
+
+                    entity.setTitle(tempSongDTO.getTitle());
+
+                    if (tempSongDTO.getSongLyrics() != null && !tempSongDTO.getSongLyrics().isEmpty()) {
+                        entity.setLyrics(new LyricsEntity(tempSongDTO.getSongLyrics()));
+                    } else {
+                        entity.setLyrics(new LyricsEntity(""));
                     }
 
-                    entity.setLyrics(new LyricsEntity(getTagValue(tag, FieldKey.LYRICS, "")));
-
-                    entity.setDuration(audioFile.getAudioHeader().getTrackLength());
-
-                    entity.setAudioFile(mediaEntity);
+                    entity.setDuration(tempSongDTO.getDuration());
+                    entity.setReleaseYear(tempSongDTO.getReleaseYear());
+                    entity.setBitrate(tempSongDTO.getBitrate());
+                    entity.setFrame(tempSongDTO.getFrame());
+                } catch (Exception e) {
+                    log.warn("Could not extract full metadata from Google Drive file", e);
+                    entity.setTitle(driveFile.getName());
+                    entity.setDuration(0);
                 }
             }
 
@@ -99,21 +124,21 @@ public class SongConverter implements EntityConverter<SongEntity, SongRequestDTO
             entity.setExplicitContent(0);
 
 
-            if (request.getArtistRequestDTOS() != null) {
-                Set<ArtistEntity> artists = request.getArtistRequestDTOS()
-                        .stream()
-                        .map(artistRequestDTO ->
-                                artistRepository.findById(artistRequestDTO.getId())
-                                        .orElseGet(null))
-                        .collect(Collectors.toSet());
-                entity.setArtists(artists);
-            }
+            List<ArtistEntity> artists = artistRepository.findAllById(request.getArtistIds());
+            entity.setArtists(new HashSet<>(artists));
 
-            if (request.getAlbumRequestDTO() != null) {
-                AlbumEntity album = albumRepository.findById(request.getAlbumRequestDTO().getId())
-                        .orElseThrow(() -> new EntityNotFoundException("Album Not Found!"));
-                entity.setAlbum(album);
-            }
+            AlbumEntity album = albumRepository.findById(request.getAlbumId())
+                    .orElseGet(
+                            () -> AlbumEntity.builder()
+                                    .title(entity.getTitle())
+                                    .artist(artistRepository
+                                            .findByUserId(Objects.requireNonNull(SecurityUtils.getPrincipal().getId()))
+                                            .orElseGet(null))
+                                    .releaseYear(entity.getReleaseYear())
+                                    .coverArt(entity.getStreamingMedia())
+                                    .build());
+
+            entity.setAlbum(album);
 
 
             return entity;
@@ -123,8 +148,15 @@ public class SongConverter implements EntityConverter<SongEntity, SongRequestDTO
         }
     }
 
-    private String getTagValue(Tag tag, FieldKey key, String defaultValue) {
-        String value = tag.getFirst(key);
-        return StringUtils.isBlank(value) ? defaultValue : value;
+    private String formatDuration(SongDTO songDTO) {
+        long minutes = songDTO.getDuration() / 60;
+        long remainingSeconds = songDTO.getDuration() % 60;
+        return String.format("%02d:%02d", minutes, remainingSeconds);
     }
+
+    private double getFrameRatePerMilliseconds(SongDTO songDTO) {
+        return (double) songDTO.getFrame() / songDTO.getLengthInMilliseconds();
+    }
+
+
 }

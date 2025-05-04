@@ -3,27 +3,25 @@ package com.javaweb.view.mini_musicplayer.event;
 
 import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 import javax.swing.*;
 
 // Mediator design pattern
 @Slf4j
+@Component
+@RequiredArgsConstructor
 public class MusicPlayerMediator {
-    private static MusicPlayerMediator instance;
+    @Getter
     private final PlayerEventPublisher eventPublisher;
 
     private MusicPlayerMediator() {
         eventPublisher = new PlayerEventPublisher();
     }
 
-
-    public static synchronized MusicPlayerMediator getInstance() {
-        if (instance == null) {
-            instance = new MusicPlayerMediator();
-        }
-        return instance;
-    }
 
     public void subscribeToPlayerEvents(PlayerEventListener listener) {
         eventPublisher.addObserver(listener);

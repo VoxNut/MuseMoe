@@ -25,7 +25,8 @@ public class PlaylistConverter implements EntityConverter<PlaylistEntity, Playli
 
         // Convert entities to DTOs while preserving position information
         res.setSongs(
-                entity.getPlaylistSongEntities()
+                entity
+                        .getPlaylistSongEntities()
                         .stream()
                         .map(playlistSongEntity -> {
                             SongDTO songDTO = songConverter.toDTO(playlistSongEntity.getSong());

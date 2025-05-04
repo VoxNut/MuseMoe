@@ -87,7 +87,7 @@ public class SongSelectionPanel extends JPanel implements ThemeChangeListener {
         @Override
         public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
             SongDTO song = (SongDTO) value;
-            String displayText = String.format("%s - %s", song.getSongTitle(), song.getSongArtist());
+            String displayText = String.format("%s - %s", song.getTitle(), song.getSongArtist());
             JLabel label = (JLabel) super.getListCellRendererComponent(list, displayText, index, isSelected, cellHasFocus);
             label.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
 

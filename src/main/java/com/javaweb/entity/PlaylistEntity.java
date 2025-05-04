@@ -25,7 +25,7 @@ public class PlaylistEntity extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cover_image_id")
-    private MediaEntity coverImage;
+    private StreamingMediaEntity coverImage;
 
     @Enumerated(EnumType.STRING)
     private Visibility visibility = Visibility.PRIVATE;
@@ -40,7 +40,8 @@ public class PlaylistEntity extends BaseEntity {
 
     @OneToMany(mappedBy = "playlist"
             , cascade = CascadeType.ALL
-            , orphanRemoval = true)
+            , orphanRemoval = true
+            , fetch = FetchType.EAGER)
     private List<PlaylistSongEntity> playlistSongEntities;
 
 

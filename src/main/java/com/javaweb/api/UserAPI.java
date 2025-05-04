@@ -86,9 +86,9 @@ public class UserAPI {
     }
 
     @PutMapping("/last_login")
-    public ResponseEntity<Void> updateLastLoginTime() {
+    public ResponseEntity<Void> updateLastLoginTime(@RequestBody UserDTO userDTO) {
         try {
-            userService.updateLastLoginTime();
+            userService.updateLastLoginTime(userDTO.getLastLoginDate());
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -96,9 +96,9 @@ public class UserAPI {
     }
 
     @PutMapping("/reset_password")
-    public ResponseEntity<Boolean> resetPassword(@RequestParam Map<String, Object> params) {
+    public ResponseEntity<Boolean> resetPassword(@RequestBody UserDTO userDTO) {
         try {
-            boolean isUpdated = userService.resetPassword(Long.valueOf(String.valueOf(params.get("id"))), String.valueOf(params.get("password")));
+            boolean isUpdated = userService.resetPassword(userDTO.getId(), userDTO.getPassword());
             return ResponseEntity.ok(isUpdated);
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
@@ -107,7 +107,7 @@ public class UserAPI {
 
 
     @PostMapping("/register")
-    public ResponseEntity<Boolean> registerUser(@RequestBody UserRequestDTO userRequestDTO) {
+    public ResponseEntity<Boolean> registerUser(@ModelAttribute UserRequestDTO userRequestDTO) {
         try {
             boolean res = userService.saveSignUpUser(userRequestDTO);
             return ResponseEntity.ok(res);
@@ -115,6 +115,7 @@ public class UserAPI {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
     }
+
 
     @PostMapping
     public ResponseEntity<Void> saveUser(@RequestBody UserRequestDTO userRequestDTO) {

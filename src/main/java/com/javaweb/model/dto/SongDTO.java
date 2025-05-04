@@ -1,33 +1,48 @@
 package com.javaweb.model.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.mpatric.mp3agic.Mp3File;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 import java.awt.image.BufferedImage;
-import java.util.Date;
 import java.util.Objects;
 
 @Getter
 @Setter
-public class SongDTO extends AbstractDTO<SongDTO> {
+@NoArgsConstructor
+@AllArgsConstructor
+@SuperBuilder
+public class SongDTO extends AbstractDTO {
 
-    private String songTitle;
+    private String title;
     private String songArtist;
-    private String album;
+    private String songAlbum;
     private String songLength;
+    private Integer duration;
+    private Long frame;
+    private Long bitrate;
     private String genre;
-    private Date releaseDate;
-    private String audioFilePath;
+    private Integer releaseYear;
+    private String songLyrics;
+    private Integer playCount;
+
     private double frameRatePerMilliseconds;
-    private int playCount;
+    private int lengthInMilliseconds;
+
     private Integer position;
 
-    @JsonIgnore
-    private Mp3File mp3File;
+
+    private String driveFileId;
+    private String webContentLink;
+
+    private String albumArtId;
+
     @JsonIgnore
     private BufferedImage songImage;
+
 
     @Override
     public boolean equals(Object o) {
@@ -37,13 +52,13 @@ public class SongDTO extends AbstractDTO<SongDTO> {
 
         SongDTO that = (SongDTO) o;
 
-        return this.songTitle.equals(that.songTitle)
-                && this.audioFilePath.equals(that.audioFilePath);
+        return this.title.equals(that.title)
+                && this.driveFileId.equals(that.driveFileId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(songTitle, songArtist, audioFilePath);
+        return Objects.hash(title, songArtist, driveFileId);
     }
 
 

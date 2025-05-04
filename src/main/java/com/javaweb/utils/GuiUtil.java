@@ -60,11 +60,9 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-
 public class GuiUtil {
 
     private static final Map<String, BufferedImage> imageCache = new ConcurrentHashMap<>();
-
 
     public static void formatTable(JTable table) {
         // Add table styling
@@ -1170,9 +1168,14 @@ public class GuiUtil {
         return new ImageIcon(createRoundedCornerImage(image, cornerRadius, width, height));
     }
 
+
     public static JLabel createRoundedCornerImageLabel(BufferedImage image, int cornerRadius, int width, int height) {
         JLabel label = new JLabel();
-        label.setIcon(createRoundedCornerImageIcon(image, cornerRadius, width, height));
+        if (image != null) {
+            label.setIcon(createRoundedCornerImageIcon(image, cornerRadius, width, height));
+        } else {
+            label.setIcon(createRoundedCornerImageIcon(AppConstant.DEFAULT_COVER_PATH, cornerRadius, width, height));
+        }
         return label;
     }
 
@@ -1964,20 +1967,18 @@ public class GuiUtil {
         return errorLabel;
     }
 
+
     public static JLabel createUserAvatar(UserDTO user, int size, Color backgroundColor, Color textColor) {
-        BufferedImage avatarImage = null;
+
+        BufferedImage avatarImage = user.getAvatarImage();
         boolean useDefaultAvatar = false;
 
-        try {
-            if (user.getAvatar() != null) {
-                BufferedImage originalImage = ImageIO.read(new File(user.getAvatar().getFileUrl()));
-                avatarImage = createSmoothCircularAvatar(originalImage, size);
-            } else {
-                useDefaultAvatar = true;
-            }
-        } catch (IOException e) {
+        if (avatarImage != null) {
+            avatarImage = createSmoothCircularAvatar(avatarImage, size);
+        } else {
             useDefaultAvatar = true;
         }
+
 
         if (useDefaultAvatar) {
             avatarImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
@@ -2011,21 +2012,17 @@ public class GuiUtil {
 
     public static JLabel createArtistAvatar(ArtistDTO artist, int size) {
 
-        BufferedImage avatarImage;
+        BufferedImage avatarImage = artist.getProfileImage();
 
         try {
-            // Try to load the artist's profile picture
-            if (artist.getProfilePicture() != null) {
-                BufferedImage originalImage = ImageIO.read(new File(artist.getProfilePicture()));
-                avatarImage = createSmoothCircularAvatar(originalImage, size);
+            if (avatarImage != null) {
+                avatarImage = createSmoothCircularAvatar(avatarImage, size);
             } else {
-                // Create default avatar with initial
                 avatarImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
                 Graphics2D g2d = avatarImage.createGraphics();
 
                 configureGraphicsForHighQuality(g2d);
 
-                // Fill background circle
                 g2d.setColor(ThemeManager.getInstance().getBackgroundColor());
                 g2d.fillOval(0, 0, size, size);
 

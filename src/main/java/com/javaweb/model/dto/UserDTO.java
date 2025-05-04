@@ -1,25 +1,37 @@
 package com.javaweb.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.javaweb.enums.AccountStatus;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
+import java.awt.image.BufferedImage;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
 @Getter
 @Setter
-public class UserDTO extends AbstractDTO<UserDTO> implements Comparable<UserDTO> {
-    private Long id;
+@AllArgsConstructor
+@NoArgsConstructor
+@SuperBuilder
+public class UserDTO extends AbstractDTO implements Comparable<UserDTO> {
     private String username;
     private String password;
     private String fullName;
     private String email;
     private AccountStatus accountStatus;
-    private MediaDTO avatar;
+    private StreamingMediaDTO avatar;
     private Set<String> roles = new HashSet<>();
     private String role;
     private String preferredLanguage;
+    private LocalDateTime lastLoginDate;
+    private String avatarId;
+    @JsonIgnore
+    private BufferedImage avatarImage;
 
 
     @Override

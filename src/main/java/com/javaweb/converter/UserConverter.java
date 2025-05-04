@@ -1,32 +1,35 @@
 package com.javaweb.converter;
 
-import com.javaweb.constant.AppConstant;
-import com.javaweb.entity.MediaEntity;
+import com.google.api.services.drive.model.File;
 import com.javaweb.entity.RoleEntity;
+import com.javaweb.entity.StreamingMediaEntity;
 import com.javaweb.entity.UserEntity;
 import com.javaweb.enums.AccountStatus;
-import com.javaweb.enums.MediaType;
 import com.javaweb.enums.RoleType;
 import com.javaweb.model.dto.UserDTO;
 import com.javaweb.model.request.UserRequestDTO;
-import com.javaweb.repository.MediaRepository;
 import com.javaweb.repository.RoleRepository;
-import com.javaweb.utils.FileUtil;
+import com.javaweb.repository.StreamingMediaRepository;
+import com.javaweb.service.StreamingMediaService;
+import com.javaweb.service.impl.GoogleDriveService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
 
-import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class UserConverter implements EntityConverter<UserEntity, UserRequestDTO, UserDTO> {
 
     private final ModelMapper modelMapper;
     private final RoleRepository roleRepository;
-    private final MediaRepository mediaRepository;
+    private final StreamingMediaRepository mediaRepository;
+    private final GoogleDriveService googleDriveService;
+    private final StreamingMediaService streamingMediaService;
 
     public UserDTO toDTO(UserEntity entity) {
         UserDTO result = modelMapper.map(entity, UserDTO.class);
@@ -38,33 +41,43 @@ public class UserConverter implements EntityConverter<UserEntity, UserRequestDTO
     }
 
 
-    public UserEntity toEntity(UserRequestDTO userRequestDTO) {
-        UserEntity result = modelMapper.map(userRequestDTO, UserEntity.class);
+    public UserEntity toEntity(UserRequestDTO request) {
+        UserEntity entity = modelMapper.map(request, UserEntity.class);
 
-        if (userRequestDTO.getAvatarPath() == null) {
-            result.setAvatar(
-                    mediaRepository.findByFileUrl(AppConstant.DEFAULT_ARTIST_PROFILE_PATH)
-                            .orElse(null)
-            );
-        } else {
-            File file = new File(userRequestDTO.getAvatarPath());
-            result.setAvatar(new MediaEntity(userRequestDTO.getAvatarPath(), MediaType.IMAGE, FileUtil.getFileSize(file)));
+
+        if (request.getGoogleDriveFileId() != null) {
+            try {
+                File driveFile = googleDriveService.getFileMetadata(request.getGoogleDriveFileId());
+
+                StreamingMediaEntity mediaEntity = streamingMediaService.getOrCreateStreamingMedia(
+                        driveFile.getId(),
+                        driveFile.getName(),
+                        driveFile.getMimeType(),
+                        driveFile.getSize(),
+                        driveFile.getWebContentLink()
+                );
+
+                entity.setAvatar(mediaEntity);
+
+            } catch (Exception e) {
+                log.error("Failed to process album cover picture from Google Drive", e);
+            }
         }
 
-        if (userRequestDTO.getRequestRoles() != null && !userRequestDTO.getRequestRoles().isEmpty()) {
-            Set<RoleEntity> roleEntities = userRequestDTO.getRequestRoles()
+        if (request.getRequestRoles() != null && !request.getRequestRoles().isEmpty()) {
+            Set<RoleEntity> roleEntities = request.getRequestRoles()
                     .stream()
                     .map(roleRepository::findOneByName)
                     .filter(Objects::nonNull)
                     .collect(Collectors.toCollection(HashSet::new));
-            result.setRoles(roleEntities);
+            entity.setRoles(roleEntities);
         } else {
             RoleEntity roleEntity = roleRepository.findOneByCode(RoleType.FREE);
-            result.setRoles(Collections.singleton(roleEntity));
+            entity.setRoles(Collections.singleton(roleEntity));
         }
-        result.setPreferredLanguage("en");
-        result.setAccountStatus(AccountStatus.ACTIVE);
-        return result;
+        entity.setPreferredLanguage("en");
+        entity.setAccountStatus(AccountStatus.ACTIVE);
+        return entity;
     }
 
 

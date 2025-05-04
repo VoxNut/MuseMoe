@@ -1,94 +1,40 @@
 package com.javaweb.view;
 
-import java.awt.BorderLayout;
-import java.awt.CardLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.KeyboardFocusManager;
-import java.awt.RenderingHints;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionAdapter;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
+import com.javaweb.App;
+import com.javaweb.constant.AppConstant;
+import com.javaweb.model.dto.*;
+import com.javaweb.utils.*;
+import com.javaweb.view.mini_musicplayer.event.MusicPlayerFacade;
+import com.javaweb.view.mini_musicplayer.event.PlayerEvent;
+import com.javaweb.view.mini_musicplayer.event.PlayerEventListener;
+import com.javaweb.view.panel.*;
+import com.javaweb.view.theme.ThemeChangeListener;
+import com.javaweb.view.theme.ThemeManager;
+import com.javaweb.view.user.UserSessionManager;
+import lombok.extern.slf4j.Slf4j;
+import net.miginfocom.swing.MigLayout;
+
+import javax.swing.*;
+import javax.swing.border.TitledBorder;
+import java.awt.*;
+import java.awt.event.*;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JLayeredPane;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JProgressBar;
-import javax.swing.JScrollPane;
-import javax.swing.JSlider;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
-import javax.swing.SwingWorker;
-import javax.swing.Timer;
-import javax.swing.UIManager;
-import javax.swing.border.TitledBorder;
-
-import com.javaweb.constant.AppConstant;
-import com.javaweb.model.dto.ArtistDTO;
-import com.javaweb.model.dto.PlaylistDTO;
-import com.javaweb.model.dto.SongDTO;
-import com.javaweb.model.dto.SongLikesDTO;
-import com.javaweb.model.dto.UserDTO;
-import com.javaweb.utils.CommonApiUtil;
-import com.javaweb.utils.FontUtil;
-import com.javaweb.utils.GuiUtil;
-import com.javaweb.utils.NetworkChecker;
-import com.javaweb.utils.StringUtils;
-import com.javaweb.view.mini_musicplayer.event.MusicPlayerFacade;
-import com.javaweb.view.mini_musicplayer.event.MusicPlayerMediator;
-import com.javaweb.view.mini_musicplayer.event.PlayerEvent;
-import com.javaweb.view.mini_musicplayer.event.PlayerEventListener;
-import com.javaweb.view.panel.CommitPanel;
-import com.javaweb.view.panel.EnhancedSpectrumVisualizer;
-import com.javaweb.view.panel.ExpandableCardPanel;
-import com.javaweb.view.panel.InstructionPanel;
-import com.javaweb.view.panel.RecentSearchDropdown;
-import com.javaweb.view.theme.ThemeChangeListener;
-import com.javaweb.view.theme.ThemeManager;
-import com.javaweb.view.user.UserSessionManager;
-
-import lombok.extern.slf4j.Slf4j;
-import net.miginfocom.swing.MigLayout;
 
 @Slf4j
 public class HomePage extends JFrame implements PlayerEventListener, ThemeChangeListener {
 
+
     private static final Dimension FRAME_SIZE = new Dimension(1024, 768);
+
+    private final MusicPlayerFacade playerFacade;
 
     private JLabel spinningDisc;
     private JPanel controlButtonsPanel;
@@ -107,7 +53,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private float scrollPosition = 0.0f;
 
     private JPanel mainPanel;
-    private final MusicPlayerFacade playerFacade;
     private JTextField searchField;
     private RecentSearchDropdown recentSearchDropdown;
     private final ImageIcon miniMuseMoeIcon;
@@ -127,13 +72,17 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private boolean commitPanelActive = false;
     private boolean instructionPanelActive = false;
 
+
     public HomePage() {
+
+        playerFacade = App.getBean(MusicPlayerFacade.class);
+        ;
+
         initializeFrame();
 
         showLoadingOverlay("Loading MuseMoe...");
 
-        playerFacade = MusicPlayerFacade.getInstance();
-        MusicPlayerMediator.getInstance().subscribeToPlayerEvents(this);
+        playerFacade.subscribeToPlayerEvents(this);
         ThemeManager.getInstance().addThemeChangeListener(this);
 
         miniMuseMoeIcon = GuiUtil.createImageIcon(AppConstant.MUSE_MOE_LOGO_PATH, 30, 30);
@@ -684,7 +633,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                     int timeInMillis = (int) (value / frameRate);
                     updateSongTimeLabel(timeInMillis);
 
-                    MusicPlayerMediator.getInstance().notifySliderDragging(value, timeInMillis);
+                    playerFacade.notifySliderDragging(value, timeInMillis);
                 }
                 SwingUtilities.invokeLater(() -> playbackSlider.setValueIsAdjusting(false));
             }
@@ -825,16 +774,16 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     }
 
     private void handleRecentSongSelected(SongDTO song) {
-        java.util.List<PlaylistDTO> playlists = CommonApiUtil.fetchAllPlaylists();
-
-        Optional<PlaylistDTO> playlistWithSong = playlists.stream()
-                .filter(playlist -> playlist.getSongs().stream()
-                .anyMatch(playlistSong -> playlistSong.getId().equals(song.getId())))
+        java.util.List<PlaylistDTO> playlists = CommonApiUtil.fetchPlaylistByUserId();
+        Optional<PlaylistDTO> playlistWithSong = playlists
+                .stream()
+                .filter(playlist -> playlist.getSongs()
+                        .stream()
+                        .anyMatch(playlistSong -> playlistSong.getId().equals(song.getId())))
                 .findFirst();
-
         playerFacade.setCurrentPlaylist(playlistWithSong.orElse(null));
         playerFacade.loadSong(song);
-        searchField.setText(song.getSongTitle() + " - " + (song.getSongArtist() != null ? song.getSongArtist() : "Unknown"));
+        searchField.setText(song.getTitle() + " - " + (song.getSongArtist() != null ? song.getSongArtist() : "Unknown"));
 
     }
 
@@ -848,10 +797,11 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 // Show search results in a popup or another part of the UI
                 SongDTO songDTO = searchResults.getFirst();
                 //For MiniMusicPlayerGUI.
-                java.util.List<PlaylistDTO> playlists = CommonApiUtil.fetchAllPlaylists();
+                java.util.List<PlaylistDTO> playlists = CommonApiUtil.fetchPlaylistByUserId();
                 Optional<PlaylistDTO> playlistWithSong = playlists.stream()
-                        .filter(playlist -> playlist.getSongs().stream()
-                        .anyMatch(playlistSong -> playlistSong.getId().equals(songDTO.getId())))
+                        .filter(playlist -> playlist.getSongs()
+                                .stream()
+                                .anyMatch(playlistSong -> playlistSong.getId().equals(songDTO.getId())))
                         .findFirst();
 
                 playerFacade.setCurrentPlaylist(playlistWithSong.orElse(null));
@@ -896,8 +846,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
     public void updatePlaybackSlider(SongDTO song) {
         // Set slider range based on total frames instead of milliseconds
-        int totalFrames = song.getMp3File().getFrameCount();
-        playbackSlider.setMaximum(totalFrames);
+        long totalFrames = song.getFrame();
+        playbackSlider.setMaximum((int) totalFrames);
 
         labelEnd.setText(song.getSongLength());
         // Turn on or off this for octagon/ball thumb
@@ -941,13 +891,13 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     }
 
     public void updateScrollingText(SongDTO song) {
-        String text = song.getSongTitle() + " - " + song.getSongArtist() + " ";
+        String text = song.getTitle() + " - " + song.getSongArtist() + " ";
         scrollingLabel.setText(text);
         scrollingLabel.setVisible(true);
     }
 
-    public void setPlaybackSliderValue(int frame) {
-        playbackSlider.setValue(frame);
+    public void setPlaybackSliderValue(long frame) {
+        playbackSlider.setValue((int) frame);
     }
 
     public void updateSpinningDisc(SongDTO song) {
@@ -957,8 +907,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             spinningDisc.setIcon(
                     GuiUtil.createDiscImageIcon(GuiUtil.createBufferImage(AppConstant.DEFAULT_COVER_PATH), 50, 50, 7));
         }
-        int totalFrames = song.getMp3File().getFrameCount();
-        playbackSlider.setMaximum(totalFrames);
+        long totalFrames = song.getFrame();
+        playbackSlider.setMaximum((int) totalFrames);
     }
 
     // Methods to toggle play and pause buttons
@@ -1200,7 +1150,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             }
 
             // Fetch liked songs
-            java.util.List<SongDTO> likedSongs = CommonApiUtil.findAllSongLikes()
+            List<SongLikesDTO> songLikesDTOList = CommonApiUtil.findAllSongLikes();
+            List<SongDTO> likedSongs = songLikesDTOList
                     .stream()
                     .map(SongLikesDTO::getSongDTO)
                     .toList();
@@ -1251,7 +1202,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
             // Fetch liked songs
             java.util.List<SongDTO> downloadedSongs = CommonApiUtil.fetchUserDownloadedSongs();
-            if (downloadedSongs.isEmpty()) {
+            if (downloadedSongs == null || downloadedSongs.isEmpty()) {
                 container.add(GuiUtil.createErrorLabel("No downloaded songs"));
                 return;
             }
@@ -1298,7 +1249,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         JLabel countLabel = GuiUtil.createLabel(
                 likedSongsPlaylist.getSongs().size() + " song"
-                + (likedSongsPlaylist.getSongs().size() != 1 ? "s" : ""),
+                        + (likedSongsPlaylist.getSongs().size() != 1 ? "s" : ""),
                 Font.PLAIN, 12
         );
         countLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -1319,7 +1270,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             @Override
             public void mouseClicked(MouseEvent e) {
                 log.info("Liked Songs collection clicked");
-//                playerFacade.setCurrentPlaylist(likedSongsPlaylist);
+                playerFacade.setCurrentPlaylist(likedSongsPlaylist);
                 if (!likedSongsPlaylist.getSongs().isEmpty()) {
                     playerFacade.loadSong(likedSongsPlaylist.getSongs().getFirst());
                 }
@@ -1333,18 +1284,15 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         JPanel playlistPanel = GuiUtil.createPanel(new BorderLayout(10, 0));
         playlistPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         playlistPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
-
         JLabel coverLabel;
-        if (playlist.getSongs() != null && !playlist.getSongs().isEmpty()
-                && playlist.getSongs().getFirst().getSongImage() != null) {
-            coverLabel = GuiUtil.createRoundedCornerImageLabel(
-                    playlist.getSongs().getFirst().getSongImage(), 15, 40, 40);
+        if (!playlist.getSongs().isEmpty()) {
+            SongDTO songDTO = playlist.getSongs().getFirst();
+            playerFacade.getImageMediaUtil().populateSongImage(songDTO);
+            coverLabel = GuiUtil.createRoundedCornerImageLabel(songDTO.getSongImage(), 15, 40, 40);
         } else {
-
-            //Replace with actual default icon
-            coverLabel = GuiUtil.createRoundedCornerImageLabel(
-                    AppConstant.DEFAULT_COVER_PATH, 15, 40, 40);
+            coverLabel = GuiUtil.createRoundedCornerImageLabel(AppConstant.DEFAULT_COVER_PATH, 15, 40, 40);
         }
+
         // Create playlist info panel
         JPanel infoPanel = GuiUtil.createPanel();
         infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
@@ -1370,7 +1318,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             @Override
             public void mouseClicked(MouseEvent e) {
                 log.info("Playlist clicked: {}", playlist.getName());
-//                playerFacade.setCurrentPlaylist(playlist);
+                playerFacade.setCurrentPlaylist(playlist);
                 if (!playlist.getSongs().isEmpty()) {
                     playerFacade.loadSong(playlist.getSongs().getFirst());
                 }
@@ -1385,13 +1333,15 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         songPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
 
         // Create song cover
+        playerFacade.getImageMediaUtil().populateSongImage(song);
         JLabel coverLabel = GuiUtil.createRoundedCornerImageLabel(song.getSongImage(), 15, 40, 40);
+
 
         // Create song info panel
         JPanel infoPanel = GuiUtil.createPanel();
         infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
 
-        JLabel titleLabel = GuiUtil.createLabel(StringUtils.getTruncatedText(song.getSongTitle()), Font.BOLD, 12);
+        JLabel titleLabel = GuiUtil.createLabel(StringUtils.getTruncatedText(song.getTitle()), Font.BOLD, 12);
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel artistLabel = GuiUtil.createLabel(
@@ -1466,7 +1416,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 // Only handle click if it's not on the heart button
                 Component clickedComponent = SwingUtilities.getDeepestComponentAt(songPanel, e.getX(), e.getY());
                 if (clickedComponent != heartButton) {
-                    log.info("Song clicked: {}", song.getSongTitle());
+                    log.info("Song clicked: {}", song.getTitle());
                     playerFacade.loadSong(song);
                 }
             }
@@ -1482,6 +1432,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         artistPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
 
         // Create artist avatar
+        playerFacade.getImageMediaUtil().populateArtistProfile(artist);
         JLabel avatarLabel = GuiUtil.createArtistAvatar(artist, 40);
 
         // Create artist info panel
@@ -1513,7 +1464,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         logoutItem.addActionListener(e -> logout());
         profileItem.addActionListener(e -> {/* navigate to profile */
         });
-
+        playerFacade.getImageMediaUtil().populateUserProfile(getCurrentUser());
         return GuiUtil.createInteractiveUserAvatar(
                 getCurrentUser(),
                 40,
@@ -1849,11 +1800,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                     enablePauseButtonDisablePlayButton();
                 }
 
-                case PLAYBACK_STARTED ->
-                    enablePauseButtonDisablePlayButton();
+                case PLAYBACK_STARTED -> enablePauseButtonDisablePlayButton();
 
-                case PLAYBACK_PAUSED ->
-                    enablePlayButtonDisablePauseButton();
+                case PLAYBACK_PAUSED -> enablePlayButtonDisablePauseButton();
 
                 case PLAYBACK_PROGRESS -> {
                     int[] data = (int[]) event.data();
@@ -1864,11 +1813,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                     }
                 }
                 // Starting to show the playback slider in the Home Page.
-                case HOME_PAGE_SLIDER_CHANGED ->
-                    showPlaybackSlider();
+                case HOME_PAGE_SLIDER_CHANGED -> showPlaybackSlider();
 
-                case SLIDER_CHANGED ->
-                    setPlaybackSliderValue((int) event.data());
+                case SLIDER_CHANGED -> setPlaybackSliderValue((int) event.data());
 
                 case SLIDER_DRAGGING -> {
                     int[] data = (int[]) event.data();
@@ -1880,8 +1827,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                     updateSongTimeLabel(data[1]);
                 }
 
-                case SONG_LIKED_CHANGED ->
-                    refreshLikedSongsPanel();
+                case SONG_LIKED_CHANGED -> refreshLikedSongsPanel();
 
                 case TOGGLE_CAVA -> {
                     if (visualizerActive && visualizerPanel != null) {
@@ -1897,7 +1843,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     @Override
     public void dispose() {
         ThemeManager.getInstance().removeThemeChangeListener(this);
-        MusicPlayerMediator.getInstance().unsubscribeFromPlayerEvents(this);
+        playerFacade.unsubscribeFromPlayerEvents(this);
         super.dispose();
     }
 

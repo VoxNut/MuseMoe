@@ -2,15 +2,22 @@ package com.javaweb.model.request;
 
 import com.javaweb.model.dto.AbstractDTO;
 import com.javaweb.model.dto.RoleDTO;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Date;
 import java.util.Set;
 
 @Getter
 @Setter
-public class UserRequestDTO extends AbstractDTO<UserRequestDTO> {
+@SuperBuilder
+@NoArgsConstructor
+@AllArgsConstructor
+public class UserRequestDTO extends AbstractDTO {
     private Long id;
     private String username;
     private String password;
@@ -18,7 +25,6 @@ public class UserRequestDTO extends AbstractDTO<UserRequestDTO> {
     private String fullName;
     private String phone;
     private Integer status;
-    private String avatarPath;
     private Date createdDate;
     private Date modifiedDate;
     private String createdBy;
@@ -26,6 +32,8 @@ public class UserRequestDTO extends AbstractDTO<UserRequestDTO> {
     private String role;
     private Set<RoleDTO> roles;
     private Set<String> requestRoles;
+    private String googleDriveFileId;
+    private MultipartFile userAvatar;
 
 
 }

@@ -21,4 +21,7 @@ public interface SongService {
     List<SongDTO> findAllSongs();
 
     boolean createSong(SongRequestDTO songRequestDTO);
+
+
+    int importSongsFromGoogleDrive();
 }

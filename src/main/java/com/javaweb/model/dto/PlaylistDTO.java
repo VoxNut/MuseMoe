@@ -2,15 +2,21 @@ package com.javaweb.model.dto;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 import java.util.List;
 import java.util.Objects;
 
 @Getter
 @Setter
-public class PlaylistDTO extends AbstractDTO<PlaylistDTO> {
+@NoArgsConstructor
+@AllArgsConstructor
+@SuperBuilder
+public class PlaylistDTO extends AbstractDTO {
 
     private String name;
     private String description;

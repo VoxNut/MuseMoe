@@ -4,12 +4,14 @@ import com.javaweb.constant.AppConstant;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.model.dto.UserDTO;
 import lombok.Getter;
+import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 @Getter
+@Component
 public class AdvertisementManager {
 
     private static AdvertisementManager instance;

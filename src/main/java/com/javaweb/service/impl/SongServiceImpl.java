@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,6 +31,8 @@ public class SongServiceImpl implements SongService {
 
     private final TagService tagService;
 
+    private final GoogleDriveService googleDriveService;
+
     @Override
     public SongDTO findOneByTitle(String title) {
         SongDTO song = songConverter.toDTO(
@@ -41,10 +44,15 @@ public class SongServiceImpl implements SongService {
 
     @Override
     public List<SongDTO> findAllSongsLike(String title) {
-        return songRepository.findAllSongsLike(title)
-                .stream()
-                .map(songConverter::toDTO)
-                .collect(Collectors.toList());
+        try {
+            List<SongDTO> songDTOS = songRepository.findAllSongsLike(title)
+                    .stream()
+                    .map(songConverter::toDTO)
+                    .collect(Collectors.toList());
+            return songDTOS;
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
     }
 
     @Override
@@ -60,28 +68,72 @@ public class SongServiceImpl implements SongService {
 
     @Override
     public SongDTO findSongByUrl(String songUrl) {
-        return songRepository.findSongByUrl(songUrl)
+        return songRepository.findByStreamingMediaWebContentLink(songUrl)
                 .map(songConverter::toDTO)
                 .orElseThrow(() -> new EntityNotFoundException("Song with URL " + songUrl + " not found"));
     }
 
     @Override
     public List<SongDTO> findAllSongs() {
-        return songRepository.findAll()
-                .stream()
-                .map(songConverter::toDTO)
-                .collect(Collectors.toList());
+        try {
+            return songRepository.findAll()
+                    .stream()
+                    .map(songConverter::toDTO)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
     }
 
     @Override
     public boolean createSong(SongRequestDTO songRequestDTO) {
-        SongEntity song = songConverter.toEntity(songRequestDTO);
         try {
+
+            songRequestDTO.setGoogleDriveFileId(
+                    googleDriveService.uploadSongFile(songRequestDTO.getMp3File()));
+
+            SongEntity song = songConverter.toEntity(songRequestDTO);
             SongEntity res = songRepository.save(song);
             tagService.generateTagsForSong(res);
             return true;
         } catch (Exception e) {
             return false;
         }
+    }
+
+    public int importSongsFromGoogleDrive() {
+        List<GoogleDriveService.DriveFileBundle> songBundles = googleDriveService.loadAllSongsWithMetadata();
+
+        int importedCount = 0;
+
+        for (GoogleDriveService.DriveFileBundle bundle : songBundles) {
+            try {
+                // Create song request DTO
+                SongRequestDTO songRequestDTO = new SongRequestDTO();
+
+                // Set Google Drive file ID
+                songRequestDTO.setGoogleDriveFileId(bundle.getSongFile().getId());
+
+                // Create song entity
+                SongEntity song = songConverter.toEntity(songRequestDTO);
+
+                // Save song
+                SongEntity savedSong = songRepository.save(song);
+
+                try {
+                    tagService.generateTagsForSong(savedSong);
+                } catch (Exception e) {
+                    log.warn("Failed to generate tags for song {}: {}", savedSong.getTitle(), e.getMessage());
+                }
+
+                importedCount++;
+
+            } catch (Exception e) {
+                log.error("Failed to import song {}: {}", bundle.getSongFile().getName(), e.getMessage(), e);
+            }
+        }
+
+        log.info("Imported {} songs from Google Drive out of {} found", importedCount, songBundles.size());
+        return importedCount;
     }
 }

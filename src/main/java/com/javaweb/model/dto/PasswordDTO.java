@@ -1,11 +1,17 @@
 package com.javaweb.model.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 @Getter
 @Setter
-public class PasswordDTO extends AbstractDTO<PasswordDTO> {
+@NoArgsConstructor
+@AllArgsConstructor
+@SuperBuilder
+public class PasswordDTO extends AbstractDTO {
 
     private static final long serialVersionUID = 8835146939192307340L;
 

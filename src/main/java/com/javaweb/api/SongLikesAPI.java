@@ -21,7 +21,7 @@ public class SongLikesAPI {
     @PostMapping("/song_id")
     public ResponseEntity<Boolean> createNewSongLikes(@RequestBody SongLikesDTO songLikesDTO) {
         try {
-            boolean res = songLikesService.createSongLikes(songLikesDTO.getId());
+            boolean res = songLikesService.createSongLikes(songLikesDTO.getSongId());
             return ResponseEntity.ok(res);
         } catch (Exception e) {
             e.printStackTrace();

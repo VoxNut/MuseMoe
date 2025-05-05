@@ -274,15 +274,18 @@ public class GuiUtil {
         progressBar.setForeground(foregroundColor);
 
         // Remove borders
-        progressBar.setBorderPainted(false);
+        progressBar.setBorderPainted(true);
 
         // Set preferred size for a sleeker look
         progressBar.setPreferredSize(new Dimension(300, 20));
 
         // Set UI properties
-        UIManager.put("ProgressBar.arc", 999); // Very rounded corners
         UIManager.put("ProgressBar.selectionForeground", foregroundColor);
         UIManager.put("ProgressBar.selectionBackground", backgroundColor);
+
+        progressBar.setFont(FontUtil.getSpotifyFont(Font.BOLD, 14));
+        progressBar.setStringPainted(false);
+
 
         if (!progressBar.isIndeterminate()) {
             new Timer(50, e -> {
@@ -294,26 +297,7 @@ public class GuiUtil {
 
         return progressBar;
     }
-
-    public static void styleProgressBar(JProgressBar progressBar, Color backgroundColor, Color foregroundColor) {
-        // Set colors
-        progressBar.setBackground(GuiUtil.darkenColor(backgroundColor, 0.2f));
-        progressBar.setForeground(foregroundColor);
-
-        // Remove borders
-        progressBar.setBorderPainted(false);
-
-        // Set preferred size for a sleeker look
-        progressBar.setPreferredSize(new Dimension(300, 8));
-
-        // Set UI properties for rounded corners
-        UIManager.put("ProgressBar.arc", 999);
-        UIManager.put("ProgressBar.selectionForeground", foregroundColor);
-        UIManager.put("ProgressBar.selectionBackground", backgroundColor);
-
-        // Force the bar to use the new styling
-        progressBar.updateUI();
-    }
+    
 
     public static JTextField createLineInputField(int columns) {
         JTextField textField = new JTextField(columns);

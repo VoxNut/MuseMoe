@@ -1,5 +1,6 @@
 package com.javaweb.security;
 
+import com.javaweb.enums.AccountStatus;
 import com.javaweb.model.dto.MyUserDetail;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -7,6 +8,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -15,6 +17,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtTokenProvider {
@@ -25,6 +28,9 @@ public class JwtTokenProvider {
     @Value("${jwt.expiration:86400000}")
     private long jwtExpirationMs;
 
+    /**
+     * Generate a comprehensive JWT token containing extended user information
+     */
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
 
@@ -33,11 +39,25 @@ public class JwtTokenProvider {
             MyUserDetail myUserDetail = (MyUserDetail) userDetails;
             claims.put("id", myUserDetail.getId());
             claims.put("fullName", myUserDetail.getFullName());
+            claims.put("email", myUserDetail.getEmail());
+            claims.put("accountStatus", myUserDetail.getAccountStatus().name());
+
+            // Add roles/authorities as a comma-separated string
+            String authorities = userDetails.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .collect(Collectors.joining(","));
+            claims.put("roles", authorities);
+
+            // Add any other user attributes you might need
+            if (myUserDetail.getAvatarId() != null) {
+                claims.put("avatarId", myUserDetail.getAvatarId());
+            }
         }
 
         return createToken(claims, userDetails.getUsername());
     }
 
+    // Extract user details from token
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
@@ -50,10 +70,28 @@ public class JwtTokenProvider {
         return extractAllClaims(token).get("fullName", String.class);
     }
 
+    public String extractEmail(String token) {
+        return extractAllClaims(token).get("email", String.class);
+    }
+
+    public AccountStatus extractAccountStatus(String token) {
+        String status = extractAllClaims(token).get("accountStatus", String.class);
+        return status != null ? AccountStatus.valueOf(status) : null;
+    }
+
+    public String extractRoles(String token) {
+        return extractAllClaims(token).get("roles", String.class);
+    }
+
+    public String extractAvatarId(String token) {
+        return extractAllClaims(token).get("avatarId", String.class);
+    }
+
     public Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
     }
 
+    // Standard JWT utility methods
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
@@ -74,6 +112,10 @@ public class JwtTokenProvider {
 
     private String createToken(Map<String, Object> claims, String subject) {
         return Jwts.builder()
+                .setHeader(Map.of(
+                        "alg", "HS256",
+                        "typ", "JWT"
+                ))
                 .setClaims(claims)
                 .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))

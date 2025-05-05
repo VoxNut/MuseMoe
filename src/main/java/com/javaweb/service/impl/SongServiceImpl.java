@@ -14,8 +14,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -86,15 +88,62 @@ public class SongServiceImpl implements SongService {
     }
 
     @Override
+    @Transactional
+    public Map<String, Object> createMultipleSongs(SongRequestDTO songRequestDTO) {
+        List<String> successfulUploads = new ArrayList<>();
+        List<String> failedUploads = new ArrayList<>();
+
+        if (songRequestDTO.getMp3Files() == null || songRequestDTO.getMp3Files().isEmpty()) {
+            return Map.of(
+                    "success", false,
+                    "message", "No files provided for upload"
+            );
+        }
+
+        try {
+            List<Map<String, String>> uploadResults = googleDriveService.uploadMultipleSongFiles(songRequestDTO.getMp3Files());
+
+            for (Map<String, String> uploadResult : uploadResults) {
+                String fileName = uploadResult.get("fileName");
+                String fileId = uploadResult.get("fileId");
+                if (uploadResult.containsKey("error")) {
+                    failedUploads.add(fileName + " (Error: " + uploadResult.get("error") + ")");
+                    continue;
+                }
+                songRequestDTO.setGoogleDriveFileId(fileId);
+                SongEntity song = songConverter.toEntity(songRequestDTO);
+                song.setTags(tagService.generateTagsForSong(song));
+                songRepository.save(song);
+                successfulUploads.add(fileName);
+            }
+        } catch (Exception e) {
+            log.error("Error in batch upload process: {}", e.getMessage(), e);
+            return Map.of(
+                    "success", false,
+                    "message", "Error processing batch upload: " + e.getMessage()
+            );
+        }
+
+        return Map.of(
+                "success", !successfulUploads.isEmpty(),
+                "totalFiles", songRequestDTO.getMp3Files().size(),
+                "successful", successfulUploads,
+                "failed", failedUploads,
+                "successCount", successfulUploads.size(),
+                "failureCount", failedUploads.size()
+        );
+    }
+
+    @Override
     public boolean createSong(SongRequestDTO songRequestDTO) {
         try {
 
             songRequestDTO.setGoogleDriveFileId(
-                    googleDriveService.uploadSongFile(songRequestDTO.getMp3File()));
+                    googleDriveService.uploadSongFile(songRequestDTO.getMp3Files().getFirst()));
 
             SongEntity song = songConverter.toEntity(songRequestDTO);
-            SongEntity res = songRepository.save(song);
-            tagService.generateTagsForSong(res);
+            song.setTags(tagService.generateTagsForSong(song));
+            songRepository.save(song);
             return true;
         } catch (Exception e) {
             return false;

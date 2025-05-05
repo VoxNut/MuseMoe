@@ -5,6 +5,7 @@ import com.javaweb.model.dto.SongDTO;
 import com.javaweb.model.request.SongRequestDTO;
 
 import java.util.List;
+import java.util.Map;
 
 public interface SongService {
 
@@ -24,4 +25,8 @@ public interface SongService {
 
 
     int importSongsFromGoogleDrive();
+
+    Map<String, Object> createMultipleSongs(SongRequestDTO songRequestDTO);
+
+
 }

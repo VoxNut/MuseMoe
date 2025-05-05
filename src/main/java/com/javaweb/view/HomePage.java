@@ -4,9 +4,9 @@ import com.javaweb.App;
 import com.javaweb.constant.AppConstant;
 import com.javaweb.model.dto.*;
 import com.javaweb.utils.*;
-import com.javaweb.view.mini_musicplayer.event.MusicPlayerFacade;
-import com.javaweb.view.mini_musicplayer.event.PlayerEvent;
-import com.javaweb.view.mini_musicplayer.event.PlayerEventListener;
+import com.javaweb.view.event.MusicPlayerFacade;
+import com.javaweb.view.event.PlayerEvent;
+import com.javaweb.view.event.PlayerEventListener;
 import com.javaweb.view.panel.*;
 import com.javaweb.view.theme.ThemeChangeListener;
 import com.javaweb.view.theme.ThemeManager;
@@ -43,13 +43,18 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private JLabel labelBeginning;
     private JLabel labelEnd;
 
+    private JLabel timerLabel;
+    private JLabel statusLabel;
+    private Timer loadingTimer;
+    private long startTime;
+
     private double rotationAngle = 0.0;
     private static final double SPIN_SPEED = Math.PI / 60;
     private static final int TIMER_DELAY = 16; //
     private Timer scrollTimer;
     private JLabel scrollingLabel;
     private static final int SCROLL_DELAY = 16; // ~60 FPS (1000ms/60)
-    private static final float SCROLL_SPEED = 0.5f; // Smaller increment
+    private static final float SCROLL_SPEED = 0.5f;
     private float scrollPosition = 0.0f;
 
     private JPanel mainPanel;
@@ -173,13 +178,11 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
 
             // Create a logo or app icon at the top
-            ImageIcon logoIcon = GuiUtil.createImageIcon(AppConstant.MUSE_MOE_LOGO_PATH, 300, 300);
+            ImageIcon logoIcon = GuiUtil.createImageIcon(AppConstant.MUSE_MOE_LOGO_PATH, 400, 400);
             JLabel logoLabel = new JLabel(logoIcon);
             logoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-            // Create the progress message with nice font
             progressLabel = GuiUtil.createLabel(message, Font.BOLD, 40);
-
             progressLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
             // Create a modern looking progress bar
@@ -190,18 +193,37 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                     accentColor != null ? accentColor : new Color(52, 152, 219)
             );
             progressBar.setAlignmentX(Component.CENTER_ALIGNMENT);
-            progressBar.setIndeterminate(true);
+            progressBar.setIndeterminate(false);
+            progressBar.setMinimum(0);
+            progressBar.setMaximum(100);
+            progressBar.setValue(0);
+            progressBar.setStringPainted(true);
+
+            // Add timer label
+            timerLabel = GuiUtil.createLabel("Time elapsed: 0.0s", Font.PLAIN, 16);
+            timerLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+            // Create and start the timer
+            startTime = System.currentTimeMillis();
+            loadingTimer = new Timer(100, e -> {
+                long elapsed = System.currentTimeMillis() - startTime;
+                double seconds = elapsed / 1000.0;
+                timerLabel.setText(String.format("Time elapsed: %.1fs", seconds));
+            });
+            loadingTimer.start();
 
             // Add additional status text below progress bar
-            JLabel statusLabel = GuiUtil.createLabel("Initializing application...", Font.ITALIC, 30);
+            statusLabel = GuiUtil.createLabel("Initializing application...", Font.ITALIC, 30);
             statusLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
             // Add components to the content panel with proper spacing
             contentPanel.add(logoLabel);
-            contentPanel.add(Box.createVerticalStrut(15));
+            contentPanel.add(Box.createVerticalStrut(10));
             contentPanel.add(progressLabel);
             contentPanel.add(Box.createVerticalStrut(15));
             contentPanel.add(progressBar);
+            contentPanel.add(Box.createVerticalStrut(10));
+            contentPanel.add(timerLabel);
             contentPanel.add(Box.createVerticalStrut(10));
             contentPanel.add(statusLabel);
 
@@ -214,7 +236,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             loadingOverlay.setBounds(0, 0, getWidth(), getHeight());
             layeredPane.add(loadingOverlay, JLayeredPane.POPUP_LAYER);
 
-            // Add resize listener to keep overlay sized correctly
             addComponentListener(new ComponentAdapter() {
                 @Override
                 public void componentResized(ComponentEvent e) {
@@ -230,33 +251,45 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
     private void hideLoadingOverlay() {
         if (loadingOverlay != null) {
+            // Stop the timer when hiding the overlay
+            if (loadingTimer != null && loadingTimer.isRunning()) {
+                loadingTimer.stop();
+            }
             loadingOverlay.setVisible(false);
         }
     }
 
+
     private void startProgressiveLoading() {
         // Create a worker thread for background loading
-        new SwingWorker<Void, String>() {
+        new SwingWorker<Void, ProgressUpdate>() {
             @Override
             protected Void doInBackground() {
                 try {
                     // Step 1: Create the main structural panels
-                    publish("Setting up the interface...");
+                    publish(new ProgressUpdate("Setting up the interface...", 10));
                     Thread.sleep(100);
 
                     mainPanel = createMainPanel();
 
                     // Step 2: Load header components
-                    publish("Loading user profile...");
+                    publish(new ProgressUpdate("Loading user profile...", 30));
+                    Thread.sleep(100);
                     headerPanel = createHeaderPanel();
 
                     // Step 3: Load library components
-                    publish("Loading your library...");
+                    publish(new ProgressUpdate("Loading your library...", 60));
+                    Thread.sleep(100);
                     combinedPanel = createCombinedPanel();
 
                     // Step 4: Load player components
-                    publish("Setting up music player...");
+                    publish(new ProgressUpdate("Setting up music player...", 85));
+                    Thread.sleep(100);
                     miniMusicPlayerPanel = createMiniMusicPlayerPanel();
+
+                    // Complete loading
+                    publish(new ProgressUpdate("Loading complete!", 100));
+                    Thread.sleep(500);
 
                     return null;
                 } catch (Exception e) {
@@ -266,20 +299,18 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             }
 
             @Override
-            protected void process(java.util.List<String> chunks) {
-                if (!chunks.isEmpty()) {
-                    String latestMessage = chunks.getLast();
-                    progressLabel.setText(latestMessage);
-
-                    progressBar.setIndeterminate(false);
-                    progressBar.setIndeterminate(true);
+            protected void process(java.util.List<ProgressUpdate> updates) {
+                if (!updates.isEmpty()) {
+                    ProgressUpdate latestUpdate = updates.getLast();
+                    statusLabel.setText(latestUpdate.message);
+                    progressBar.setValue(latestUpdate.progressPercentage);
+                    progressBar.setIndeterminate(latestUpdate.progressPercentage < 0);
                 }
             }
 
             @Override
             protected void done() {
                 try {
-                    // Replace the initial panel with the fully loaded UI
                     getContentPane().removeAll();
                     getContentPane().add(mainPanel);
 
@@ -310,6 +341,16 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         }.execute();
     }
 
+    private static class ProgressUpdate {
+        String message;
+        int progressPercentage;
+
+        public ProgressUpdate(String message, int progressPercentage) {
+            this.message = message;
+            this.progressPercentage = progressPercentage;
+        }
+    }
+
     private JPanel createMainPanel() {
         JPanel mainPanel = GuiUtil.createPanel(new BorderLayout(0, 10));
 
@@ -319,9 +360,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 GuiUtil.darkenColor(ThemeManager.getInstance().getBackgroundColor(), 0.4f),
                 0.5f, 0.5f, 0.8f);
 
-        mainPanel.add(createHeaderPanel(), BorderLayout.NORTH);
-        mainPanel.add(createCombinedPanel(), BorderLayout.CENTER);
-        mainPanel.add(createMiniMusicPlayerPanel(), BorderLayout.SOUTH);
 
         mainPanel.addMouseListener(new MouseAdapter() {
             @Override
@@ -744,7 +782,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         try {
             // Fetch the 10 most recent played songs
             java.util.List<SongDTO> recentSongs = CommonApiUtil.fetchRecentSearchHistory((AppConstant.RECENT_SEARCHED_SONG_LIMIT));
-
+            recentSongs.forEach(playerFacade::populateSongImage);
             if (!recentSongs.isEmpty()) {
                 if (recentSearchDropdown == null) {
                     // Create the dropdown if it doesn't exist
@@ -1287,7 +1325,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         JLabel coverLabel;
         if (!playlist.getSongs().isEmpty()) {
             SongDTO songDTO = playlist.getSongs().getFirst();
-            playerFacade.getImageMediaUtil().populateSongImage(songDTO);
+            playerFacade.populateSongImage(songDTO);
             coverLabel = GuiUtil.createRoundedCornerImageLabel(songDTO.getSongImage(), 15, 40, 40);
         } else {
             coverLabel = GuiUtil.createRoundedCornerImageLabel(AppConstant.DEFAULT_COVER_PATH, 15, 40, 40);
@@ -1333,7 +1371,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         songPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
 
         // Create song cover
-        playerFacade.getImageMediaUtil().populateSongImage(song);
+        playerFacade.populateSongImage(song);
         JLabel coverLabel = GuiUtil.createRoundedCornerImageLabel(song.getSongImage(), 15, 40, 40);
 
 
@@ -1341,11 +1379,14 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         JPanel infoPanel = GuiUtil.createPanel();
         infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
 
-        JLabel titleLabel = GuiUtil.createLabel(StringUtils.getTruncatedText(song.getTitle()), Font.BOLD, 12);
+        Font titleFont = FontUtil.getSpotifyFont(Font.BOLD, 12);
+        Font artistFont = FontUtil.getSpotifyFont(Font.PLAIN, 10);
+
+        JLabel titleLabel = GuiUtil.createLabel(StringUtils.getTruncatedTextByWidth(song.getTitle(), titleFont), Font.BOLD, 12);
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel artistLabel = GuiUtil.createLabel(
-                song.getSongArtist() != null ? StringUtils.getTruncatedText(song.getSongArtist()) : "Unknown Artist",
+                song.getSongArtist() != null ? StringUtils.getTruncatedTextByWidth(song.getSongArtist(), artistFont) : "Unknown Artist",
                 Font.PLAIN, 10
         );
         artistLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -1432,7 +1473,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         artistPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
 
         // Create artist avatar
-        playerFacade.getImageMediaUtil().populateArtistProfile(artist);
+        playerFacade.populateArtistProfile(artist);
         JLabel avatarLabel = GuiUtil.createArtistAvatar(artist, 40);
 
         // Create artist info panel
@@ -1464,7 +1505,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         logoutItem.addActionListener(e -> logout());
         profileItem.addActionListener(e -> {/* navigate to profile */
         });
-        playerFacade.getImageMediaUtil().populateUserProfile(getCurrentUser());
+        playerFacade.populateUserProfile(getCurrentUser());
         return GuiUtil.createInteractiveUserAvatar(
                 getCurrentUser(),
                 40,

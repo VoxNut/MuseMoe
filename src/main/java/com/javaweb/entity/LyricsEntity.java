@@ -11,7 +11,7 @@ import lombok.Setter;
 @Setter
 public class LyricsEntity extends BaseEntity {
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name = "song_id", nullable = false)
     private SongEntity song;
 

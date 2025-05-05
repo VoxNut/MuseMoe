@@ -27,7 +27,7 @@ public class UserEntity extends BaseEntity {
     @Column(unique = true, nullable = false, length = 100)
     private String email;
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinColumn(name = "avatar_id")
     private StreamingMediaEntity avatar;
 
@@ -42,7 +42,7 @@ public class UserEntity extends BaseEntity {
     @Column(name = "preferred_language")
     private String preferredLanguage;
 
-    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinTable(name = "user_role"
             , joinColumns = @JoinColumn(name = "user_id")
             , inverseJoinColumns = @JoinColumn(name = "role_id"))

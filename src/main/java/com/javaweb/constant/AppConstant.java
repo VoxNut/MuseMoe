@@ -38,7 +38,6 @@ public class AppConstant {
     public static final String HISTORY_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/history-icon.jpg";
     public static final String MUSIC_NOTE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/music-note-icon.png";
     public static final String CLOCK_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/clock-icon.png";
-    public static final String DEFAULT_ARTIST_PROFILE_PATH = "src/main/java/com/javaweb/view/imgs/artist_profile/default-profile-without-text.png";
     public static final String GO_BACK_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/go-back-icon.png";
     public static final String GO_FORWARD_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/go-forward-icon.png";
     public static final String PLAYLIST_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/playlist-icon.png";
@@ -66,7 +65,7 @@ public class AppConstant {
     public static final String SPEAKER_75_ICON = "src/main/java/com/javaweb/view/imgs/icon/75v-speaker-icon.png";
     public static final String PREVIOUS_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/previous-icon.png";
 
-    public static final String DEFAULT_COVER_PATH = "src/main/java/com/javaweb/view/mini_musicplayer/album_cover/record2.png";
+    public static final String DEFAULT_COVER_PATH = "src/main/java/com/javaweb/view/imgs/icon/record.png";
     public static final String SHUFFLE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/shuffle-icon.png";
     public static final String REPLAY_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/replay-icon.png";
     public static final String HEART_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/heart-icon.png";
@@ -100,10 +99,8 @@ public class AppConstant {
     //MISCELLANEOUS
     public static final String CHANGE_PASSWORD_FAIL = "change_password_fail";
     public static final String DEFAULT_PASSWORD = "123321";
-    public static final String DEFAULT_USER_AVT_PATH = "src/main/java/com/javaweb/view/imgs/avatars/anonymous.png";
-    public static final String GIF_PATH = "src/main/java/com/javaweb/view/imgs/back_ground/LatteLiteratureBackGround.gif";
     public static final int SONGS_BEFORE_AD = 10;
-    public static final int RECENT_SEARCHED_SONG_LIMIT = 20;
+    public static final int RECENT_SEARCHED_SONG_LIMIT = 10;
     public static final String[] WELCOME_MESSAGE = {
             "Feel the Music in Colors!",
             "MuseMoe: Paint Your Songs!",
@@ -118,6 +115,7 @@ public class AppConstant {
     };
     public static final String CREDENTIALS_FILE_PATH = "D:\\My WorkSpace\\MuseMoe\\src\\main\\resources\\credentials.json";
     public static final String TOKENS_DIRECTORY_PATH = "src/main/resources/tokens";
+
     //ADS
     public static final String MUSE_MOE_AD = "https://drive.google.com/uc?id=1V-UlJy6yG60GZPB0Ro-ZWvRg__JCcxz_&export=download";
     public static final String STUDY_SMART_AD = "https://drive.google.com/uc?id=1ra1NtQDV2Q0rjAywJkX4l-nslTRh5P9Y&export=download";

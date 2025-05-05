@@ -10,6 +10,7 @@ import lombok.experimental.SuperBuilder;
 
 import java.awt.image.BufferedImage;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -30,6 +31,7 @@ public class UserDTO extends AbstractDTO implements Comparable<UserDTO> {
     private String preferredLanguage;
     private LocalDateTime lastLoginDate;
     private String avatarId;
+    private Date tokenExpiration;
     @JsonIgnore
     private BufferedImage avatarImage;
 

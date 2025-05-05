@@ -8,8 +8,8 @@ import com.javaweb.utils.CommonApiUtil;
 import com.javaweb.utils.GuiUtil;
 import com.javaweb.utils.ImageMediaUtil;
 import com.javaweb.utils.StreamingAudioPlayer;
-import com.javaweb.view.mini_musicplayer.advertisement.AdvertisementManager;
-import com.javaweb.view.mini_musicplayer.event.MusicPlayerMediator;
+import com.javaweb.view.advertisement.AdvertisementManager;
+import com.javaweb.view.event.MusicPlayerMediator;
 import com.javaweb.view.theme.ThemeManager;
 import com.javaweb.view.user.UserSessionManager;
 import javazoom.jl.player.AudioDevice;
@@ -321,6 +321,7 @@ public class MusicPlayer extends PlaybackListener {
 
     public void playCurrentSong() {
         try {
+            resetPlaybackPosition();
             volumeControl = null;
 
             // Create player from streaming service instead of file system

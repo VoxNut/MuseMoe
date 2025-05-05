@@ -26,7 +26,7 @@ public class EnhancedSpectrumVisualizer extends JPanel implements ThemeChangeLis
 
     // Configuration constants
     private static final int DEFAULT_NUM_BANDS = 16;
-    private static final int DEFAULT_FRAMERATE = 120;
+    private static final int DEFAULT_FRAMERATE = 240;
 
     // Visualization state
     private float[] bands;

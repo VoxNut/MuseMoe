@@ -113,6 +113,8 @@ public class Test {
         String packagePath = "src/main/java/com/javaweb/view/mini_musicplayer/audio";
 //        String packagePath = "src/main/java/com/javaweb/view/imgs/artist_profile";
 //        String packagePath = "src/main/java/com/javaweb/view/mini_musicplayer/advertisement";
+//        String packagePath = "src/main/java/com/javaweb/view/imgs/avatars";
+//        String packagePath = "src/main/java/com/javaweb/view/imgs/album_cover";
         File directory = new File(packagePath);
 
         if (!directory.exists() || !directory.isDirectory()) {

@@ -4,9 +4,7 @@ import com.javaweb.entity.UserEntity;
 import com.javaweb.enums.AccountStatus;
 import com.javaweb.model.dto.MyUserDetail;
 import com.javaweb.repository.UserRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,40 +12,47 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class CustomUserDetailsService implements UserDetailsService {
+
     private final UserRepository userRepository;
 
     @Override
-    @Transactional
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        UserEntity userEntity = userRepository.findOneByUsernameAndAccountStatus(username, AccountStatus.ACTIVE);
-        if (userEntity == null) {
-            log.error("username not found!");
+        UserEntity user = userRepository.findOneByUsername(username);
+        if (user == null) {
+            throw new UsernameNotFoundException("User not found with username: " + username);
         }
 
-        List<GrantedAuthority> authorities = new ArrayList<>();
-        userEntity.getRoles()
-                .forEach(role ->
-                        authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getCode()))
-                );
+        // Convert role entities to GrantedAuthority
+        Collection<GrantedAuthority> authorities = user.getRoles().stream()
+                .map(role -> new SimpleGrantedAuthority(role.getCode().name()))
+                .collect(Collectors.toList());
 
-        MyUserDetail myUserDetail = new MyUserDetail(
-                username,
-                userEntity.getPassword(),
-                true, true, true, true,
+        // Create user details with all necessary information
+        MyUserDetail userDetails = new MyUserDetail(
+                user.getUsername(),
+                user.getPassword(),
+                AccountStatus.ACTIVE.equals(user.getAccountStatus()),
+                true, true, true,
                 authorities
         );
 
-        myUserDetail.setId(userEntity.getId());
-        myUserDetail.setFullName(userEntity.getFullName());
+        // Set additional properties
+        userDetails.setId(user.getId());
+        userDetails.setFullName(user.getFullName());
+        userDetails.setEmail(user.getEmail());
+        userDetails.setAccountStatus(user.getAccountStatus());
 
+        // Set avatar ID if available
+        if (user.getAvatar() != null) {
+            userDetails.setAvatarId(user.getAvatar().getGoogleDriveId());
+        }
 
-        return myUserDetail;
+        return userDetails;
     }
 }

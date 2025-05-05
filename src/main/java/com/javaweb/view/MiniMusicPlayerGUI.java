@@ -9,9 +9,9 @@ import com.javaweb.utils.CommonApiUtil;
 import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
 import com.javaweb.utils.NetworkChecker;
-import com.javaweb.view.mini_musicplayer.event.MusicPlayerFacade;
-import com.javaweb.view.mini_musicplayer.event.PlayerEvent;
-import com.javaweb.view.mini_musicplayer.event.PlayerEventListener;
+import com.javaweb.view.event.MusicPlayerFacade;
+import com.javaweb.view.event.PlayerEvent;
+import com.javaweb.view.event.PlayerEventListener;
 import com.javaweb.view.panel.PlaylistPanel;
 import com.javaweb.view.panel.PlaylistSelectionPanel;
 import com.javaweb.view.panel.SongSelectionPanel;
@@ -389,6 +389,11 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
                 List<PlaylistDTO> playlists = CommonApiUtil.fetchPlaylistByUserId();
 
                 // Create and display the PlaylistSelectionPanel
+                playlists.forEach(playlist -> {
+                    if (!playlist.isEmptyList()) {
+                        playerFacade.populateSongImage(playlist.getSongs().getFirst());
+                    }
+                });
                 playlistPanel = new PlaylistSelectionPanel(playlists);
 
                 playlistDialog = GuiUtil.createStyledDialog(this, "Select Playlist", playlistPanel, ThemeManager.getInstance().getBackgroundColor(), ThemeManager.getInstance().getTextColor());
@@ -570,7 +575,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
 
     // Method to update the song image
     public void updateSongImage(SongDTO song) {
-        playerFacade.getImageMediaUtil().populateSongImage(song);
+        playerFacade.populateSongImage(song);
         if (song.getSongImage() != null) {
             songImageLabel.setIcon(GuiUtil.createRoundedCornerImageIcon(song.getSongImage(), 10, 300, 300));
         } else {

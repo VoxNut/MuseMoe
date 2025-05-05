@@ -536,6 +536,47 @@ public class GoogleDriveService {
         }
     }
 
+    public List<Map<String, String>> uploadMultipleSongFiles(List<MultipartFile> files) {
+        List<Map<String, String>> results = new ArrayList<>();
+
+        for (MultipartFile file : files) {
+            try {
+                File fileMetadata = new File();
+                fileMetadata.setName(file.getOriginalFilename());
+                fileMetadata.setParents(Collections.singletonList(MUSIC_FOLDER_ID));
+
+                java.io.File tempFile = java.io.File.createTempFile("upload-", ".tmp");
+                file.transferTo(tempFile);
+                FileContent mediaContent = new FileContent(file.getContentType(), tempFile);
+
+                File uploadedFile = driveService.files().create(fileMetadata, mediaContent)
+                        .setFields("id, name, mimeType, size, webContentLink")
+                        .execute();
+
+                log.info("File uploaded to Google Drive: {}", uploadedFile.getName());
+
+                Map<String, String> fileResult = new HashMap<>();
+                fileResult.put("fileName", file.getOriginalFilename());
+                fileResult.put("fileId", uploadedFile.getId());
+                fileResult.put("webContentLink", uploadedFile.getWebContentLink());
+                results.add(fileResult);
+
+                // Clean up temporary file
+                if (tempFile.exists()) {
+                    tempFile.delete();
+                }
+            } catch (Exception e) {
+                log.error("Failed to upload file {}: {}", file.getOriginalFilename(), e.getMessage(), e);
+                Map<String, String> errorResult = new HashMap<>();
+                errorResult.put("fileName", file.getOriginalFilename());
+                errorResult.put("error", e.getMessage());
+                results.add(errorResult);
+            }
+        }
+
+        return results;
+    }
+
     public File uploadAlbumArtwork(java.io.File artworkFile, String albumName) throws IOException {
         if (artworkFile == null || !artworkFile.exists()) {
             log.warn("No artwork file provided for album: {}", albumName);

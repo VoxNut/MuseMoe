@@ -116,4 +116,28 @@ public class SongAPI {
             ));
         }
     }
+
+    @PostMapping("/create-multiple")
+    public ResponseEntity<?> createMultipleSongs(@ModelAttribute SongRequestDTO songRequestDTO) {
+        try {
+            log.info("Received request to upload {} song files to album ID: {}",
+                    songRequestDTO.getMp3Files() != null ? songRequestDTO.getMp3Files().size() : 0,
+                    songRequestDTO.getAlbumId());
+
+            Map<String, Object> result = songService.createMultipleSongs(songRequestDTO);
+
+            if ((Boolean) result.get("success")) {
+                return ResponseEntity.ok(result);
+            } else {
+                return ResponseEntity.badRequest().body(result);
+            }
+
+        } catch (Exception e) {
+            log.error("Error processing batch song upload: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "success", false,
+                    "message", "Error uploading songs: " + e.getMessage()
+            ));
+        }
+    }
 }

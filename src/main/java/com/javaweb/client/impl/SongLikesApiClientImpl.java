@@ -24,6 +24,7 @@ public class SongLikesApiClientImpl implements SongLikesApiClient {
             return apiClient.post(url,
                     SongLikesDTO.builder()
                             .songId(songId)
+                            .build()
                     , Boolean.class);
         } catch (Exception e) {
             e.printStackTrace();

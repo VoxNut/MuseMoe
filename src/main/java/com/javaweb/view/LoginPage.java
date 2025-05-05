@@ -1,7 +1,5 @@
 package com.javaweb.view;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.javaweb.constant.AppConstant;
 import com.javaweb.enums.AccountStatus;
 import com.javaweb.model.dto.UserDTO;
@@ -9,6 +7,7 @@ import com.javaweb.utils.*;
 import com.javaweb.view.theme.ThemeManager;
 import com.javaweb.view.user.UserSessionManager;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -22,9 +21,9 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.util.Base64;
 import java.util.UUID;
 
+@Slf4j
 public class LoginPage extends JFrame {
     private static final Dimension FRAME_SIZE = new Dimension(1100, 934);
     private static final String IMAGE_PATH = "src/main/java/com/javaweb/view/imgs/back_ground/dark-blossom.jpg";
@@ -573,11 +572,11 @@ public class LoginPage extends JFrame {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
                 String responseBody = reader.readLine();
 
-                // Extract the token from the response
                 String token = responseBody.split("\"token\":\"")[1].split("\"")[0];
 
-                // Extract user info from JWT token payload
-                UserDTO user = extractUserFromToken(token);
+                UserDTO user = JwtTokenUtil.extractUserFromToken(token);
+
+                log.info("username '{}', with token '{}'", user.getUsername(), token);
 
                 if (user == null || user.getAccountStatus().equals(AccountStatus.INACTIVE)) {
                     GuiUtil.showErrorMessageDialog(this, "User not existed or deleted");
@@ -598,43 +597,11 @@ public class LoginPage extends JFrame {
             } else if (statusCode == 401) {
                 GuiUtil.showErrorMessageDialog(this, "Username or Password incorrect!");
             } else {
-                GuiUtil.showErrorMessageDialog(this, "An error occurred during login: Status " + statusCode);
+                GuiUtil.showErrorMessageDialog(this, "Error connecting to server!");
             }
-            response.close();
         } catch (Exception e) {
-            e.printStackTrace();
-            GuiUtil.showErrorMessageDialog(this, "An error has occurred!");
+            GuiUtil.showErrorMessageDialog(this, "Error: " + e.getMessage());
         }
     }
 
-
-    private UserDTO extractUserFromToken(String token) {
-        try {
-            // Get the payload part of the JWT (second part)
-            String[] parts = token.split("\\.");
-            if (parts.length < 2) {
-                return null;
-            }
-
-            // Decode base64 payload
-            String payload = new String(Base64.getUrlDecoder().decode(parts[1]));
-
-            // Parse JSON
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode payloadJson = mapper.readTree(payload);
-
-            // Create user from claims
-            UserDTO user = new UserDTO();
-            user.setId(payloadJson.has("id") ? payloadJson.get("id").asLong() : null);
-            user.setUsername(payloadJson.has("sub") ? payloadJson.get("sub").asText() : null);
-            user.setFullName(payloadJson.has("fullName") ? payloadJson.get("fullName").asText() : null);
-
-            user.setAccountStatus(AccountStatus.ACTIVE);
-
-            return user;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
 }

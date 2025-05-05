@@ -3,13 +3,14 @@ package com.javaweb.view.user;
 import com.javaweb.model.dto.UserDTO;
 import lombok.Getter;
 
+import java.util.Date;
+
 @Getter
 public class UserSessionManager {
     private static UserSessionManager instance;
 
     private UserDTO currentUser;
     private String authToken;
-
 
     private UserSessionManager() {
     }
@@ -27,9 +28,15 @@ public class UserSessionManager {
     }
 
     public boolean isLoggedIn() {
-        return currentUser != null && authToken != null;
+        return currentUser != null && authToken != null && !isTokenExpired();
     }
 
+    public boolean isTokenExpired() {
+        if (currentUser == null || currentUser.getTokenExpiration() == null) {
+            return true;
+        }
+        return new Date().after(currentUser.getTokenExpiration());
+    }
 
     public void clearSession() {
         this.authToken = null;

@@ -4,6 +4,7 @@ import com.javaweb.App;
 import com.javaweb.constant.AppConstant;
 import com.javaweb.model.dto.*;
 import com.javaweb.utils.*;
+import com.javaweb.view.components.AsyncImageLabel;
 import com.javaweb.view.event.MusicPlayerFacade;
 import com.javaweb.view.event.PlayerEvent;
 import com.javaweb.view.event.PlayerEventListener;
@@ -778,14 +779,15 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
     }
 
+
     private void loadRecentSearches() {
         try {
-            // Fetch the 10 most recent played songs
             java.util.List<SongDTO> recentSongs = CommonApiUtil.fetchRecentSearchHistory((AppConstant.RECENT_SEARCHED_SONG_LIMIT));
-            recentSongs.forEach(playerFacade::populateSongImage);
+            recentSongs.forEach(song -> {
+                playerFacade.populateSongImage(song, null);
+            });
             if (!recentSongs.isEmpty()) {
                 if (recentSearchDropdown == null) {
-                    // Create the dropdown if it doesn't exist
                     recentSearchDropdown = new RecentSearchDropdown(
                             searchField,
                             recentSongs,
@@ -800,10 +802,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 recentSearchDropdown.showPopup(searchField);
             }
         } catch (Exception e) {
-            // Log the error but don't crash the application
             log.error("Error loading recent searches", e);
 
-            // If there's an existing dropdown, ensure it's hidden
             if (recentSearchDropdown != null) {
                 recentSearchDropdown.hidePopup();
             }
@@ -1179,6 +1179,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         }
     }
 
+
     private void loadLikedSongs(JPanel container) {
         try {
             // Check for network connectivity
@@ -1187,42 +1188,68 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 return;
             }
 
-            // Fetch liked songs
-            List<SongLikesDTO> songLikesDTOList = CommonApiUtil.findAllSongLikes();
-            List<SongDTO> likedSongs = songLikesDTOList
-                    .stream()
-                    .map(SongLikesDTO::getSongDTO)
-                    .toList();
+            // Show loading indicator
+            JLabel loadingLabel = GuiUtil.createLabel("Loading liked songs...", Font.ITALIC, 12);
+            container.add(loadingLabel);
 
-            if (likedSongs.isEmpty()) {
-                container.add(GuiUtil.createErrorLabel("No liked songs"));
-                return;
-            }
+            // Load in background
+            SwingWorker<List<SongDTO>, Void> worker = new SwingWorker<>() {
+                @Override
+                protected List<SongDTO> doInBackground() throws Exception {
+                    List<SongLikesDTO> songLikesDTOList = CommonApiUtil.findAllSongLikes();
+                    return songLikesDTOList
+                            .stream()
+                            .map(SongLikesDTO::getSongDTO)
+                            .toList();
+                }
 
-            // Create a virtual playlist for liked songs
-            PlaylistDTO likedSongsPlaylist = new PlaylistDTO();
-            likedSongsPlaylist.setName("Liked Songs");
-            likedSongsPlaylist.setSongs(likedSongs);
+                @Override
+                protected void done() {
+                    try {
+                        List<SongDTO> likedSongs = get();
+                        container.remove(loadingLabel);
 
-            // Add the liked songs panel
-            container.add(createLikedSongsCollectionPanel(likedSongsPlaylist));
+                        if (likedSongs.isEmpty()) {
+                            container.add(GuiUtil.createErrorLabel("No liked songs"));
+                            return;
+                        }
 
-            JPanel recentLabelPanel = GuiUtil.createPanel(new BorderLayout());
-            recentLabelPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-            recentLabelPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+                        // Create a virtual playlist for liked songs
+                        PlaylistDTO likedSongsPlaylist = new PlaylistDTO();
+                        likedSongsPlaylist.setName("Liked Songs");
+                        likedSongsPlaylist.setSongs(likedSongs);
 
-            JLabel recentLabel = GuiUtil.createLabel("Recently Liked", Font.BOLD, 14);
-            recentLabelPanel.add(recentLabel, BorderLayout.WEST);
+                        // Add the liked songs panel
+                        container.add(createLikedSongsCollectionPanel(likedSongsPlaylist));
 
-            container.add(recentLabelPanel);
+                        JPanel recentLabelPanel = GuiUtil.createPanel(new BorderLayout());
+                        recentLabelPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+                        recentLabelPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
 
-            container.add(Box.createVerticalStrut(5));
+                        JLabel recentLabel = GuiUtil.createLabel("Recently Liked", Font.BOLD, 14);
+                        recentLabelPanel.add(recentLabel, BorderLayout.WEST);
 
-            // Add up to 5 most recent liked songs
-            for (int i = 0; i < Math.min(5, likedSongs.size()); i++) {
-                container.add(createSongPanel(likedSongs.get(i)));
-                container.add(Box.createVerticalStrut(5));
-            }
+                        container.add(recentLabelPanel);
+                        container.add(Box.createVerticalStrut(5));
+
+                        // Add up to 5 most recent liked songs
+                        for (int i = 0; i < Math.min(5, likedSongs.size()); i++) {
+                            container.add(createSongPanel(likedSongs.get(i)));
+                            container.add(Box.createVerticalStrut(5));
+                        }
+
+                        container.revalidate();
+                        container.repaint();
+                    } catch (Exception e) {
+                        log.error("Failed to load liked songs", e);
+                        container.remove(loadingLabel);
+                        container.add(GuiUtil.createErrorLabel("Failed to load liked songs"));
+                        container.revalidate();
+                        container.repaint();
+                    }
+                }
+            };
+            worker.execute();
 
         } catch (Exception e) {
             log.error("Failed to load liked songs", e);
@@ -1322,13 +1349,13 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         JPanel playlistPanel = GuiUtil.createPanel(new BorderLayout(10, 0));
         playlistPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         playlistPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
-        JLabel coverLabel;
+        AsyncImageLabel coverLabel = GuiUtil.createAsyncImageLabel(40, 40, 15);
+        coverLabel.startLoading();
         if (!playlist.getSongs().isEmpty()) {
-            SongDTO songDTO = playlist.getSongs().getFirst();
-            playerFacade.populateSongImage(songDTO);
-            coverLabel = GuiUtil.createRoundedCornerImageLabel(songDTO.getSongImage(), 15, 40, 40);
+            AsyncImageLabel finalCoverLabel = coverLabel;
+            playerFacade.populateSongImage(playlist.getFirstSong(), image -> finalCoverLabel.setLoadedImage(image));
         } else {
-            coverLabel = GuiUtil.createRoundedCornerImageLabel(AppConstant.DEFAULT_COVER_PATH, 15, 40, 40);
+            coverLabel.setLoadedImage(GuiUtil.createBufferImage(AppConstant.DEFAULT_COVER_PATH));
         }
 
         // Create playlist info panel
@@ -1371,8 +1398,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         songPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
 
         // Create song cover
-        playerFacade.populateSongImage(song);
-        JLabel coverLabel = GuiUtil.createRoundedCornerImageLabel(song.getSongImage(), 15, 40, 40);
+        AsyncImageLabel coverLabel = GuiUtil.createAsyncImageLabel(40, 40, 15);
+        coverLabel.startLoading();
+        playerFacade.populateSongImage(song, image -> coverLabel.setLoadedImage(image));
 
 
         // Create song info panel
@@ -1472,9 +1500,10 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         artistPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         artistPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
 
-        // Create artist avatar
-        playerFacade.populateArtistProfile(artist);
-        JLabel avatarLabel = GuiUtil.createArtistAvatar(artist, 40);
+        // Create artist profile
+        AsyncImageLabel artistProfile = GuiUtil.createAsyncImageLabel(40, 40, 15);
+        artistProfile.startLoading();
+        playerFacade.populateArtistProfile(artist, image -> artistProfile.setLoadedImage(image));
 
         // Create artist info panel
         JPanel infoPanel = GuiUtil.createPanel();
@@ -1489,7 +1518,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         infoPanel.add(Box.createVerticalGlue());
 
-        artistPanel.add(avatarLabel, BorderLayout.WEST);
+        artistPanel.add(artistProfile, BorderLayout.WEST);
         artistPanel.add(infoPanel, BorderLayout.CENTER);
 
         // Add hover effect
@@ -1505,8 +1534,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         logoutItem.addActionListener(e -> logout());
         profileItem.addActionListener(e -> {/* navigate to profile */
         });
-        playerFacade.populateUserProfile(getCurrentUser());
-        return GuiUtil.createInteractiveUserAvatar(
+        AsyncImageLabel avatarLabel = GuiUtil.createInteractiveUserAvatar(
                 getCurrentUser(),
                 40,
                 ThemeManager.getInstance().getBackgroundColor(),
@@ -1514,6 +1542,11 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 profileItem,
                 logoutItem
         );
+
+        // Start loading and populate the image
+        avatarLabel.startLoading();
+        playerFacade.populateUserProfile(getCurrentUser(), image -> avatarLabel.setLoadedImage(image));
+        return avatarLabel;
     }
 
     private void logout() {

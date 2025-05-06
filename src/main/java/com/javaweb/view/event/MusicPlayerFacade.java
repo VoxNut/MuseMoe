@@ -11,7 +11,9 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.function.Consumer;
 
 @Component
 @RequiredArgsConstructor
@@ -162,16 +164,16 @@ public class MusicPlayerFacade {
         mediator.notifySliderDragging(value, timeInMillis);
     }
 
-    public void populateSongImage(SongDTO songDTO) {
-        imageMediaUtil.populateSongImage(songDTO);
+    public void populateSongImage(SongDTO songDTO, Consumer<BufferedImage> callback) {
+        imageMediaUtil.populateSongImage(songDTO, callback);
     }
 
-    public void populateArtistProfile(ArtistDTO artistDTO) {
-        imageMediaUtil.populateArtistProfile(artistDTO);
+    public void populateArtistProfile(ArtistDTO artistDTO, Consumer<BufferedImage> callback) {
+        imageMediaUtil.populateArtistProfile(artistDTO, callback);
     }
 
-    public void populateUserProfile(UserDTO userDTO) {
-        imageMediaUtil.populateUserProfile(userDTO);
+    public void populateUserProfile(UserDTO userDTO, Consumer<BufferedImage> callback) {
+        imageMediaUtil.populateUserProfile(userDTO, callback);
     }
 
 

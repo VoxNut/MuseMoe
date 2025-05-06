@@ -43,6 +43,11 @@ public class PlaylistDTO extends AbstractDTO {
         return (int) (Math.random() * size());
     }
 
+    @JsonIgnore
+    public SongDTO getFirstSong() {
+        return songs.getFirst();
+    }
+
 
     public int getIndexFromSong(SongDTO song) {
         if (song.getPosition() != null) {

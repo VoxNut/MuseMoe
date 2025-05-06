@@ -391,7 +391,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
                 // Create and display the PlaylistSelectionPanel
                 playlists.forEach(playlist -> {
                     if (!playlist.isEmptyList()) {
-                        playerFacade.populateSongImage(playlist.getSongs().getFirst());
+                        playerFacade.populateSongImage(playlist.getSongs().getFirst(), null);
                     }
                 });
                 playlistPanel = new PlaylistSelectionPanel(playlists);
@@ -575,7 +575,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
 
     // Method to update the song image
     public void updateSongImage(SongDTO song) {
-        playerFacade.populateSongImage(song);
+        playerFacade.populateSongImage(song, null);
         if (song.getSongImage() != null) {
             songImageLabel.setIcon(GuiUtil.createRoundedCornerImageIcon(song.getSongImage(), 10, 300, 300));
         } else {

@@ -1,8 +1,8 @@
 package com.javaweb.utils;
 
 import com.javaweb.constant.AppConstant;
-import com.javaweb.model.dto.ArtistDTO;
 import com.javaweb.model.dto.UserDTO;
+import com.javaweb.view.components.AsyncImageLabel;
 import com.javaweb.view.custom.spinner.DateLabelFormatter;
 import com.javaweb.view.custom.table.BorderedHeaderRenderer;
 import com.javaweb.view.custom.table.BorderedTableCellRenderer;
@@ -297,7 +297,7 @@ public class GuiUtil {
 
         return progressBar;
     }
-    
+
 
     public static JTextField createLineInputField(int columns) {
         JTextField textField = new JTextField(columns);
@@ -1169,6 +1169,16 @@ public class GuiUtil {
         return label;
     }
 
+    public static AsyncImageLabel createAsyncImageLabel(int width, int height, int cornerRadius) {
+        AsyncImageLabel label = new AsyncImageLabel(width, height, cornerRadius);
+        return label;
+    }
+
+    public static AsyncImageLabel createAsyncImageLabel(int width, int height) {
+        AsyncImageLabel label = createAsyncImageLabel(width, height, 0);
+        return label;
+    }
+
 
     public static ImageIcon createRoundedCornerImageIcon(String path, int cornerRadius, int width, int height) {
         try {
@@ -1994,49 +2004,36 @@ public class GuiUtil {
         return new JLabel(new ImageIcon(avatarImage));
     }
 
-    public static JLabel createArtistAvatar(ArtistDTO artist, int size) {
+    public static BufferedImage createDefaultAvatar(String name, int size) {
+        Color textColor = ThemeManager.getInstance().getTextColor();
+        Color backgroundColor = ThemeManager.getInstance().getBackgroundColor();
+        BufferedImage defaultAvatar = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = defaultAvatar.createGraphics();
 
-        BufferedImage avatarImage = artist.getProfileImage();
+        configureGraphicsForHighQuality(g2d);
 
-        try {
-            if (avatarImage != null) {
-                avatarImage = createSmoothCircularAvatar(avatarImage, size);
-            } else {
-                avatarImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
-                Graphics2D g2d = avatarImage.createGraphics();
+        g2d.setColor(backgroundColor);
+        g2d.fillOval(0, 0, size, size);
 
-                configureGraphicsForHighQuality(g2d);
+        String initial = StringUtils.isNotBlank(name) ?
+                name.substring(0, 1).toUpperCase() : "U";
 
-                g2d.setColor(ThemeManager.getInstance().getBackgroundColor());
-                g2d.fillOval(0, 0, size, size);
+        float fontSize = (float) size * 0.4f;
+        g2d.setColor(textColor);
+        g2d.setFont(FontUtil.getSpotifyFont(Font.BOLD, fontSize));
 
-                // Draw initial
-                String initial = artist.getStageName() != null && !artist.getStageName().isEmpty() ?
-                        artist.getStageName().substring(0, 1).toUpperCase() :
-                        "A";
+        FontMetrics fm = g2d.getFontMetrics();
+        int textWidth = fm.stringWidth(initial);
+        int textHeight = fm.getAscent();
 
-                g2d.setColor(ThemeManager.getInstance().getTextColor());
-                g2d.setFont(FontUtil.getSpotifyFont(Font.BOLD, (float) size / 2));
+        int x = (size - textWidth) / 2;
+        int y = (size - textHeight) / 2 + fm.getAscent();
 
-                FontMetrics fm = g2d.getFontMetrics();
-                int textWidth = fm.stringWidth(initial);
-                int textHeight = fm.getAscent();
-                int x = (size - textWidth) / 2;
-                int y = (size - textHeight) / 2 + textHeight;
+        g2d.drawString(initial, x, y);
+        g2d.dispose();
 
-                g2d.drawString(initial, x, y);
-                g2d.dispose();
-            }
-        } catch (Exception e) {
-            avatarImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2d = avatarImage.createGraphics();
-            configureGraphicsForHighQuality(g2d);
-            g2d.setColor(ThemeManager.getInstance().getBackgroundColor());
-            g2d.fillOval(0, 0, size, size);
-            g2d.dispose();
-        }
+        return defaultAvatar;
 
-        return new JLabel(new ImageIcon(avatarImage));
     }
 
 
@@ -2057,14 +2054,16 @@ public class GuiUtil {
         });
     }
 
-    public static JLabel createInteractiveUserAvatar(UserDTO user, int size, Color backgroundColor,
-                                                     Color textColor, JMenuItem... popupItems) {
-        JLabel avatarLabel = createUserAvatar(user, size, backgroundColor, textColor);
+    public static AsyncImageLabel createInteractiveUserAvatar(UserDTO user, int size,
+                                                              Color backgroundColor,
+                                                              Color textColor,
+                                                              JMenuItem... popupItems) {
+        AsyncImageLabel avatarLabel = createAsyncImageLabel(size, size, size / 2);
         avatarLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        // Ensure the label size matches the image size
-        avatarLabel.setPreferredSize(new Dimension(size, size));
-
+        if (user.getAvatarImage() == null && user.getAvatarId() == null) {
+            avatarLabel.setLoadedImage(createDefaultAvatar(user.getUsername(), size));
+        }
         // Add popup menu if items are provided
         if (popupItems.length > 0) {
             JPopupMenu popupMenu = createPopupMenu(backgroundColor, textColor);

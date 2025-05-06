@@ -100,7 +100,7 @@ public class AppConstant {
     public static final String CHANGE_PASSWORD_FAIL = "change_password_fail";
     public static final String DEFAULT_PASSWORD = "123321";
     public static final int SONGS_BEFORE_AD = 10;
-    public static final int RECENT_SEARCHED_SONG_LIMIT = 10;
+    public static final int RECENT_SEARCHED_SONG_LIMIT = 20;
     public static final String[] WELCOME_MESSAGE = {
             "Feel the Music in Colors!",
             "MuseMoe: Paint Your Songs!",

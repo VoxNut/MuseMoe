@@ -1037,11 +1037,6 @@ public class GuiUtil {
                 Graphics2D g2d = (Graphics2D) g.create();
                 configureGraphicsForHighQuality(g2d);
 
-                // Draw gradient background
-//                GradientPaint gradient = new GradientPaint(
-//                        0, 0, new Color(0xE8128A),
-//                        getWidth(), getHeight(), new Color(0x26C6DA)
-//                );
                 GradientPaint gradient = new GradientPaint(
                         0, 0, darkenColor(ThemeManager.getInstance().getBackgroundColor(), 0.1),
                         getWidth(), getHeight(), lightenColor(ThemeManager.getInstance().getBackgroundColor(), 0.4)
@@ -1084,7 +1079,6 @@ public class GuiUtil {
         }
 
         try {
-            // First, use Thumbnailator for high-quality resizing
             BufferedImage resized = Thumbnails.of(image)
                     .size(width, height)
                     .keepAspectRatio(true)
@@ -1093,7 +1087,6 @@ public class GuiUtil {
                     .outputQuality(1.0f)
                     .asBufferedImage();
 
-            // Create an output image with transparency
             BufferedImage output = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
             Graphics2D g2 = output.createGraphics();
 
@@ -1228,6 +1221,19 @@ public class GuiUtil {
             e.printStackTrace();
         }
         throw new IllegalArgumentException("Error!");
+    }
+
+    public static AsyncImageLabel createCircularImageLabel(int width, int height) {
+        AsyncImageLabel label = new AsyncImageLabel(width, height, width / 2, true);
+        return label;
+    }
+
+    public static AsyncImageLabel createUserAvatarLabel(int size) {
+        return createCircularImageLabel(size, size);
+    }
+
+    public static AsyncImageLabel createArtistProfileLabel(int size) {
+        return createCircularImageLabel(size, size);
     }
 
     public static BufferedImage createBufferImage(BufferedImage bufferedImage, int width, int height) {
@@ -1684,13 +1690,33 @@ public class GuiUtil {
                         ((LineBorder) jComponent.getBorder()).getThickness(),
                         ((LineBorder) jComponent.getBorder()).getRoundedCorners()));
             } else if (jComponent.getBorder() instanceof CompoundBorder compoundBorder) {
-                if (compoundBorder.getOutsideBorder() instanceof LineBorder) {
-                    Border insideBorder = compoundBorder.getInsideBorder();
+                Border outsideBorder = compoundBorder.getOutsideBorder();
+                Border insideBorder = compoundBorder.getInsideBorder();
+
+                //LineBorder
+                if (outsideBorder instanceof LineBorder) {
                     jComponent.setBorder(BorderFactory.createCompoundBorder(
                             BorderFactory.createLineBorder(textColor,
-                                    ((LineBorder) compoundBorder.getOutsideBorder()).getThickness(),
-                                    ((LineBorder) compoundBorder.getOutsideBorder()).getRoundedCorners()),
+                                    ((LineBorder) outsideBorder).getThickness(),
+                                    ((LineBorder) outsideBorder).getRoundedCorners()),
                             insideBorder
+                    ));
+                }
+                // Outside is EmptyBorder and inside is MatteBorder
+                else if (outsideBorder instanceof EmptyBorder && insideBorder instanceof MatteBorder) {
+                    Insets outsideInsets = ((EmptyBorder) outsideBorder).getBorderInsets();
+                    Insets insideInsets = ((MatteBorder) insideBorder).getBorderInsets();
+
+                    jComponent.setBorder(BorderFactory.createCompoundBorder(
+                            BorderFactory.createEmptyBorder(
+                                    outsideInsets.top, outsideInsets.left,
+                                    outsideInsets.bottom, outsideInsets.right
+                            ),
+                            BorderFactory.createMatteBorder(
+                                    insideInsets.top, insideInsets.left,
+                                    insideInsets.bottom, insideInsets.right,
+                                    GuiUtil.darkenColor(backgroundColor, 0.1f)
+                            )
                     ));
                 }
             } else if (jComponent.getBorder() instanceof MatteBorder matteBorder) {
@@ -1962,63 +1988,26 @@ public class GuiUtil {
     }
 
 
-    public static JLabel createUserAvatar(UserDTO user, int size, Color backgroundColor, Color textColor) {
-
-        BufferedImage avatarImage = user.getAvatarImage();
-        boolean useDefaultAvatar = false;
-
-        if (avatarImage != null) {
-            avatarImage = createSmoothCircularAvatar(avatarImage, size);
-        } else {
-            useDefaultAvatar = true;
-        }
-
-
-        if (useDefaultAvatar) {
-            avatarImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2d = avatarImage.createGraphics();
-
-            configureGraphicsForHighQuality(g2d);
-
-            g2d.setColor(backgroundColor);
-            g2d.fillOval(0, 0, size, size);
-
-            String initial = user.getUsername() != null && !user.getUsername().isEmpty() ?
-                    user.getUsername().substring(0, 1).toUpperCase() : "U";
-
-            float fontSize = (float) size * 0.4f;
-            g2d.setColor(textColor);
-            g2d.setFont(FontUtil.getSpotifyFont(Font.BOLD, fontSize));
-
-            FontMetrics fm = g2d.getFontMetrics();
-            int textWidth = fm.stringWidth(initial);
-            int textHeight = fm.getAscent();
-
-            int x = (size - textWidth) / 2;
-            int y = (size - textHeight) / 2 + fm.getAscent();
-
-            g2d.drawString(initial, x, y);
-            g2d.dispose();
-        }
-
-        return new JLabel(new ImageIcon(avatarImage));
-    }
-
-    public static BufferedImage createDefaultAvatar(String name, int size) {
+    public static BufferedImage createCharacterProfile(String name, int size) {
         Color textColor = ThemeManager.getInstance().getTextColor();
         Color backgroundColor = ThemeManager.getInstance().getBackgroundColor();
-        BufferedImage defaultAvatar = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2d = defaultAvatar.createGraphics();
 
+        // First create a base image with the character
+        BufferedImage baseAvatar = new BufferedImage(size * 3, size * 3, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = baseAvatar.createGraphics();
+
+        // Configure for high quality
         configureGraphicsForHighQuality(g2d);
 
+        // Fill the background circle
         g2d.setColor(backgroundColor);
-        g2d.fillOval(0, 0, size, size);
+        g2d.fillOval(0, 0, size * 3, size * 3);
 
+        // Draw the initial character
         String initial = StringUtils.isNotBlank(name) ?
                 name.substring(0, 1).toUpperCase() : "U";
 
-        float fontSize = (float) size * 0.4f;
+        float fontSize = (float) size * 1.2f;
         g2d.setColor(textColor);
         g2d.setFont(FontUtil.getSpotifyFont(Font.BOLD, fontSize));
 
@@ -2026,16 +2015,14 @@ public class GuiUtil {
         int textWidth = fm.stringWidth(initial);
         int textHeight = fm.getAscent();
 
-        int x = (size - textWidth) / 2;
-        int y = (size - textHeight) / 2 + fm.getAscent();
+        int x = ((size * 3) - textWidth) / 2;
+        int y = ((size * 3) - textHeight) / 2 + fm.getAscent();
 
         g2d.drawString(initial, x, y);
         g2d.dispose();
 
-        return defaultAvatar;
-
+        return createSmoothCircularAvatar(baseAvatar, size);
     }
-
 
     public static void addHoverEffect(JPanel panel) {
         panel.addMouseListener(new MouseAdapter() {
@@ -2058,11 +2045,11 @@ public class GuiUtil {
                                                               Color backgroundColor,
                                                               Color textColor,
                                                               JMenuItem... popupItems) {
-        AsyncImageLabel avatarLabel = createAsyncImageLabel(size, size, size / 2);
+        AsyncImageLabel avatarLabel = createUserAvatarLabel(size);
         avatarLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         if (user.getAvatarImage() == null && user.getAvatarId() == null) {
-            avatarLabel.setLoadedImage(createDefaultAvatar(user.getUsername(), size));
+            avatarLabel.setLoadedImage(createCharacterProfile(user.getUsername(), size));
         }
         // Add popup menu if items are provided
         if (popupItems.length > 0) {

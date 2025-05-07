@@ -321,7 +321,6 @@ public class MusicPlayer extends PlaybackListener {
 
     public void playCurrentSong() {
         try {
-            resetPlaybackPosition();
             volumeControl = null;
 
             // Create player from streaming service instead of file system
@@ -520,7 +519,6 @@ public class MusicPlayer extends PlaybackListener {
                         throw new RuntimeException(e);
                     }
                 } else {
-                    // Playlist mode
                     try {
                         handlePlaylistSongCompletion();
                     } catch (IOException e) {
@@ -531,39 +529,34 @@ public class MusicPlayer extends PlaybackListener {
         }
     }
 
-    // Helper method for single song completion logic
     private void handleSingleSongCompletion() throws IOException {
         if (repeatMode == RepeatMode.REPEAT_ONE || repeatMode == RepeatMode.REPEAT_ALL) {
+            resetPlaybackPosition();
             playCurrentSong();
         } else {
             mediator.notifyPlaybackPaused();
-
             songFinished = true;
         }
     }
 
-    // Helper method for playlist song completion logic
     private void handlePlaylistSongCompletion() throws IOException {
-        // Last song in the playlist
         if (currentPlaylistIndex == currentPlaylist.size() - 1) {
             if (repeatMode == RepeatMode.REPEAT_ALL) {
-                // Loop back to the beginning of the playlist
                 currentPlaylistIndex = 0;
                 currentSong = currentPlaylist.getSongAt(currentPlaylistIndex);
+                resetPlaybackPosition();
                 playCurrentSong();
 
             } else if (repeatMode == RepeatMode.REPEAT_ONE) {
-                // Repeat the current song
+                resetPlaybackPosition();
                 playCurrentSong();
 
             } else {
-                // End of playlist with no repeat
                 mediator.notifyPlaybackPaused();
                 songFinished = true;
             }
         } else {
             if (repeatMode == RepeatMode.REPEAT_ONE) {
-                // Repeat the current song
                 loadSong(currentSong);
             } else {
                 try {
@@ -575,7 +568,6 @@ public class MusicPlayer extends PlaybackListener {
         }
     }
 
-    // Helper method to reset playback position
     private void resetPlaybackPosition() {
         currentTimeInMilli = 0;
         currentFrame = 0;
@@ -585,16 +577,13 @@ public class MusicPlayer extends PlaybackListener {
         if (havingAd) return;
         if (currentSong == null) return;
 
-        // Set replay flag
         pressedReplay = true;
 
-        // Calculate new position
         long newPosition = currentTimeInMilli - 5000;
         if (newPosition < 0) {
             newPosition = 0;
         }
 
-        // Stop current playback
         stopSong();
 
         // Update current position
@@ -602,7 +591,6 @@ public class MusicPlayer extends PlaybackListener {
         currentFrame = (int) (newPosition * currentSong.getFrameRatePerMilliseconds());
 
 
-        // Start playback from new position
         playCurrentSong();
     }
 
@@ -622,11 +610,9 @@ public class MusicPlayer extends PlaybackListener {
     }
 
     public void setVolume(float gain) {
-        // Store the volume setting regardless of player state
         this.currentVolumeGain = Math.min(Math.max(gain, -40f), 40f);
 
         if (this.device == null) {
-            // Just store the value for later application
             return;
         }
 
@@ -648,17 +634,14 @@ public class MusicPlayer extends PlaybackListener {
                     }
                 }
 
-                // Check if source is available before trying to get control
                 if (source != null && source.isOpen()) {
                     try {
                         this.volumeControl = (FloatControl) source.getControl(FloatControl.Type.MASTER_GAIN);
                     } catch (IllegalArgumentException e) {
-                        // Some audio formats or devices might not support MASTER_GAIN
                         System.out.println("This audio device doesn't support volume control: " + e.getMessage());
                         return;
                     }
                 } else {
-                    // Source not ready yet, will try again later
                     return;
                 }
             }
@@ -668,7 +651,6 @@ public class MusicPlayer extends PlaybackListener {
                 volumeControl.setValue(newGain);
             }
         } catch (Exception e) {
-            // Log the exception, but don't let it crash the application
             System.err.println("Error setting volume: " + e.getMessage());
         }
     }

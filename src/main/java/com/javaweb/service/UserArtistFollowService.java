@@ -18,4 +18,6 @@ public interface UserArtistFollowService {
 
 
     boolean unfollowArtist(Long artistId);
+
+    boolean followArtists(List<Long> artistIds);
 }

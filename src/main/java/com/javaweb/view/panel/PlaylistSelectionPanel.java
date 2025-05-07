@@ -11,8 +11,6 @@ import com.javaweb.view.theme.ThemeManager;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.List;
 
 public class PlaylistSelectionPanel extends JPanel implements ThemeChangeListener {
@@ -94,42 +92,6 @@ public class PlaylistSelectionPanel extends JPanel implements ThemeChangeListene
             JPanel cellPanel = GuiUtil.createPanel(new BorderLayout(10, 0));
             cellPanel.setOpaque(true);
 
-            // Set appropriate background and border based on selection state
-            if (isSelected) {
-                cellPanel.setBackground(accentColor);
-                cellPanel.setBorder(BorderFactory.createCompoundBorder(
-                        BorderFactory.createEmptyBorder(2, 2, 2, 2),
-                        BorderFactory.createCompoundBorder(
-                                BorderFactory.createLineBorder(accentColor.brighter(), 1, true),
-                                BorderFactory.createEmptyBorder(6, 8, 6, 8)
-                        )
-                ));
-            } else {
-                cellPanel.setBackground(backgroundColor);
-                cellPanel.setBorder(BorderFactory.createCompoundBorder(
-                        BorderFactory.createEmptyBorder(2, 2, 2, 2),
-                        BorderFactory.createCompoundBorder(
-                                BorderFactory.createLineBorder(GuiUtil.darkenColor(backgroundColor, 0.1f), 1, true),
-                                BorderFactory.createEmptyBorder(6, 8, 6, 8)
-                        )
-                ));
-
-                // Add hover effect to list items
-                cellPanel.addMouseListener(new MouseAdapter() {
-                    @Override
-                    public void mouseEntered(MouseEvent e) {
-                        cellPanel.setBackground(GuiUtil.darkenColor(backgroundColor, 0.1f));
-                        cellPanel.repaint();
-                    }
-
-                    @Override
-                    public void mouseExited(MouseEvent e) {
-                        cellPanel.setBackground(backgroundColor);
-                        cellPanel.repaint();
-                    }
-                });
-            }
-
 
             JLabel imageLabel;
             if (!playlist.isEmptyList()) {
@@ -153,13 +115,36 @@ public class PlaylistSelectionPanel extends JPanel implements ThemeChangeListene
             String songCountText = playlist.getSongs().size() + " song" + (playlist.getSongs().size() != 1 ? "s" : "");
             JLabel countLabel = new JLabel(songCountText);
             countLabel.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 12));
-            countLabel.setForeground(isSelected ?
-                    new Color(textColor.getRed(), textColor.getGreen(), textColor.getBlue(), 200) :
-                    GuiUtil.darkenColor(PlaylistSelectionPanel.this.textColor, 0.3f));
+            countLabel.setForeground(GuiUtil.darkenColor(textColor, 0.3f));
 
             infoPanel.add(nameLabel);
             infoPanel.add(countLabel);
 
+            if (isSelected) {
+                cellPanel.setBackground(accentColor);
+                cellPanel.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createEmptyBorder(2, 2, 2, 2),
+                        BorderFactory.createCompoundBorder(
+                                BorderFactory.createLineBorder(accentColor.brighter(), 1, true),
+                                BorderFactory.createEmptyBorder(6, 8, 6, 8)
+                        )
+                ));
+                nameLabel.setForeground(backgroundColor);
+                countLabel.setForeground(new Color(backgroundColor.getRed(), backgroundColor.getGreen(), backgroundColor.getBlue(), 200));
+            } else {
+                cellPanel.setBackground(backgroundColor);
+                cellPanel.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createEmptyBorder(2, 2, 2, 2),
+                        BorderFactory.createCompoundBorder(
+                                BorderFactory.createLineBorder(GuiUtil.darkenColor(backgroundColor, 0.1f), 1, true),
+                                BorderFactory.createEmptyBorder(6, 8, 6, 8)
+                        )
+                ));
+                nameLabel.setForeground(textColor);
+                countLabel.setForeground(new Color(textColor.getRed(), textColor.getGreen(), textColor.getBlue(), 200));
+            }
+
+            GuiUtil.addHoverEffect(cellPanel);
             cellPanel.add(infoPanel, BorderLayout.CENTER);
 
             return cellPanel;

@@ -18,16 +18,22 @@ public class AsyncImageLabel extends JLabel {
     private final int height;
     private final int cornerRadius;
     private boolean isRounded;
+    private boolean isCircular;
 
     public AsyncImageLabel(int width, int height) {
-        this(width, height, 0);
+        this(width, height, 0, false);
     }
 
     public AsyncImageLabel(int width, int height, int cornerRadius) {
+        this(width, height, cornerRadius, false);
+    }
+
+    public AsyncImageLabel(int width, int height, int cornerRadius, boolean isCircular) {
         this.width = width;
         this.height = height;
         this.cornerRadius = cornerRadius;
         this.isRounded = cornerRadius > 0;
+        this.isCircular = isCircular;
 
         setPreferredSize(new Dimension(width, height));
         setMinimumSize(new Dimension(width, height));
@@ -49,7 +55,9 @@ public class AsyncImageLabel extends JLabel {
         animationTimer.stop();
 
         if (image != null) {
-            if (isRounded) {
+            if (isCircular) {
+                setIcon(new ImageIcon(GuiUtil.createSmoothCircularAvatar(image, width)));
+            } else if (isRounded) {
                 setIcon(GuiUtil.createRoundedCornerImageIcon(image, cornerRadius, width, height));
             } else {
                 setIcon(new ImageIcon(GuiUtil.createBufferImage(image, width, height)));

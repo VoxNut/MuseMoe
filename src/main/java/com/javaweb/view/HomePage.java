@@ -8,6 +8,10 @@ import com.javaweb.view.components.AsyncImageLabel;
 import com.javaweb.view.event.MusicPlayerFacade;
 import com.javaweb.view.event.PlayerEvent;
 import com.javaweb.view.event.PlayerEventListener;
+import com.javaweb.view.navigation.NavigationDestination;
+import com.javaweb.view.navigation.NavigationListener;
+import com.javaweb.view.navigation.NavigationManager;
+import com.javaweb.view.navigation.NavigationManager.NavigationItem;
 import com.javaweb.view.panel.*;
 import com.javaweb.view.theme.ThemeChangeListener;
 import com.javaweb.view.theme.ThemeManager;
@@ -30,7 +34,7 @@ import java.util.Optional;
 import java.util.Set;
 
 @Slf4j
-public class HomePage extends JFrame implements PlayerEventListener, ThemeChangeListener {
+public class HomePage extends JFrame implements PlayerEventListener, ThemeChangeListener, NavigationListener {
 
 
     private static final Dimension FRAME_SIZE = new Dimension(1024, 768);
@@ -78,11 +82,22 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private boolean commitPanelActive = false;
     private boolean instructionPanelActive = false;
 
+    private JButton goBackButton;
+    private JButton goForwardButton;
+    private final NavigationManager navigationManager;
+
 
     public HomePage() {
 
+        navigationManager = NavigationManager.getInstance();
+        navigationManager.addNavigationListener(this);
+
+        navigationManager.clearHistory();
+
+        navigationManager.navigateTo(NavigationDestination.HOME, null);
+
         playerFacade = App.getBean(MusicPlayerFacade.class);
-        ;
+
 
         initializeFrame();
 
@@ -400,17 +415,13 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         leftPanel.add(dateLabel, "");
 
         // Navigation buttons
-        JButton goBackButton = GuiUtil.changeButtonIconColor(AppConstant.GO_BACK_ICON_PATH, 20, 20);
-        goBackButton.setToolTipText("Go Back");
-        goBackButton.addActionListener(e -> {
-            // Add navigation logic here
-        });
+        goBackButton = GuiUtil.changeButtonIconColor(AppConstant.GO_BACK_ICON_PATH, 20, 20);
+        goBackButton.setEnabled(navigationManager.canGoBack());
+        goBackButton.addActionListener(e -> handleNavigationBack());
 
-        JButton goForwardButton = GuiUtil.changeButtonIconColor(AppConstant.GO_FORWARD_ICON_PATH, 20, 20);
-        goForwardButton.setToolTipText("Go Forward");
-        goForwardButton.addActionListener(e -> {
-            // Add navigation logic here
-        });
+        goForwardButton = GuiUtil.changeButtonIconColor(AppConstant.GO_FORWARD_ICON_PATH, 20, 20);
+        goForwardButton.setEnabled(navigationManager.canGoForward());
+        goForwardButton.addActionListener(e -> handleNavigationForward());
 
         leftPanel.add(goBackButton, "");
         leftPanel.add(goForwardButton, "");
@@ -827,14 +838,11 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
     private void performSearch(String query) {
         if (NetworkChecker.isNetworkAvailable()) {
-            // You can implement search functionality here
-            // For example, search for songs matching the query and display them
+
             java.util.List<SongDTO> searchResults = CommonApiUtil.searchSongs(query);
 
             if (searchResults != null && !searchResults.isEmpty()) {
-                // Show search results in a popup or another part of the UI
                 SongDTO songDTO = searchResults.getFirst();
-                //For MiniMusicPlayerGUI.
                 java.util.List<PlaylistDTO> playlists = CommonApiUtil.fetchPlaylistByUserId();
                 Optional<PlaylistDTO> playlistWithSong = playlists.stream()
                         .filter(playlist -> playlist.getSongs()
@@ -860,7 +868,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         // Implement this to show search results
         // Could be a new panel in the main area, or a popup similar to recent searches
         // For now, just play the first result as an example
-        playerFacade.loadSong(searchResults.getFirst());
+        SongDTO songDTO = searchResults.getFirst();
+        playerFacade.populateSongImage(songDTO, null);
+        playerFacade.loadSong(songDTO);
     }
 
     private JPanel createLabelsPanel() {
@@ -1299,7 +1309,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         likedSongsPanel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createEmptyBorder(5, 10, 10, 10),
-                BorderFactory.createMatteBorder(0, 0, 1, 0, GuiUtil.darkenColor(ThemeManager.getInstance().getBackgroundColor(), 0.1f))
+                BorderFactory.createMatteBorder(0, 0, 1, 0, GuiUtil.darkenColor(ThemeManager.getInstance().getAccentColor(), 0.1f))
         ));
         likedSongsPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
 
@@ -1349,7 +1359,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         JPanel playlistPanel = GuiUtil.createPanel(new BorderLayout(10, 0));
         playlistPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         playlistPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
-        AsyncImageLabel coverLabel = GuiUtil.createAsyncImageLabel(40, 40, 15);
+        AsyncImageLabel coverLabel = new AsyncImageLabel(40, 40, 15);
         coverLabel.startLoading();
         if (!playlist.getSongs().isEmpty()) {
             AsyncImageLabel finalCoverLabel = coverLabel;
@@ -1398,7 +1408,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         songPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
 
         // Create song cover
-        AsyncImageLabel coverLabel = GuiUtil.createAsyncImageLabel(40, 40, 15);
+        AsyncImageLabel coverLabel = new AsyncImageLabel(40, 40, 15);
         coverLabel.startLoading();
         playerFacade.populateSongImage(song, image -> coverLabel.setLoadedImage(image));
 
@@ -1428,48 +1438,62 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         // Check if song is liked
         boolean isLiked = CommonApiUtil.checkSongLiked(song.getId());
 
-        // Create heart button based on liked status
-        JButton heartButton = GuiUtil.changeButtonIconColor(
-                isLiked ? AppConstant.HEART_ICON_PATH : AppConstant.HEART_OUTLINE_ICON_PATH,
-                20, 20
-        );
+        // Only show heartbutton if user has network available
+        if (NetworkChecker.isNetworkAvailable()) {
+            JButton heartButton = GuiUtil.changeButtonIconColor(
+                    isLiked ? AppConstant.HEART_ICON_PATH : AppConstant.HEART_OUTLINE_ICON_PATH,
+                    20, 20
+            );
 
-        heartButton.addActionListener(e -> {
-            boolean currentlyLiked = CommonApiUtil.checkSongLiked(song.getId());
+            heartButton.addActionListener(e -> {
+                boolean currentlyLiked = CommonApiUtil.checkSongLiked(song.getId());
 
-            if (currentlyLiked) {
-                // Unlike the song
-                if (CommonApiUtil.deleteSongLikes(song.getId())) {
-                    heartButton.setIcon(GuiUtil.createColoredIcon(
-                            AppConstant.HEART_OUTLINE_ICON_PATH,
-                            ThemeManager.getInstance().getTextColor(),
-                            20, 20
-                    ));
+                if (currentlyLiked) {
+                    // Unlike the song
+                    if (CommonApiUtil.deleteSongLikes(song.getId())) {
+                        heartButton.setIcon(GuiUtil.createColoredIcon(
+                                AppConstant.HEART_OUTLINE_ICON_PATH,
+                                ThemeManager.getInstance().getTextColor(),
+                                20, 20
+                        ));
 
-                    GuiUtil.changeButtonIconColor(heartButton);
+                        GuiUtil.changeButtonIconColor(heartButton);
 
-                    GuiUtil.showSuccessMessageDialog(HomePage.this, "Removed from liked songs");
-                    refreshLikedSongsPanel();
+                        GuiUtil.showSuccessMessageDialog(HomePage.this, "Removed from liked songs");
+                        refreshLikedSongsPanel();
+                    } else {
+                        GuiUtil.showErrorMessageDialog(HomePage.this, "Failed to unlike song");
+                    }
                 } else {
-                    GuiUtil.showErrorMessageDialog(HomePage.this, "Failed to unlike song");
+                    // Like the song
+                    if (CommonApiUtil.createSongLikes(song.getId())) {
+                        heartButton.setIcon(GuiUtil.createColoredIcon(
+                                AppConstant.HEART_ICON_PATH,
+                                ThemeManager.getInstance().getTextColor(),
+                                20, 20
+                        ));
+                        GuiUtil.showSuccessMessageDialog(HomePage.this, "Added to liked songs");
+                        refreshLikedSongsPanel();
+                    } else {
+                        GuiUtil.showErrorMessageDialog(HomePage.this, "Failed to like song");
+                    }
                 }
-            } else {
-                // Like the song
-                if (CommonApiUtil.createSongLikes(song.getId())) {
-                    heartButton.setIcon(GuiUtil.createColoredIcon(
-                            AppConstant.HEART_ICON_PATH,
-                            ThemeManager.getInstance().getTextColor(),
-                            20, 20
-                    ));
-                    GuiUtil.showSuccessMessageDialog(HomePage.this, "Added to liked songs");
-                    refreshLikedSongsPanel();
-                } else {
-                    GuiUtil.showErrorMessageDialog(HomePage.this, "Failed to like song");
-                }
-            }
-        });
+            });
 
-        actionPanel.add(heartButton);
+            actionPanel.add(heartButton);
+
+            songPanel.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    Component clickedComponent = SwingUtilities.getDeepestComponentAt(songPanel, e.getX(), e.getY());
+                    if (clickedComponent != heartButton) {
+                        log.info("Song clicked: {}", song.getTitle());
+                        playerFacade.loadSong(song);
+                    }
+                }
+            });
+        }
+
 
         songPanel.add(coverLabel, BorderLayout.WEST);
         songPanel.add(infoPanel, BorderLayout.CENTER);
@@ -1477,19 +1501,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         // Add hover effect
         GuiUtil.addHoverEffect(songPanel);
-
-        // Add click handler for playing the song
-        songPanel.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                // Only handle click if it's not on the heart button
-                Component clickedComponent = SwingUtilities.getDeepestComponentAt(songPanel, e.getX(), e.getY());
-                if (clickedComponent != heartButton) {
-                    log.info("Song clicked: {}", song.getTitle());
-                    playerFacade.loadSong(song);
-                }
-            }
-        });
 
         return songPanel;
     }
@@ -1501,7 +1512,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         artistPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
 
         // Create artist profile
-        AsyncImageLabel artistProfile = GuiUtil.createAsyncImageLabel(40, 40, 15);
+        AsyncImageLabel artistProfile = GuiUtil.createArtistProfileLabel(40);
         artistProfile.startLoading();
         playerFacade.populateArtistProfile(artist, image -> artistProfile.setLoadedImage(image));
 
@@ -1635,13 +1646,13 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
 
         if (commitPanelActive) {
-            if (visualizerActive) {
-                visualizerActive = false;
-                playerFacade.notifyToggleCava(false);
-            }
-            if (instructionPanelActive) {
-                instructionPanelActive = false;
-            }
+
+            visualizerActive = false;
+            instructionPanelActive = false;
+
+            navigationManager.navigateTo(NavigationDestination.COMMITS, null);
+
+            playerFacade.notifyToggleCava(false);
             cardLayout.show(centerCardPanel, "commits");
             log.info("Commit panel activated");
             GuiUtil.showToast(this, "Commit panel activated");
@@ -1662,13 +1673,12 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
 
         if (instructionPanelActive) {
-            if (visualizerActive) {
-                visualizerActive = false;
-                playerFacade.notifyToggleCava(false);
-            }
-            if (commitPanelActive) {
-                commitPanelActive = false;
-            }
+            visualizerActive = false;
+            playerFacade.notifyToggleCava(false);
+            commitPanelActive = false;
+
+            navigationManager.navigateTo(NavigationDestination.INSTRUCTIONS, null);
+
 
             cardLayout.show(centerCardPanel, "instructions");
             log.info("Instruction panel activated");
@@ -1681,6 +1691,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     }
 
     private void toggleHome() {
+        navigationManager.navigateTo(NavigationDestination.HOME, null);
+
         visualizerActive = false;
         commitPanelActive = false;
         instructionPanelActive = false;
@@ -1700,16 +1712,15 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
 
         if (visualizerActive) {
-            // Turn off commit panel if it's active
-            if (commitPanelActive) {
-                commitPanelActive = false;
-            }
-            if (instructionPanelActive) {
-                instructionPanelActive = false;
-            }
+
+            commitPanelActive = false;
+            instructionPanelActive = false;
+
+            navigationManager.navigateTo(NavigationDestination.VISUALIZER, null);
 
             playerFacade.notifyToggleCava(true);
             cardLayout.show(centerCardPanel, "visualizer");
+
             log.info("Visualizer activated");
             GuiUtil.showToast(this, "Visualizer activated");
         } else {
@@ -1916,6 +1927,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
     @Override
     public void dispose() {
+        navigationManager.removeNavigationListener(this);
         ThemeManager.getInstance().removeThemeChangeListener(this);
         playerFacade.unsubscribeFromPlayerEvents(this);
         super.dispose();
@@ -1925,4 +1937,60 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         return UserSessionManager.getInstance().getCurrentUser();
     }
 
+    @Override
+    public void onNavigationStateChanged(boolean canGoBack, boolean canGoForward) {
+        if (goBackButton != null) {
+            goBackButton.setEnabled(canGoBack);
+        }
+        if (goForwardButton != null) {
+            goForwardButton.setEnabled(canGoForward);
+        }
+    }
+
+    private void handleNavigationBack() {
+        NavigationItem previousItem = navigationManager.goBack();
+        if (previousItem != null) {
+            applyNavigationState(previousItem);
+        }
+    }
+
+    private void handleNavigationForward() {
+        NavigationItem nextItem = navigationManager.goForward();
+        if (nextItem != null) {
+            applyNavigationState(nextItem);
+        }
+    }
+
+    private void applyNavigationState(NavigationManager.NavigationItem item) {
+        CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
+
+        switch (item.destination()) {
+            case NavigationDestination.HOME -> {
+                cardLayout.show(centerCardPanel, "home");
+                visualizerActive = false;
+                commitPanelActive = false;
+                instructionPanelActive = false;
+            }
+            case NavigationDestination.VISUALIZER -> {
+                cardLayout.show(centerCardPanel, "visualizer");
+                visualizerActive = true;
+                commitPanelActive = false;
+                instructionPanelActive = false;
+                playerFacade.notifyToggleCava(true);
+            }
+            case NavigationDestination.COMMITS -> {
+                cardLayout.show(centerCardPanel, "commits");
+                visualizerActive = false;
+                commitPanelActive = true;
+                instructionPanelActive = false;
+            }
+            case NavigationDestination.INSTRUCTIONS -> {
+                cardLayout.show(centerCardPanel, "instructions");
+                visualizerActive = false;
+                commitPanelActive = false;
+                instructionPanelActive = true;
+            }
+
+        }
+    }
 }

@@ -15,6 +15,7 @@ import com.javaweb.service.UserArtistFollowService;
 import com.javaweb.utils.SecurityUtils;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class UserArtistFollowServiceImpl implements UserArtistFollowService {
 
     private final UserRepository userRepository;
@@ -105,6 +107,45 @@ public class UserArtistFollowServiceImpl implements UserArtistFollowService {
             return true;
         } catch (Exception e) {
             e.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
+    public boolean followArtists(List<Long> artistIds) {
+        Long userId = Objects.requireNonNull(SecurityUtils.getPrincipal()).getId();
+        try {
+            UserEntity user = userRepository.findById(userId)
+                    .orElseThrow(() -> new EntityNotFoundException("User not found! Id: " + userId));
+
+            List<Long> existingFollowedArtistIds = userArtistFollowRepository.findByFollower(user).stream()
+                    .map(follow -> follow.getArtist().getId())
+                    .collect(Collectors.toList());
+
+            List<Long> newArtistIds = artistIds.stream()
+                    .filter(id -> !existingFollowedArtistIds.contains(id))
+                    .collect(Collectors.toList());
+
+            if (newArtistIds.isEmpty()) {
+                log.warn("All Artists: {} has followed", artistIds);
+                return true;
+            }
+
+            List<ArtistEntity> artistsToFollow = artistRepository.findAllById(newArtistIds);
+
+            if (artistsToFollow.size() != newArtistIds.size()) {
+                log.warn("Not all artists were found. Requested: {}, Found: {}",
+                        newArtistIds.size(), artistsToFollow.size());
+            }
+
+            List<UserArtistFollowEntity> newFollows = artistsToFollow.stream()
+                    .map(artist -> new UserArtistFollowEntity(user, artist))
+                    .collect(Collectors.toList());
+            userArtistFollowRepository.saveAll(newFollows);
+            return true;
+        } catch (Exception e) {
+            log.error("User with id: {} cannot follow these artists: {}. Error: {}",
+                    userId, artistIds, e.getMessage(), e);
             return false;
         }
     }

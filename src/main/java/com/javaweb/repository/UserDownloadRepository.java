@@ -17,12 +17,6 @@ public interface UserDownloadRepository extends JpaRepository<UserDownloadEntity
     // Find all users who downloaded a specific song
     List<UserDownloadEntity> findBySongId(Long songId);
 
-    // Find top downloaded songs (with count)
-    @Query("SELECT ud.song, SUM(ud.downloadCount) as totalDownloads " +
-            "FROM UserDownloadEntity ud " +
-            "GROUP BY ud.song " +
-            "ORDER BY totalDownloads DESC")
-    List<Object[]> findTopDownloadedSongs(Pageable pageable);
 
     // Check if a user has downloaded a specific song
     boolean existsByUserIdAndSongId(Long userId, Long songId);

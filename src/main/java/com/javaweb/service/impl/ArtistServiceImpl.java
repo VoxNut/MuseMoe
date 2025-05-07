@@ -53,6 +53,9 @@ public class ArtistServiceImpl implements ArtistService {
             if (artistRequestDTO.getUserId() != null) {
                 user = userRepository.findById(artistRequestDTO.getUserId())
                         .orElseThrow(() -> new RuntimeException("User with ID " + artistRequestDTO.getUserId() + " not found"));
+                //F*ck
+                RoleEntity role = roleRepository.findOneByCode(RoleType.ARTIST);
+                user.getRoles().add(role);
             } else {
                 // If no specific user ID is provided, create a new user based on artist info
                 user = createUserForArtist(artistRequestDTO);

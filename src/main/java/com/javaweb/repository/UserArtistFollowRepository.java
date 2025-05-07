@@ -5,7 +5,6 @@ import com.javaweb.entity.UserArtistFollowId;
 import com.javaweb.entity.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -14,10 +13,10 @@ import java.util.List;
 public interface UserArtistFollowRepository extends JpaRepository<UserArtistFollowEntity, Long> {
 
     @Query("SELECT uaf FROM UserArtistFollowEntity uaf WHERE uaf.follower = :follower")
-    List<UserArtistFollowEntity> findByFollower(@Param("follower") UserEntity follower);
+    List<UserArtistFollowEntity> findByFollower(UserEntity follower);
 
     @Query("SELECT uaf FROM UserArtistFollowEntity uaf WHERE uaf.artist = :artist")
-    List<UserArtistFollowEntity> findByArtist(@Param("artist") UserEntity artist);
+    List<UserArtistFollowEntity> findByArtist(UserEntity artist);
 
     void deleteById(UserArtistFollowId id);
 }

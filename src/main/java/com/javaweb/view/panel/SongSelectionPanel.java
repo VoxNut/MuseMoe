@@ -113,6 +113,7 @@ public class SongSelectionPanel extends JPanel implements ThemeChangeListener {
                 ));
             }
 
+
             return label;
         }
     }

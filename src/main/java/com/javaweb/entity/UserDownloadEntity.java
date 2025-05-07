@@ -19,9 +19,6 @@ public class UserDownloadEntity {
     @Column(name = "download_date")
     private LocalDateTime downloadDate;
 
-    @Column(name = "download_count")
-    private Integer downloadCount = 1;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("userId")
     @JoinColumn(name = "user_id")
@@ -43,7 +40,4 @@ public class UserDownloadEntity {
         this.downloadDate = LocalDateTime.now();
     }
 
-    public void incrementDownloadCount() {
-        this.downloadCount += 1;
-    }
 }

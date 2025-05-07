@@ -98,6 +98,7 @@ public class SongAPI {
             boolean result = songService.createSong(songRequestDTO);
             if (result) {
                 return ResponseEntity.ok().body(Map.of(
+
                         "success", true,
                         "message", "Song uploaded successfully"
                 ));

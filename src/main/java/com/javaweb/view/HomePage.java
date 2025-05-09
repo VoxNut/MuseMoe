@@ -23,10 +23,6 @@ import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.*;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -86,6 +82,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private JButton goForwardButton;
     private final NavigationManager navigationManager;
 
+
+    // Keyboard event dispatch
+    private KeyEventDispatcher keyEventDispatcher;
 
     public HomePage() {
 
@@ -339,7 +338,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                         }
                     });
 
-                    // Hide loading overlay and refresh the UI
                     hideLoadingOverlay();
                     revalidate();
                     repaint();
@@ -1071,24 +1069,33 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     }
 
     private void refreshLikedSongsPanel() {
-        ExpandableCardPanel likedSongsCard = null;
-
-        for (Component component : GuiUtil.findComponentsByType(libraryPanel, ExpandableCardPanel.class)) {
-            if (component instanceof ExpandableCardPanel card
-                    && card.getTitle().equals("Liked")) {
-                likedSongsCard = card;
-                break;
-            }
-        }
+        ExpandableCardPanel likedSongsCard = GuiUtil.findFirstComponentByType(
+                libraryPanel,
+                ExpandableCardPanel.class,
+                card -> card.getTitle().equals("Liked")
+        );
 
         if (likedSongsCard != null) {
-            JPanel updatedLikedSongsPanel = createLikedSongsPanel();
-
-            likedSongsCard.setContent(updatedLikedSongsPanel);
-
             boolean wasExpanded = likedSongsCard.isExpanded();
-            if (wasExpanded) {
-                likedSongsCard.expandPanel();
+            JPanel contentPanel = likedSongsCard.getContentPanel();
+            JPanel likedSongsListPanel = GuiUtil.findFirstComponentByType(
+                    contentPanel,
+                    JPanel.class,
+                    panel -> panel.getLayout() instanceof MigLayout
+            );
+
+            if (likedSongsListPanel != null) {
+                loadLikedSongsTemplate(likedSongsListPanel, false, () -> {
+                    if (wasExpanded) {
+                        likedSongsCard.expandPanel();
+                    }
+                });
+            } else {
+                JPanel updatedLikedSongsPanel = createLikedSongsPanel();
+                likedSongsCard.setContent(updatedLikedSongsPanel);
+                if (wasExpanded) {
+                    likedSongsCard.expandPanel();
+                }
             }
         }
     }
@@ -1179,80 +1186,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
 
     private void loadLikedSongs(JPanel container) {
-        try {
-            // Check for network connectivity
-            if (!NetworkChecker.isNetworkAvailable()) {
-                container.add(GuiUtil.createErrorLabel("Network is unavailable!"));
-                return;
-            }
-
-            // Show loading indicator
-            JLabel loadingLabel = GuiUtil.createLabel("Loading liked songs...", Font.ITALIC, 12);
-            container.add(loadingLabel);
-
-            // Load in background
-            SwingWorker<List<SongDTO>, Void> worker = new SwingWorker<>() {
-                @Override
-                protected List<SongDTO> doInBackground() throws Exception {
-                    List<SongLikesDTO> songLikesDTOList = CommonApiUtil.findAllSongLikes();
-                    return songLikesDTOList
-                            .stream()
-                            .map(SongLikesDTO::getSongDTO)
-                            .toList();
-                }
-
-                @Override
-                protected void done() {
-                    try {
-                        List<SongDTO> likedSongs = get();
-                        container.remove(loadingLabel);
-
-                        if (likedSongs.isEmpty()) {
-                            container.add(GuiUtil.createErrorLabel("No liked songs"));
-                            return;
-                        }
-
-                        // Create a virtual playlist for liked songs
-                        PlaylistDTO likedSongsPlaylist = new PlaylistDTO();
-                        likedSongsPlaylist.setName("Liked Songs");
-                        likedSongsPlaylist.setSongs(likedSongs);
-
-                        // Add the liked songs panel
-                        container.add(createLikedSongsCollectionPanel(likedSongsPlaylist));
-
-                        JPanel recentLabelPanel = GuiUtil.createPanel(new BorderLayout());
-                        recentLabelPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-                        recentLabelPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
-
-                        JLabel recentLabel = GuiUtil.createLabel("Recently Liked", Font.BOLD, 14);
-                        recentLabelPanel.add(recentLabel, BorderLayout.WEST);
-
-                        container.add(recentLabelPanel);
-                        container.add(Box.createVerticalStrut(5));
-
-                        // Add up to 5 most recent liked songs
-                        for (int i = 0; i < Math.min(5, likedSongs.size()); i++) {
-                            container.add(createSongPanel(likedSongs.get(i)));
-                            container.add(Box.createVerticalStrut(5));
-                        }
-
-                        container.revalidate();
-                        container.repaint();
-                    } catch (Exception e) {
-                        log.error("Failed to load liked songs", e);
-                        container.remove(loadingLabel);
-                        container.add(GuiUtil.createErrorLabel("Failed to load liked songs"));
-                        container.revalidate();
-                        container.repaint();
-                    }
-                }
-            };
-            worker.execute();
-
-        } catch (Exception e) {
-            log.error("Failed to load liked songs", e);
-            container.add(GuiUtil.createErrorLabel("Failed to load liked songs"));
-        }
+        loadLikedSongsTemplate(container, true, null);
     }
 
     private void loadDownloadedSongs(JPanel container) {
@@ -1295,10 +1229,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private JPanel createLikedSongsCollectionPanel(PlaylistDTO likedSongsPlaylist) {
         JPanel likedSongsPanel = GuiUtil.createPanel(new BorderLayout(10, 0));
 
-        likedSongsPanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createEmptyBorder(5, 10, 10, 10),
-                BorderFactory.createMatteBorder(0, 0, 1, 0, GuiUtil.darkenColor(ThemeManager.getInstance().getAccentColor(), 0.1f))
-        ));
         likedSongsPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
 
         JPanel heartIconPanel = GuiUtil.createGradientHeartPanel(60, 60, 15, 30);
@@ -1350,8 +1280,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         AsyncImageLabel coverLabel = new AsyncImageLabel(40, 40, 15);
         coverLabel.startLoading();
         if (!playlist.getSongs().isEmpty()) {
-            AsyncImageLabel finalCoverLabel = coverLabel;
-            playerFacade.populateSongImage(playlist.getFirstSong(), image -> finalCoverLabel.setLoadedImage(image));
+            playerFacade.populateSongImage(playlist.getFirstSong(), image -> coverLabel.setLoadedImage(image));
         } else {
             coverLabel.setLoadedImage(GuiUtil.createBufferImage(AppConstant.DEFAULT_COVER_PATH));
         }
@@ -1502,7 +1431,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         // Create artist profile
         AsyncImageLabel artistProfile = GuiUtil.createArtistProfileLabel(40);
         artistProfile.startLoading();
-        playerFacade.populateArtistProfile(artist, image -> artistProfile.setLoadedImage(image));
+        playerFacade.populateArtistProfile(artist, artistProfile::setLoadedImage);
 
         // Create artist info panel
         JPanel infoPanel = GuiUtil.createPanel();
@@ -1575,7 +1504,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         centerCardPanel.setBorder(GuiUtil.createTitledBorder("Main", TitledBorder.LEFT));
 
         // Create the home panel
-        JPanel homePanel = createHomePanel();
+        JPanel homePanel = new HomePanel(playerFacade);
         homePanel.setName("home");
         centerCardPanel.add(homePanel, "home");
 
@@ -1593,8 +1522,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         instructionPanel.setName("instructions");
         centerCardPanel.add(instructionPanel, "instructions");
 
-        // Add global keyboard listener for toggling between views
-        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(e -> {
+        keyEventDispatcher = e -> {
             if (e.getID() == KeyEvent.KEY_PRESSED) {
                 // Do nothing when search field gain focus
                 if (searchField.hasFocus()) {
@@ -1623,7 +1551,10 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 }
             }
             return false;
-        });
+        };
+
+        // Add global keyboard listener for toggling between views
+        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(keyEventDispatcher);
 
         return centerCardPanel;
     }
@@ -1747,74 +1678,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         GuiUtil.showToast(this, "Visualizer: " + newBands + " bands");
     }
 
-    private JPanel createHomePanel() {
-        JPanel mainContent = GuiUtil.createPanel(new MigLayout(
-                "fill, insets 10",
-                "[grow]",
-                "[top][grow]"
-        ));
-
-        String[] welcomeMessages = AppConstant.WELCOME_MESSAGE;
-        int randomIndex = (int) (Math.random() * welcomeMessages.length);
-        String selectedMessage = welcomeMessages[randomIndex];
-        String asciiArt = generateFigletArt(selectedMessage);
-
-        JTextArea asciiArtTextArea = GuiUtil.createTextArea(asciiArt, Font.BOLD, 12);
-
-        JPanel asciiArtPanel = GuiUtil.createPanel(new MigLayout("fill, insets 0"));
-        asciiArtPanel.add(asciiArtTextArea, "left, top, growx");
-
-        mainContent.add(asciiArtPanel, "growx, wrap");
-
-        return mainContent;
-    }
-
-    private String generateFigletArt(String text) {
-        try {
-            Process process = getProcess(text);
-
-            // Read the output
-            StringBuilder output = new StringBuilder();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    output.append(line).append("\n");
-                }
-            }
-
-            return output.toString();
-        } catch (Exception e) {
-            log.error("Error generating ASCII art", e);
-            return "";
-        }
-    }
-
-    private Process getProcess(String text) throws IOException {
-        File folder = new File("D:\\figlet\\usr\\share\\figlet");
-        File[] files = folder.listFiles();
-
-        if (files == null || files.length == 0) {
-            log.error(".flf files not found!.");
-        }
-
-        File randomFile = files[(int) (Math.random() * files.length)];
-        String fontName = randomFile.getName();
-        ProcessBuilder processBuilder = new ProcessBuilder(
-                "figlet",
-                "-f",
-                fontName,
-                "-W",
-                "-w 500",
-                "-s",
-                text
-        );
-
-        processBuilder.redirectErrorStream(true);
-
-        Process process = processBuilder.start();
-        return process;
-    }
-
     @Override
     public void onThemeChanged(Color backgroundColor, Color textColor, Color accentColor) {
         // Title Bar
@@ -1919,6 +1782,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
     @Override
     public void dispose() {
+        if (keyEventDispatcher != null) {
+            KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(keyEventDispatcher);
+        }
         navigationManager.removeNavigationListener(this);
         ThemeManager.getInstance().removeThemeChangeListener(this);
         playerFacade.unsubscribeFromPlayerEvents(this);
@@ -1951,6 +1817,90 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         if (nextItem != null) {
             applyNavigationState(nextItem);
         }
+    }
+
+    private void loadLikedSongsTemplate(JPanel targetContainer, boolean showLoadingIndicator, Runnable onComplete) {
+        if (!NetworkChecker.isNetworkAvailable()) {
+            targetContainer.removeAll();
+            targetContainer.add(GuiUtil.createErrorLabel("Network is unavailable!"));
+            targetContainer.revalidate();
+            targetContainer.repaint();
+            return;
+        }
+
+        // Optional loading indicator
+        JLabel loadingLabel = null;
+        if (showLoadingIndicator) {
+            loadingLabel = GuiUtil.createLabel("Loading liked songs...", Font.ITALIC, 12);
+            targetContainer.add(loadingLabel);
+            targetContainer.revalidate();
+        }
+
+        final JLabel finalLoadingLabel = loadingLabel;
+
+        SwingWorker<List<SongDTO>, Void> worker = new SwingWorker<>() {
+            @Override
+            protected List<SongDTO> doInBackground() {
+                try {
+                    List<SongLikesDTO> songLikesDTOList = CommonApiUtil.findAllSongLikes();
+                    return songLikesDTOList.stream()
+                            .map(SongLikesDTO::getSongDTO)
+                            .toList();
+                } catch (Exception e) {
+                    log.error("Failed to load liked songs", e);
+                    return List.of();
+                }
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    List<SongDTO> likedSongs = get();
+                    targetContainer.removeAll();
+
+                    if (likedSongs.isEmpty()) {
+                        targetContainer.add(GuiUtil.createErrorLabel("No liked songs"));
+                    } else {
+                        PlaylistDTO likedSongsPlaylist = new PlaylistDTO();
+                        likedSongsPlaylist.setName("Liked Songs");
+                        likedSongsPlaylist.setSongs(likedSongs);
+
+                        targetContainer.add(createLikedSongsCollectionPanel(likedSongsPlaylist));
+
+                        JPanel recentLabelPanel = GuiUtil.createPanel(new BorderLayout());
+                        recentLabelPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+                        recentLabelPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+                        JLabel recentLabel = GuiUtil.createLabel("Recently Liked", Font.BOLD, 14);
+                        recentLabelPanel.add(recentLabel, BorderLayout.WEST);
+                        targetContainer.add(recentLabelPanel);
+                        targetContainer.add(Box.createVerticalStrut(5));
+
+                        for (int i = 0; i < Math.min(5, likedSongs.size()); i++) {
+                            targetContainer.add(createSongPanel(likedSongs.get(i)));
+                            targetContainer.add(Box.createVerticalStrut(5));
+                        }
+                    }
+
+                    targetContainer.revalidate();
+                    targetContainer.repaint();
+
+                    if (onComplete != null) {
+                        onComplete.run();
+                    }
+
+                } catch (Exception e) {
+                    log.error("Failed to load liked songs", e);
+                    targetContainer.removeAll();
+                    if (finalLoadingLabel != null) {
+                        targetContainer.remove(finalLoadingLabel);
+                    }
+                    targetContainer.add(GuiUtil.createErrorLabel("Failed to load liked songs"));
+                    targetContainer.revalidate();
+                    targetContainer.repaint();
+                }
+            }
+        };
+        worker.execute();
     }
 
     private void applyNavigationState(NavigationManager.NavigationItem item) {

@@ -56,6 +56,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -759,14 +760,26 @@ public class GuiUtil {
         return button;
     }
 
-    public static JButton createIconButton(String iconPath, int width, int height) {
-        ImageIcon imageIcon = createImageIcon(iconPath, width, height);
+    public static JButton createIconButton(String iconPath, int width) {
+        ImageIcon imageIcon = createImageIcon(iconPath, width, width);
         JButton button = new JButton();
         button.setIcon(imageIcon);
         button.setBorderPainted(false);
         button.setContentAreaFilled(false);
         button.setFocusPainted(false);
         button.setOpaque(false);
+        return button;
+    }
+
+    public static JButton createIconButton(Icon normalIcon, Icon hoverIcon) {
+        JButton button = new JButton();
+        button.setIcon(normalIcon);
+        button.setRolloverIcon(hoverIcon);
+        button.setBorderPainted(false);
+        button.setContentAreaFilled(false);
+        button.setFocusPainted(false);
+        button.setOpaque(false);
+        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         return button;
     }
 
@@ -796,14 +809,7 @@ public class GuiUtil {
             ImageIcon normalIcon = new ImageIcon(Thumbnails.of(normalColoredImg).size(width, height).asBufferedImage());
             ImageIcon hoverIcon = new ImageIcon(Thumbnails.of(hoverColoredImg).size(width, height).asBufferedImage());
 
-            JButton newButton = new JButton();
-            newButton.setIcon(normalIcon);
-            newButton.setRolloverIcon(hoverIcon);
-            newButton.setBorderPainted(false);
-            newButton.setContentAreaFilled(false);
-            newButton.setFocusPainted(false);
-            newButton.setOpaque(false);
-            newButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            JButton newButton = createIconButton(normalIcon, hoverIcon);
             return newButton;
         } catch (IOException e) {
             e.printStackTrace();
@@ -812,45 +818,11 @@ public class GuiUtil {
     }
 
     public static JButton changeButtonIconColor(String iconPath, Color color, int width, int height) {
-        if (color == null) {
-            throw new IllegalArgumentException("Icon path or color cannot be null");
-        }
-
-        // Load the original icon
-        ImageIcon originalIcon = createImageIcon(iconPath, width, height);
-
-        // Create a copy of the original image to preserve its structure
-        BufferedImage originalImg = new BufferedImage(
-                originalIcon.getIconWidth(),
-                originalIcon.getIconHeight(),
-                BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g = originalImg.createGraphics();
-        originalIcon.paintIcon(null, g, 0, 0);
-        g.dispose();
-
-        Color hoverColor = lightenColor(color, 0.3);
-        // Create colored versions
-        BufferedImage normalColoredImg = applyColorToImage(originalImg, ThemeManager.getInstance().getTextColor());
-        BufferedImage hoverColoredImg = applyColorToImage(originalImg, hoverColor);
-
-        try {
-            ImageIcon normalIcon = new ImageIcon(Thumbnails.of(normalColoredImg).size(width, height).asBufferedImage());
-            ImageIcon hoverIcon = new ImageIcon(Thumbnails.of(hoverColoredImg).size(width, height).asBufferedImage());
-
-            JButton newButton = new JButton();
-            newButton.setIcon(normalIcon);
-            newButton.setRolloverIcon(hoverIcon);
-            newButton.setBorderPainted(false);
-            newButton.setContentAreaFilled(false);
-            newButton.setFocusPainted(false);
-            newButton.setOpaque(false);
-            newButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            return newButton;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return new JButton();
-        }
+        JButton button = changeButtonIconColor(iconPath, width, height);
+        button.setForeground(color);
+        return button;
     }
+
 
     public static void rotateButtonIcon(JButton button, double angleDegrees) {
         Icon icon = button.getIcon();
@@ -1633,6 +1605,36 @@ public class GuiUtil {
         }
 
         return components;
+    }
+
+    public static <T> T findFirstComponentByType(Container container, Class<T> type, Predicate<T> predicate) {
+        if (container == null) {
+            return null;
+        }
+
+        if (type.isInstance(container) && predicate.test(type.cast(container))) {
+            return type.cast(container);
+        }
+
+        for (Component component : container.getComponents()) {
+            if (type.isInstance(component) && predicate.test(type.cast(component))) {
+                return type.cast(component);
+            }
+
+            if (component instanceof Container) {
+                T result = findFirstComponentByType((Container) component, type, predicate);
+                if (result != null) {
+                    return result;
+                }
+            }
+        }
+
+        return null;
+    }
+
+
+    public static <T> T findFirstComponentByType(Container container, Class<T> type) {
+        return findFirstComponentByType(container, type, component -> true);
     }
 
     public static JLabel createPlaylistIconLabel(int width, int height, Color backgroundColor, Color foregroundColor) {
@@ -2659,5 +2661,16 @@ public class GuiUtil {
             return new Color(25, 25, 25); // Almost black
         }
     }
+
+
+    public static JButton createTransparentButton(Icon icon) {
+        JButton button = new JButton(icon);
+        button.setBorderPainted(false);
+        button.setContentAreaFilled(false);
+        button.setFocusPainted(false);
+        button.setOpaque(false);
+        return button;
+    }
+
 
 }

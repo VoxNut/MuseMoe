@@ -10,6 +10,8 @@ import com.javaweb.utils.ImageMediaUtil;
 import com.javaweb.utils.StreamingAudioPlayer;
 import com.javaweb.view.advertisement.AdvertisementManager;
 import com.javaweb.view.event.MusicPlayerMediator;
+import com.javaweb.view.state.PlayerState;
+import com.javaweb.view.state.StoppedState;
 import com.javaweb.view.theme.ThemeManager;
 import com.javaweb.view.user.UserSessionManager;
 import javazoom.jl.player.AudioDevice;
@@ -38,13 +40,19 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+
 public class MusicPlayer extends PlaybackListener {
 
     private final StreamingAudioPlayer streamingPlayer;
     private final ImageMediaUtil imageMediaUtil;
-    private static final Object playSignal = new Object();
     private final MusicPlayerMediator mediator;
+    private final AdvertisementManager adManager;
+    private static final Object playSignal = new Object();
 
+
+    @Getter
+    @Setter
+    private PlayerState currentState = new StoppedState(this);
 
     @Getter
     @Setter
@@ -94,8 +102,6 @@ public class MusicPlayer extends PlaybackListener {
 
     private BufferedInputStream bufferedInputStream;
     private FileInputStream fileInputStream;
-
-    private final AdvertisementManager adManager;
 
 
     @Getter
@@ -159,7 +165,7 @@ public class MusicPlayer extends PlaybackListener {
             havingAd = true;
             //get random ad url
             String driveId = adManager.getAdvertisements()[(int) (Math.random() * adManager.getAdvertisements().length)];
-            currentSong = CommonApiUtil.fetchSongByUrl(driveId);
+            currentSong = CommonApiUtil.fetchSongByGoogleDriveId(driveId);
             mediator.notifyAdOn();
         } else {
             havingAd = false;
@@ -380,12 +386,12 @@ public class MusicPlayer extends PlaybackListener {
         sliderThread = new Thread(() -> {
             try {
                 // Store important values locally to prevent race conditions
-                final SongDTO currentSongCopy = currentSong;
+                SongDTO currentSongCopy = currentSong;
                 if (currentSongCopy == null) return;
 
-                final long totalFrames = currentSongCopy.getFrame();
-                final double frameRate = currentSongCopy.getFrameRatePerMilliseconds();
-                final long songDurationMs = currentSongCopy.getLengthInMilliseconds();
+                long totalFrames = currentSongCopy.getFrame();
+                double frameRate = currentSongCopy.getFrameRatePerMilliseconds();
+                long songDurationMs = currentSongCopy.getLengthInMilliseconds();
 
                 if (isPaused) {
                     synchronized (playSignal) {
@@ -461,7 +467,7 @@ public class MusicPlayer extends PlaybackListener {
         pressedShuffle = false;
         pressedReplay = false;
 
-        mediator.notifyPlaybackStarted();
+        mediator.notifyPlaybackStarted(currentSong);
 
         // Reapply current volume
         Timer volumeTimer = new Timer(1, e -> {
@@ -508,7 +514,7 @@ public class MusicPlayer extends PlaybackListener {
 
             //Naturally end
             if (calculatedFrame >= threshold) {
-                mediator.notifyPlaybackPaused();
+                mediator.notifyPlaybackPaused(currentSong);
                 //Update play counter
                 adManager.updateUserPlayCounter(getCurrentUser());
                 if (currentPlaylist == null) {
@@ -534,7 +540,7 @@ public class MusicPlayer extends PlaybackListener {
             resetPlaybackPosition();
             playCurrentSong();
         } else {
-            mediator.notifyPlaybackPaused();
+            mediator.notifyPlaybackPaused(currentSong);
             songFinished = true;
         }
     }
@@ -552,7 +558,7 @@ public class MusicPlayer extends PlaybackListener {
                 playCurrentSong();
 
             } else {
-                mediator.notifyPlaybackPaused();
+                mediator.notifyPlaybackPaused(currentSong);
                 songFinished = true;
             }
         } else {
@@ -670,7 +676,7 @@ public class MusicPlayer extends PlaybackListener {
     }
 
     private void updateGUI() {
-        imageMediaUtil.populateSongImage(currentSong);
+        imageMediaUtil.loadAndWaitForImage(currentSong, 700);
         updateThemeFromSong(currentSong);
         mediator.notifySongLoaded(currentSong);
         if (currentPlaylist != null) {

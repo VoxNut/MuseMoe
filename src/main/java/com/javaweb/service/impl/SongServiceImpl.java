@@ -135,6 +135,19 @@ public class SongServiceImpl implements SongService {
     }
 
     @Override
+    public SongDTO findByGoogleDriveId(String driveId) {
+        try {
+            SongEntity entity = songRepository.findByStreamingMediaGoogleDriveId(driveId);
+            SongDTO res = songConverter.toDTO(entity);
+            log.info("Successfully find song with {} drive Id", driveId);
+            return res;
+        } catch (Exception e) {
+            log.error("Failed find song with {} drive Id", driveId);
+            return null;
+        }
+    }
+
+    @Override
     public boolean createSong(SongRequestDTO songRequestDTO) {
         try {
 

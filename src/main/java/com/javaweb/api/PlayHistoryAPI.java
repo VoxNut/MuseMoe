@@ -33,7 +33,6 @@ public class PlayHistoryAPI {
 
     @GetMapping("/recent_songs")
     public ResponseEntity<List<SongDTO>> fetchRecentPlayHistory(@Param("limit") Integer limit) {
-
         try {
             List<SongDTO> recentSongs = playHistoryService.fetchRecentPlayHistory(limit);
             return ResponseEntity.ok(recentSongs);

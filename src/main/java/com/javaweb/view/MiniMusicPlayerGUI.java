@@ -477,9 +477,9 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         playbackBtns.add(nextButton);
 
         // Shuffle button
-        shuffleButton = GuiUtil.changeButtonIconColor(AppConstant.SHUFFLE_ICON_PATH, AppConstant.MUSIC_PLAYER_TEXT_COLOR, 25,
+        shuffleButton = GuiUtil.changeButtonIconColor(AppConstant.SHUFFLE_ICON_PATH, 25,
                 25);
-        shuffleButton.setBounds(340, 0, 40, 40); // Set position and size
+        shuffleButton.setBounds(340, 0, 40, 40);
         shuffleButton.addActionListener(e -> {
             playerFacade.shufflePlaylist();
         });
@@ -489,8 +489,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
 
     public void toggleShuffleButton(boolean enabled) throws IOException {
         if (!enabled) {
-            shuffleButton.setIcon(GuiUtil.changeButtonIconColor(AppConstant.SHUFFLE_ICON_PATH,
-                    GuiUtil.darkenColor(ThemeManager.getInstance().getTextColor(), 0.2f), 25, 25).getIcon());
+            shuffleButton.setIcon(GuiUtil.changeButtonIconColor(AppConstant.SHUFFLE_ICON_PATH, ThemeManager.getInstance().getTextColor(), 25, 25).getIcon());
         } else {
             shuffleButton.setIcon(GuiUtil.changeButtonIconColor(AppConstant.SHUFFLE_ICON_PATH
                     , 25, 25).getIcon());

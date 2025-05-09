@@ -63,6 +63,17 @@ class SongApiClientImpl implements SongApiClient {
     }
 
     @Override
+    public SongDTO fetchSongByGoogleDriveId(String googleDriveId) {
+        try {
+            String url = apiConfig.buildSongUrl("/driveId?driveId=" + googleDriveId);
+            SongDTO res = apiClient.get(url, SongDTO.class);
+            return res;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    @Override
     public SongDTO fetchSongByTitle(String title) {
         try {
 

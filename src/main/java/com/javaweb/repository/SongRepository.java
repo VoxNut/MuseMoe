@@ -18,6 +18,8 @@ public interface SongRepository extends JpaRepository<SongEntity, Long> {
     @Query("SELECT DISTINCT s from SongEntity s WHERE s.title LIKE %:title%")
     List<SongEntity> findAllSongsLike(String title);
 
+    @Query("SELECT s FROM SongEntity s WHERE s.streamingMedia.googleDriveId = :googleDriveId")
+    SongEntity findByStreamingMediaGoogleDriveId(String googleDriveId);
 
     @Query("SELECT s FROM SongEntity s JOIN s.streamingMedia m WHERE m.webContentLink = :url")
     Optional<SongEntity> findSongByUrl(String url);

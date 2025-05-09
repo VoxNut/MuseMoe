@@ -1,10 +1,6 @@
 package test;
 
 import com.javaweb.utils.FileUtil;
-import javazoom.jl.decoder.Bitstream;
-import javazoom.jl.decoder.Decoder;
-import javazoom.jl.decoder.Header;
-import javazoom.jl.decoder.SampleBuffer;
 import org.jaudiotagger.audio.AudioFile;
 import org.jaudiotagger.audio.AudioFileIO;
 import org.jaudiotagger.audio.exceptions.CannotReadException;
@@ -17,9 +13,7 @@ import org.jaudiotagger.tag.Tag;
 import org.jaudiotagger.tag.TagException;
 import org.jaudiotagger.tag.datatype.Artwork;
 
-import javax.sound.sampled.*;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -29,50 +23,6 @@ import java.util.logging.Logger;
 
 
 public class Test {
-    public static boolean hasArtwork(String filePath) {
-        try {
-            // Use the jaudiotagger library to create an audiofile object to read mp3 file's
-            // information
-            AudioFile audioFile = AudioFileIO.read(new File(filePath));
-
-            // Read through the metadata of the audio file
-            Tag tag = audioFile.getTag();
-            if (tag != null) {
-                // Extract artwork
-                Artwork artwork = tag.getFirstArtwork();
-                System.out.println(tag.getFirst(FieldKey.TITLE));
-                System.out.println(tag.getFirst(FieldKey.ARTIST));
-                return artwork != null;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    public static double getAverageVolume(String filePath) throws Exception {
-        Bitstream bitstream = new Bitstream(new FileInputStream(filePath));
-        Header frameHeader;
-        SampleBuffer sampleBuffer;
-        long totalSamples = 0;
-        double totalAmplitude = 0;
-
-        while ((frameHeader = bitstream.readFrame()) != null) {
-            Decoder decoder = new Decoder();
-            sampleBuffer = (SampleBuffer) decoder.decodeFrame(frameHeader, bitstream);
-
-            short[] samples = sampleBuffer.getBuffer();
-            for (short sample : samples) {
-                totalAmplitude += Math.abs(sample);
-                totalSamples++;
-            }
-
-            bitstream.closeFrame();
-        }
-        bitstream.close();
-        return totalAmplitude / totalSamples;
-    }
-
     private static void disableJaudiotaggerLogging() {
         // Get the global logger
         Logger rootLogger = Logger.getLogger("");
@@ -90,28 +40,11 @@ public class Test {
         jaudiotaggerLogger.setLevel(Level.SEVERE); // Only show severe errors
     }
 
-    public static void listAvailableAudioDevices() {
-        AudioFormat format = new AudioFormat(44100.0f, 16, 2, true, false);
-
-        Mixer.Info[] mixers = AudioSystem.getMixerInfo();
-        System.out.println("Available audio devices:");
-        for (Mixer.Info info : mixers) {
-            Mixer mixer = AudioSystem.getMixer(info);
-            System.out.println("- " + info.getName() + " | " + info.getDescription());
-
-            // Check if it supports TargetDataLine
-            boolean supportsCapture = mixer.isLineSupported(
-                    new DataLine.Info(TargetDataLine.class, format));
-            System.out.println("  Supports capture: " + supportsCapture);
-        }
-    }
-
-
     public static void main(String[] args) throws CannotReadException, TagException, InvalidAudioFrameException, ReadOnlyFileException, IOException, CannotWriteException {
         // Specify the package/directory path
         disableJaudiotaggerLogging();
-//        String packagePath = "src/main/java/com/javaweb/view/mini_musicplayer/audio";
-        String packagePath = "D:\\MuseMoe resources\\imgs\\artist_profile";
+        String packagePath = "D:\\MuseMoe resources\\audio";
+//        String packagePath = "D:\\MuseMoe resources\\imgs\\artist_profile";
 //        String packagePath = "src/main/java/com/javaweb/view/mini_musicplayer/advertisement";
 //        String packagePath = "src/main/java/com/javaweb/view/imgs/avatars";
 //        String packagePath = "src/main/java/com/javaweb/view/imgs/album_cover";

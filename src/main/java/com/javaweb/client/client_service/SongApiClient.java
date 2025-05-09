@@ -27,4 +27,6 @@ public interface SongApiClient {
     Boolean updateSong(Long id, String title, List<Long> artistIds, MultipartFile file);
 
     Boolean deleteSong(Long id);
+
+    SongDTO fetchSongByGoogleDriveId(String googleDriveId);
 }

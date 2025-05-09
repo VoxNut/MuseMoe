@@ -79,6 +79,15 @@ public class SongAPI {
         }
     }
 
+    @GetMapping("/driveId")
+    public ResponseEntity<SongDTO> getSongByGoogleDriveId(@RequestParam("driveId") String driveId) {
+        try {
+            SongDTO res = songService.findByGoogleDriveId(driveId);
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 
     @PostMapping("/import-from-drive")
     public ResponseEntity<Integer> importSongsFromDrive() {
@@ -141,4 +150,6 @@ public class SongAPI {
             ));
         }
     }
+
+
 }

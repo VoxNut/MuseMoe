@@ -117,8 +117,8 @@ public class AppConstant {
     public static final String TOKENS_DIRECTORY_PATH = "src/main/resources/tokens";
 
     //ADS
-    public static final String MUSE_MOE_AD = "https://drive.google.com/uc?id=1V-UlJy6yG60GZPB0Ro-ZWvRg__JCcxz_&export=download";
-    public static final String STUDY_SMART_AD = "https://drive.google.com/uc?id=1ra1NtQDV2Q0rjAywJkX4l-nslTRh5P9Y&export=download";
-    public static final String BREW_SPOT_AD = "https://drive.google.com/uc?id=19oHeqO0CdfzqrbBfsA_AvMfohR5ecspC&export=download";
-    public static final String INSPIRATION_AD = "https://drive.google.com/uc?id=1vY5I6n4zcQLwkS7bYWULxLcgAn2wzgtn&export=download";
+    public static final String MUSE_MOE_AD = "1LIj0GvIz6R_qGoWjVzIVotLn_Dx5Qlkh";
+    public static final String STUDY_SMART_AD = "1ra1NtQDV2Q0rjAywJkX4l-nslTRh5P9Y";
+    public static final String BREW_SPOT_AD = "18t4TUrdqgHrYciGYZSQf7J8o3U6dEfIB";
+    public static final String INSPIRATION_AD = "1kaLdCrgHZ52GEYFcIMUAuWq33bp0PFyf";
 }

@@ -82,7 +82,7 @@ public class CommonApiUtil {
         return getUserApiClient().fetchUserByEmail(email);
     }
 
-    //Song
+    // Song
 
     public static List<SongDTO> findSongsLike(String title) {
         return getSongApiClient().findSongsLike(title);
@@ -94,6 +94,10 @@ public class CommonApiUtil {
 
     public static List<SongDTO> fetchAllSongs() {
         return getSongApiClient().findAllSongs();
+    }
+
+    public static SongDTO fetchSongByGoogleDriveId(String googleDriveId) {
+        return getSongApiClient().fetchSongByGoogleDriveId(googleDriveId);
     }
 
     public static List<SongDTO> fetchUserDownloadedSongs() {

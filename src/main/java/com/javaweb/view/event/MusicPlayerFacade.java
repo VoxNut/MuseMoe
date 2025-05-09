@@ -37,7 +37,7 @@ public class MusicPlayerFacade {
     public void pauseSong() {
         try {
             player.pauseSong();
-            mediator.notifyPlaybackPaused();
+            mediator.notifyPlaybackPaused(getCurrentSong());
         } catch (IOException iOE) {
             iOE.printStackTrace();
         }
@@ -54,7 +54,7 @@ public class MusicPlayerFacade {
 
     public void playCurrentSong() {
         player.playCurrentSong();
-        mediator.notifyPlaybackStarted();
+        mediator.notifyPlaybackStarted(getCurrentSong());
     }
 
     public void nextSong() {

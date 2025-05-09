@@ -28,5 +28,6 @@ public interface SongService {
 
     Map<String, Object> createMultipleSongs(SongRequestDTO songRequestDTO);
 
+    SongDTO findByGoogleDriveId(String driveId);
 
 }

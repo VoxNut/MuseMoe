@@ -101,7 +101,6 @@ public class ImageMediaUtil {
         if (user.getAvatarImage() == null && user.getAvatarId() != null) {
             String imageId = user.getAvatarId();
 
-            // Check cache first
             if (ImageCache.containsImage(imageId)) {
                 BufferedImage cachedImage = ImageCache.getImage(imageId);
                 user.setAvatarImage(cachedImage);
@@ -111,7 +110,6 @@ public class ImageMediaUtil {
                 return;
             }
 
-            // Load image asynchronously
             CompletableFuture.supplyAsync(() -> {
                 try {
                     return googleDriveService.getBufferImage(imageId);
@@ -130,4 +128,32 @@ public class ImageMediaUtil {
             });
         }
     }
+
+    public void loadAndWaitForImage(SongDTO song, int timeoutMillis) {
+        if (song.getSongImage() == null && song.getAlbumArtId() != null) {
+            String imageId = song.getAlbumArtId();
+            if (ImageCache.containsImage(imageId)) {
+                song.setSongImage(ImageCache.getImage(imageId));
+                return;
+            }
+            CompletableFuture<BufferedImage> future = CompletableFuture.supplyAsync(() -> {
+                try {
+                    return googleDriveService.getBufferImage(imageId);
+                } catch (Exception e) {
+                    return null;
+                }
+            });
+
+            try {
+                BufferedImage image = future.get(timeoutMillis, java.util.concurrent.TimeUnit.MILLISECONDS);
+                if (image != null) {
+                    ImageCache.putImage(imageId, image);
+                    song.setSongImage(image);
+                }
+            } catch (Exception e) {
+                log.debug("Waiting for image timed out, continuing with async loading");
+            }
+        }
+    }
+
 }

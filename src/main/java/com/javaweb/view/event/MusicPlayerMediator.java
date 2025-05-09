@@ -39,12 +39,12 @@ public class MusicPlayerMediator {
         publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.SONG_LOADED, song));
     }
 
-    public void notifyPlaybackStarted() {
-        publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.PLAYBACK_STARTED, null));
+    public void notifyPlaybackStarted(SongDTO song) {
+        publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.PLAYBACK_STARTED, song));
     }
 
-    public void notifyPlaybackPaused() {
-        publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.PLAYBACK_PAUSED, null));
+    public void notifyPlaybackPaused(SongDTO song) {
+        publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.PLAYBACK_PAUSED, song));
     }
 
     public void notifyPlaybackStopped() {

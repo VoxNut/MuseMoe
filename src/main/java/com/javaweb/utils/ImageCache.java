@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class ImageCache {
     private static final Map<String, BufferedImage> cache = new ConcurrentHashMap<>();
-    private static final int MAX_CACHE_SIZE = 200; // Adjust based on memory constraints
+    private static final int MAX_CACHE_SIZE = 200;
 
     public static BufferedImage getImage(String imageId) {
         return cache.get(imageId);

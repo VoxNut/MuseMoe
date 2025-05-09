@@ -19,7 +19,7 @@ import com.javaweb.constant.AppConstant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.utils.IOUtils;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
@@ -30,8 +30,8 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Service
 @Slf4j
+@Component
 @RequiredArgsConstructor
 public class GoogleDriveService {
     private static final String APPLICATION_NAME = "MuseMoe";

@@ -77,7 +77,7 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
         String selectedMessage = welcomeMessages[randomIndex];
         String asciiArt = generateFigletArt(selectedMessage);
 
-        JTextArea asciiArtTextArea = GuiUtil.createTextArea(asciiArt, Font.BOLD, 12);
+        JTextArea asciiArtTextArea = GuiUtil.createTextArea(asciiArt, Font.BOLD, 15);
         panel.add(asciiArtTextArea, "left, top, growx");
 
         return panel;

@@ -869,7 +869,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         // Could be a new panel in the main area, or a popup similar to recent searches
         // For now, just play the first result as an example
         SongDTO songDTO = searchResults.getFirst();
-        playerFacade.populateSongImage(songDTO, null);
         playerFacade.loadSong(songDTO);
     }
 
@@ -1608,6 +1607,10 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         // Add global keyboard listener for toggling between views
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(e -> {
             if (e.getID() == KeyEvent.KEY_PRESSED) {
+                // Do nothing when search field gain focus
+                if (searchField.hasFocus()) {
+                    return false;
+                }
                 // Shift+V to toggle visualizer
                 if (e.getKeyCode() == KeyEvent.VK_V && e.isShiftDown()) {
                     toggleVisualizer();

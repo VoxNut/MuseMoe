@@ -201,13 +201,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             progressLabel = GuiUtil.createLabel(message, Font.BOLD, 40);
             progressLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-            // Create a modern looking progress bar
-            Color accentColor = ThemeManager.getInstance().getAccentColor();
-
-            progressBar = GuiUtil.createStyledProgressBar(
-                    ThemeManager.getInstance().getBackgroundColor(),
-                    accentColor != null ? accentColor : new Color(52, 152, 219)
-            );
+            progressBar = GuiUtil.createStyledProgressBar();
             progressBar.setAlignmentX(Component.CENTER_ALIGNMENT);
             progressBar.setIndeterminate(false);
             progressBar.setMinimum(0);
@@ -794,9 +788,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private void loadRecentSearches() {
         try {
             java.util.List<SongDTO> recentSongs = CommonApiUtil.fetchRecentSearchHistory((AppConstant.RECENT_SEARCHED_SONG_LIMIT));
-            recentSongs.forEach(song -> {
-                playerFacade.populateSongImage(song, null);
-            });
+            recentSongs.forEach(song -> playerFacade.populateSongImage(song, null));
             if (!recentSongs.isEmpty()) {
                 if (recentSearchDropdown == null) {
                     recentSearchDropdown = new RecentSearchDropdown(
@@ -892,14 +884,11 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     }
 
     public void updatePlaybackSlider(SongDTO song) {
-        // Set slider range based on total frames instead of milliseconds
         long totalFrames = song.getFrame();
         playbackSlider.setMaximum((int) totalFrames);
 
         labelEnd.setText(song.getSongLength());
-        // Turn on or off this for octagon/ball thumb
         playbackSlider.setPaintLabels(false);
-        // Improve slider performance
         playbackSlider.repaint();
 
     }

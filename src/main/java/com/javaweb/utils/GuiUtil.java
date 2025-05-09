@@ -266,12 +266,13 @@ public class GuiUtil {
     }
 
 
-    public static JProgressBar createStyledProgressBar(Color backgroundColor, Color foregroundColor) {
+    public static JProgressBar createStyledProgressBar() {
+        Color textColor = ThemeManager.getInstance().getTextColor();
+        Color accentColor = ThemeManager.getInstance().getAccentColor();
         JProgressBar progressBar = new JProgressBar();
 
         // Set colors
-        progressBar.setBackground(GuiUtil.darkenColor(backgroundColor, 0.2f));
-        progressBar.setForeground(foregroundColor);
+        progressBar.setForeground(accentColor);
 
         // Remove borders
         progressBar.setBorderPainted(true);
@@ -280,11 +281,10 @@ public class GuiUtil {
         progressBar.setPreferredSize(new Dimension(300, 20));
 
         // Set UI properties
-        UIManager.put("ProgressBar.selectionForeground", foregroundColor);
-        UIManager.put("ProgressBar.selectionBackground", backgroundColor);
+        UIManager.put("ProgressBar.selectionForeground", darkenColor(accentColor, 0.3));
+
 
         progressBar.setFont(FontUtil.getSpotifyFont(Font.BOLD, 14));
-        progressBar.setStringPainted(false);
 
 
         if (!progressBar.isIndeterminate()) {

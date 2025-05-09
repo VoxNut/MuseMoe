@@ -1658,7 +1658,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             return;
         }
 
-        int[] bandOptions = {10, 16, 24, 32, 48, 64, 98, 128, 256, 512};
+        int[] bandOptions = {10, 16, 24, 32, 48, 64, 98, 128, 256};
         int currentBands = visualizerPanel.getNumberOfBands();
 
         // Find next band option

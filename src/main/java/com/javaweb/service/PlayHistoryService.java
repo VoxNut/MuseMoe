@@ -9,8 +9,10 @@ public interface PlayHistoryService {
 
     List<SongDTO> fetchRecentPlayHistory(Integer limit);
 
+    List<Long> fetchRecentPlayedSongIds(Integer limit);
+
     boolean clearPlayHistoryBySongs(List<Long> songIds);
-    
+
     boolean clearAllPlayHistory();
 
 }

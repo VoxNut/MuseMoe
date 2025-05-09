@@ -66,6 +66,14 @@ public class PlayHistoryServiceImpl implements PlayHistoryService {
     }
 
     @Override
+    public List<Long> fetchRecentPlayedSongIds(Integer limit) {
+        return fetchRecentPlayHistory(limit)
+                .stream()
+                .map(SongDTO::getId)
+                .toList();
+    }
+
+    @Override
     public boolean clearPlayHistoryBySongs(List<Long> songIds) {
         try {
             Long userId = Objects.requireNonNull(SecurityUtils.getPrincipal()).getId();

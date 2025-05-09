@@ -29,4 +29,6 @@ public interface SongApiClient {
     Boolean deleteSong(Long id);
 
     SongDTO fetchSongByGoogleDriveId(String googleDriveId);
+
+    List<SongDTO> fetchRecommendedSongs(int limit);
 }

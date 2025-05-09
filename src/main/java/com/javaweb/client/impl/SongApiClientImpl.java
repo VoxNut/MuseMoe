@@ -32,6 +32,18 @@ class SongApiClientImpl implements SongApiClient {
         }
     }
 
+    @Override
+    public List<SongDTO> fetchRecommendedSongs(int limit) {
+        try {
+            String url = apiConfig.buildRecommendationsUrl("?limit=" + limit);
+            List<SongDTO> recommendedSongs = apiClient.getList(url, SongDTO.class);
+            return recommendedSongs;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
+
     public Boolean createSong(Long albumId, String title, List<Long> artistIds, MultipartFile file) {
         try {
             String url = apiConfig.buildSongUrl("/create");

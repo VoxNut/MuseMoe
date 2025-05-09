@@ -26,6 +26,7 @@ import java.util.Map;
 public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEventListener {
     private final MusicPlayerFacade playerFacade;
     private JPanel recentlyPlayedPanel;
+    private JPanel recommendationsPanel;
     private JScrollPane scrollPane;
     private final Map<SongDTO, JButton> playPauseButtonMap = new HashMap<>();
 
@@ -60,7 +61,12 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
         mainPanel.add(asciiArtPanel, "growx, wrap");
 
         createRecentlyPlayedSection();
-        mainPanel.add(recentlyPlayedPanel, "grow");
+        createRecommendationsSection();
+
+
+        mainPanel.add(recentlyPlayedPanel, "grow, wrap");
+
+        mainPanel.add(recommendationsPanel, "grow");
     }
 
     private JPanel createWelcomePanel() {
@@ -100,6 +106,56 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
         loadRecentlyPlayedSongs(songGridPanel);
         recentlyPlayedPanel.add(songGridPanel, "grow");
     }
+
+    private void createRecommendationsSection() {
+        recommendationsPanel = GuiUtil.createPanel(new MigLayout("fillx, wrap", "[grow,fill]", "[]10[]"));
+
+        JPanel headerPanel = GuiUtil.createPanel(new BorderLayout());
+        JLabel headerLabel = GuiUtil.createLabel("Recommended for you!", Font.BOLD, 18);
+        headerPanel.add(headerLabel, BorderLayout.WEST);
+
+        JButton showAllButton = GuiUtil.createButton("Show all");
+        showAllButton.addActionListener(e -> {
+            log.info("Show all recommendations clicked");
+        });
+        headerPanel.add(showAllButton, BorderLayout.EAST);
+
+        recommendationsPanel.add(headerPanel, "growx, wrap");
+
+        // Grid panel for song items
+        JPanel songGridPanel = GuiUtil.createPanel(new MigLayout(
+                "wrap 8, fillx, gapx 20, gapy 20",
+                "[grow, fill][grow, fill][grow, fill][grow, fill][grow, fill][grow, fill][grow, fill][grow, fill]",
+                ""));
+
+        loadRecommendedSongs(songGridPanel);
+        recommendationsPanel.add(songGridPanel, "grow");
+
+    }
+
+    private void loadRecommendedSongs(JPanel container) {
+        if (!NetworkChecker.isNetworkAvailable()) {
+            container.add(GuiUtil.createErrorLabel("Network unavailable!"), "span");
+            return;
+        }
+
+        try {
+            List<SongDTO> recommendedSongs = CommonApiUtil.fetchRecommendedSongs(20);
+
+            if (recommendedSongs.isEmpty()) {
+                container.add(GuiUtil.createErrorLabel("No recommendations available"), "span");
+                return;
+            }
+
+            for (SongDTO song : recommendedSongs) {
+                container.add(createSongCard(song));
+            }
+        } catch (Exception e) {
+            log.error("Failed to load recommended songs", e);
+            container.add(GuiUtil.createErrorLabel("Failed to load recommendations"), "span");
+        }
+    }
+
 
     private void loadRecentlyPlayedSongs(JPanel container) {
         if (!NetworkChecker.isNetworkAvailable()) {

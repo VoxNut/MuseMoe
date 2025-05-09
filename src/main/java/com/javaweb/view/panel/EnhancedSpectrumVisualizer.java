@@ -426,13 +426,13 @@ public class EnhancedSpectrumVisualizer extends JPanel implements ThemeChangeLis
      */
     public void setNumberOfBands(int newNumberOfBands) {
         if (newNumberOfBands < 2) {
-            newNumberOfBands = 2; // Minimum 2 bands
-        } else if (newNumberOfBands > 512) {
-            newNumberOfBands = 512; //
+            newNumberOfBands = 2;
+        } else if (newNumberOfBands > 256) {
+            newNumberOfBands = 256;
         }
 
         if (this.numberOfBands == newNumberOfBands) {
-            return; // No change
+            return;
         }
 
         this.numberOfBands = newNumberOfBands;

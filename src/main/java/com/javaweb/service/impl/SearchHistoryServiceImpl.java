@@ -30,6 +30,14 @@ public class SearchHistoryServiceImpl implements SearchHistoryService {
     private final SongConverter songConverter;
 
     @Override
+    public List<Long> fetchRecentSearchedSongIds(Integer limit) {
+        return fetchRecentSearchHistory(limit)
+                .stream()
+                .map(SongDTO::getId)
+                .toList();
+    }
+
+    @Override
     public boolean logSearchHistory(Long songId, String searchTerm) {
         try {
             SongEntity song = songRepository.findById(songId)

@@ -6,6 +6,7 @@ import com.javaweb.entity.SongEntity;
 import com.javaweb.entity.SongLikesEntity;
 import com.javaweb.entity.UserEntity;
 import com.javaweb.exception.EntityNotFoundException;
+import com.javaweb.model.dto.SongDTO;
 import com.javaweb.model.dto.SongLikesDTO;
 import com.javaweb.repository.SongLikesRepository;
 import com.javaweb.repository.SongRepository;
@@ -23,6 +24,7 @@ import java.util.Objects;
 @Transactional
 @RequiredArgsConstructor
 public class SongLikesServiceImpl implements SongLikesService {
+
 
     private final UserRepository userRepository;
 
@@ -105,4 +107,15 @@ public class SongLikesServiceImpl implements SongLikesService {
         }
 
     }
+
+    @Override
+    public List<Long> getUserLikedSongsIds() {
+        List<Long> likedSongIds = findAllByUser()
+                .stream()
+                .map(SongLikesDTO::getSongDTO)
+                .map(SongDTO::getId)
+                .toList();
+        return likedSongIds;
+    }
+
 }

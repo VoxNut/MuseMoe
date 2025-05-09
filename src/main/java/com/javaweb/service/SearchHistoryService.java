@@ -9,6 +9,8 @@ public interface SearchHistoryService {
 
     List<SongDTO> fetchRecentSearchHistory(Integer limit);
 
+    List<Long> fetchRecentSearchedSongIds(Integer limit);
+
     List<String> fetchRecentSearchTerms(Integer limit);
 
     boolean clearSearchHistoryBySongs(List<Long> songIds);

@@ -14,4 +14,6 @@ public interface SongLikesService {
     boolean deleteSongLikes(Long songId);
 
     List<SongLikesDTO> findAllByUser();
+
+    List<Long> getUserLikedSongsIds();
 }

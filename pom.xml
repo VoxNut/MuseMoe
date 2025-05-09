@@ -267,6 +267,7 @@
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-starter-model-ollama</artifactId>
         </dependency>
+
         <!--Github API-->
         <dependency>
             <groupId>org.kohsuke</groupId>

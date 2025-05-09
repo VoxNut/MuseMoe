@@ -42,5 +42,7 @@ public interface SongRepository extends JpaRepository<SongEntity, Long> {
 
     List<SongEntity> findByAlbumId(Long albumId);
 
+    @Query("SELECT s FROM SongEntity s JOIN PlayHistoryEntity ph ON s.id = ph.song.id GROUP BY s.id, s.title ORDER BY COUNT(ph.id) DESC LIMIT :limit")
+    List<SongEntity> findMostPopularSongs(int limit);
 
 }

@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -33,6 +34,17 @@ public class ArtistServiceImpl implements ArtistService {
     private final RoleRepository roleRepository;
     private final GoogleDriveService googleDriveService;
     private final PasswordService passwordService;
+
+    @Override
+    public List<Long> getArtistsIdBySongId(Long songId) {
+        List<ArtistDTO> artistDTOS =
+                artistRepository.findBySongsId(songId)
+                        .stream()
+                        .map(artistConverter::toDTO)
+                        .toList();
+        List<Long> artistIds = artistDTOS.stream().map(ArtistDTO::getId).toList();
+        return artistIds;
+    }
 
     @Override
     @Transactional

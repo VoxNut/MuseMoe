@@ -35,6 +35,9 @@ public class ApiConfig {
     @Value("${api.follows.endpoint:/api/follows}")
     private String followsEndpoint;
 
+    @Value("${api.follows.endpoint:/api/recommendations}")
+    private String recommendationsEndpoint;
+
 
     public String buildUserUrl(String path) {
         return baseUrl + userEndpoint + path;
@@ -68,5 +71,9 @@ public class ApiConfig {
 
     public String buildFollowsUrl(String path) {
         return baseUrl + followsEndpoint + path;
+    }
+
+    public String buildRecommendationsUrl(String path) {
+        return baseUrl + recommendationsEndpoint + path;
     }
 }

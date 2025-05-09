@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -18,5 +19,6 @@ public interface ArtistRepository extends JpaRepository<ArtistEntity, Long> {
     @Query("SELECT a FROM ArtistEntity a WHERE a.user.id =:userId")
     Optional<ArtistEntity> findByUserId(Long userId);
 
+    List<ArtistEntity> findBySongsId(Long songsId);
 
 }

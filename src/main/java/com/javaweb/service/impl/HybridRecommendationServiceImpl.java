@@ -32,6 +32,11 @@ public class HybridRecommendationServiceImpl implements RecommendationService {
     }
 
     @Override
+    public List<SongDTO> getRecommendedSongs(Long userId, Integer limit) {
+        return List.of();
+    }
+
+    @Override
     public List<SongDTO> getRecommendedSongs(Integer limit) {
         // Get recommendations from both services
         List<SongDTO> contentBasedRecommendations = contentBasedService.getRecommendedSongs(limit);

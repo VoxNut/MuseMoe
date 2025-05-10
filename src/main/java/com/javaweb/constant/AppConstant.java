@@ -26,10 +26,10 @@ public class AppConstant {
 
 
     //ROLE
-    public static final String ADMIN_ROLE = "ROLE_ADMIN";
-    public static final String FREE_ROLE = "ROLE_FREE";
-    public static final String PREMIUM_ROLE = "ROLE_PREMIUM";
-    public static final String ARTIST_ROLE = "ROLE_ARTIST";
+    public static final String ROLE_ADMIN = "ADMIN";
+    public static final String ROLE_FREE = "FREE";
+    public static final String ROLE_PREMIUM = "PREMIUM";
+    public static final String ROLE_ARTIST = "ARTIST";
 
 
     //HOMEPAGE

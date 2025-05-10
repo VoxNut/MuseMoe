@@ -6,4 +6,7 @@ import java.util.List;
 
 public interface RecommendationService {
     List<SongDTO> getRecommendedSongs(Integer limit);
+
+    List<SongDTO> getRecommendedSongs(Long userId, Integer limit);
+
 }

@@ -37,9 +37,9 @@ public class AdvertisementManager {
 
     public boolean shouldShowAd(UserDTO user) {
         Set<String> roles = user.getRoles();
-        if (roles.contains(AppConstant.PREMIUM_ROLE) ||
-                roles.contains(AppConstant.ADMIN_ROLE) ||
-                roles.contains(AppConstant.ARTIST_ROLE)) {
+        if (roles.contains(AppConstant.ROLE_PREMIUM) ||
+                roles.contains(AppConstant.ROLE_ADMIN) ||
+                roles.contains(AppConstant.ROLE_ADMIN)) {
             return false;
         }
 

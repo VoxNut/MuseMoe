@@ -43,10 +43,10 @@ public class Test {
     public static void main(String[] args) throws CannotReadException, TagException, InvalidAudioFrameException, ReadOnlyFileException, IOException, CannotWriteException {
         // Specify the package/directory path
         disableJaudiotaggerLogging();
-        String packagePath = "D:\\MuseMoe resources\\audio";
+//        String packagePath = "D:\\MuseMoe resources\\audio";
 //        String packagePath = "D:\\MuseMoe resources\\imgs\\artist_profile";
 //        String packagePath = "src/main/java/com/javaweb/view/mini_musicplayer/advertisement";
-//        String packagePath = "src/main/java/com/javaweb/view/imgs/avatars";
+        String packagePath = "D:\\MuseMoe resources\\imgs\\avatars";
 //        String packagePath = "D:\\MuseMoe resources\\imgs\\album_cover";
         File directory = new File(packagePath);
 

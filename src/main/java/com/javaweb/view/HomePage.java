@@ -677,12 +677,12 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
 
     public String determineUserRole(Set<String> roles) {
-        if (roles.contains(AppConstant.ADMIN_ROLE)) {
+        if (roles.contains(AppConstant.ROLE_ADMIN)) {
             return "Admin";
-        } else if (roles.contains(AppConstant.PREMIUM_ROLE)) {
-            return "Premium User";
-        } else if (roles.contains(AppConstant.ARTIST_ROLE)) {
+        } else if (roles.contains(AppConstant.ROLE_ARTIST)) {
             return "Artist";
+        } else if (roles.contains(AppConstant.ROLE_PREMIUM)) {
+            return "Premium User";
         } else {
             return "Free User";
         }

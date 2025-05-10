@@ -18,4 +18,6 @@ public interface SongLikesRepository extends JpaRepository<SongLikesEntity, Long
 
     @Query("SELECT sl FROM SongLikesEntity sl JOIN FETCH sl.song JOIN FETCH sl.user WHERE sl.user = :user ORDER BY sl.likedAt DESC")
     List<SongLikesEntity> findAllByUser(@Param("user") UserEntity user);
+
+    List<SongLikesEntity> findByUserIdIn(List<Long> userIds);
 }

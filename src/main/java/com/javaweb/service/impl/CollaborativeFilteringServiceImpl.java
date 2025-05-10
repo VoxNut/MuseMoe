@@ -14,6 +14,7 @@ import com.javaweb.service.RecommendationService;
 import com.javaweb.utils.SecurityUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -34,7 +35,22 @@ public class CollaborativeFilteringServiceImpl implements RecommendationService 
     private final SongConverter songConverter;
     private final EntityManager entityManager;
 
-    @Scheduled(cron = "0 0 3 * * ?")
+
+    @Override
+    public List<SongDTO> getRecommendedSongs(Long userId, Integer limit) {
+        List<SongRecommendationsEntity> recommendations =
+                recommendationsRepository.findByUserIdOrderByRecommendationStrengthDesc(userId);
+        List<SongDTO> songDTOS = recommendations.stream()
+                .map(SongRecommendationsEntity::getSong)
+                .map(songConverter::toDTO)
+                .limit(limit)
+                .collect(Collectors.toList());
+        return songDTOS;
+    }
+
+    //    @Scheduled(cron = "0 0 */4 * * ?")
+    @Scheduled(cron = "0 * * * * * ")
+    @Transactional
     public void updateRecommendations() {
         log.info("Starting recommendation calculations");
         Map<Long, Set<Long>> userSongLikes = new HashMap<>();
@@ -89,16 +105,31 @@ public class CollaborativeFilteringServiceImpl implements RecommendationService 
                 }
             }
 
-            // 5. Enhance with content-based signals - Calculate content similarity
-            for (Long likedSongId : userLikes) {
-                // Get all available songs
-                List<Long> availableSongIds = songRepository.findAllIds();
-                availableSongIds.removeAll(userLikes); // Remove already liked songs
+            // 5. Enhance with content-based signals, but only for songs from similar users
+            Set<Long> candidateSongsFromSimilarUsers = new HashSet<>();
 
-                for (Long candidateSongId : availableSongIds) {
+            // Collect songs from users with similarity > threshold
+            for (Map.Entry<Long, Double> entry : userSimilarities.entrySet()) {
+                Long otherUserId = entry.getKey();
+                Double similarity = entry.getValue();
+
+                if (similarity > 0.1) {
+                    Set<Long> otherUserLikes = userSongLikes.get(otherUserId);
+                    candidateSongsFromSimilarUsers.addAll(otherUserLikes);
+                }
+            }
+
+            candidateSongsFromSimilarUsers.removeAll(userLikes);
+
+            if (candidateSongsFromSimilarUsers.size() < 50) {
+                List<Long> popularSongIds = findPopularSongIds(50 - candidateSongsFromSimilarUsers.size());
+                candidateSongsFromSimilarUsers.addAll(popularSongIds);
+            }
+
+            for (Long likedSongId : userLikes) {
+                for (Long candidateSongId : candidateSongsFromSimilarUsers) {
                     double itemSimilarity = calculateItemSimilarity(likedSongId, candidateSongId);
 
-                    // Only consider songs with reasonable similarity
                     if (itemSimilarity > 0.2) {
                         songRecommendationScores.merge(candidateSongId, itemSimilarity * 0.5, Double::sum);
                     }
@@ -108,14 +139,12 @@ public class CollaborativeFilteringServiceImpl implements RecommendationService 
             // 6. Save to database
             UserEntity user = userRepository.findById(userId).orElse(null);
             if (user != null) {
-                // Delete existing recommendations
                 recommendationsRepository.deleteByUserId(userId);
 
-                // Add new ones - normalize and sort by score
                 List<Map.Entry<Long, Double>> sortedRecommendations = songRecommendationScores.entrySet()
                         .stream()
                         .sorted(Map.Entry.<Long, Double>comparingByValue().reversed())
-                        .limit(50) // Limit to top 50 recommendations
+                        .limit(50)
                         .collect(Collectors.toList());
 
                 List<SongRecommendationsEntity> recommendations = new ArrayList<>();
@@ -140,24 +169,55 @@ public class CollaborativeFilteringServiceImpl implements RecommendationService 
     }
 
 
+    private List<Long> findPopularSongIds(int limit) {
+        try {
+            String query = "SELECT s.id FROM song s " +
+                    "LEFT JOIN play_history ph ON s.id = ph.song_id " +
+                    "GROUP BY s.id " +
+                    "ORDER BY COUNT(ph.id) DESC " +
+                    "LIMIT ?";
+
+            Query nativeQuery = entityManager.createNativeQuery(query);
+            nativeQuery.setParameter(1, limit);
+
+            @SuppressWarnings("unchecked")
+            List<Number> results = nativeQuery.getResultList();
+
+            return results.stream()
+                    .map(Number::longValue)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Error finding popular songs", e);
+            return new ArrayList<>();
+        }
+    }
+
+
     @Override
     public List<SongDTO> getRecommendedSongs(Integer limit) {
         Long userId = SecurityUtils.getPrincipal().getId();
         List<SongRecommendationsEntity> recommendations =
                 recommendationsRepository.findByUserIdOrderByRecommendationStrengthDesc(userId);
 
-        return recommendations.stream()
+        List<SongDTO> songDTOS = recommendations.stream()
                 .map(SongRecommendationsEntity::getSong)
                 .map(songConverter::toDTO)
                 .limit(limit)
                 .collect(Collectors.toList());
+        return songDTOS;
     }
 
-    // Add to CollaborativeFilteringServiceImpl.java
     private double calculateItemSimilarity(Long songId1, Long songId2) {
+        if (songId1 == null || songId2 == null) {
+            log.warn("Null song ID passed to calculateItemSimilarity");
+            return 0;
+        }
+
+        if (songId1.equals(songId2)) {
+            return 1.0;
+        }
         try {
-            // Get tags for both songs
-            String query = "SELECT t.id, t.tag_type FROM tag t " +
+            String query = "SELECT st.song_id, t.id FROM tag t " +
                     "JOIN song_tags st ON t.id = st.tag_id " +
                     "WHERE st.song_id = ? OR st.song_id = ?";
 
@@ -173,11 +233,12 @@ public class CollaborativeFilteringServiceImpl implements RecommendationService 
             songTags.put(songId2, new HashSet<>());
 
             for (Object[] row : results) {
-                Long tagId = ((Number) row[0]).longValue();
-                String songIdStr = (String) row[1];
-                Long songId = Long.parseLong(songIdStr);
+                Long songId = ((Number) row[0]).longValue();
+                Long tagId = ((Number) row[1]).longValue();
 
-                songTags.get(songId).add(tagId);
+                if (songId.equals(songId1) || songId.equals(songId2)) {
+                    songTags.get(songId).add(tagId);
+                }
             }
 
             // Calculate Jaccard similarity of tags
@@ -192,9 +253,8 @@ public class CollaborativeFilteringServiceImpl implements RecommendationService 
 
             return union.isEmpty() ? 0 : (double) intersection.size() / union.size();
         } catch (Exception e) {
-            log.error("Error calculating item similarity", e);
+            log.error("Error calculating item similarity: {}", e.getMessage(), e);
             return 0;
         }
     }
-
 }

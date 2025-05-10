@@ -27,5 +27,28 @@ public class SongRecommendationsEntity {
     @JoinColumn(name = "song_id")
     private SongEntity song;
 
+    public SongRecommendationsEntity(UserEntity user, SongEntity song) {
+        this.user = user;
+        this.song = song;
+        this.id = new SongRecommendationsId(user.getId(), song.getId());
+    }
 
+    public SongRecommendationsEntity() {
+        this.id = new SongRecommendationsId();
+    }
+
+    public void setUser(UserEntity user) {
+        this.user = user;
+        if (this.id == null) this.id = new SongRecommendationsId();
+        if (user != null) this.id.setUserId(user.getId());
+    }
+
+    public void setSong(SongEntity song) {
+        this.song = song;
+        if (this.id == null) this.id = new SongRecommendationsId();
+        if (song != null) this.id.setSongId(song.getId());
+    }
 }
+
+
+

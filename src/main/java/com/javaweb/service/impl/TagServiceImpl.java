@@ -1,9 +1,11 @@
 package com.javaweb.service.impl;
 
+import com.javaweb.converter.TagConverter;
 import com.javaweb.entity.ArtistEntity;
 import com.javaweb.entity.SongEntity;
 import com.javaweb.entity.TagEntity;
 import com.javaweb.entity.TagEntity.TagType;
+import com.javaweb.model.dto.TagDTO;
 import com.javaweb.repository.SongRepository;
 import com.javaweb.repository.TagRepository;
 import com.javaweb.service.TagService;
@@ -33,6 +35,22 @@ public class TagServiceImpl implements TagService {
     private final OllamaChatModel chatModel;
     private final SongRepository songRepository;
     private final TagRepository tagRepository;
+    private final TagConverter tagConverter;
+
+    @Override
+    public List<TagDTO> findTagsBySongId(Long songId) {
+        try {
+            List<TagDTO> tagEntities = tagRepository.findTagEntitiesBySongId(songId)
+                    .stream()
+                    .map(tagConverter::toDTO)
+                    .toList();
+            log.info("Successfully get Tags by songId: {}", songId);
+            return tagEntities;
+        } catch (Exception e) {
+            log.error("Failed to get Tags by songId: {}", songId);
+        }
+        return List.of();
+    }
 
     // Common keywords for tag type classification
     private static final Map<TagType, List<String>> TAG_TYPE_KEYWORDS = Map.of(
@@ -77,6 +95,7 @@ public class TagServiceImpl implements TagService {
                     - "modern classical" not just "classical"  
                     - "deep house" not just "house"
                     - "melodic dubstep" not just "dubstep"
+                    - "language" not just "english"
                     
                     Return a maximum of 5 tags total.
                     Do not return explanations, just the categorized tags as described.

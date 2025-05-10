@@ -33,6 +33,11 @@ public class RecommendationServiceImpl implements RecommendationService {
     private EntityManager entityManager;
 
     @Override
+    public List<SongDTO> getRecommendedSongs(Long userId, Integer limit) {
+        return List.of();
+    }
+
+    @Override
     @Transactional
     public List<SongDTO> getRecommendedSongs(Integer limit) {
         // 1. Get user's liked songs

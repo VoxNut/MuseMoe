@@ -620,32 +620,50 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
     }
 
+    // Update the performSearch method
     private void performSearch(String query) {
         if (NetworkChecker.isNetworkAvailable()) {
-
-            java.util.List<SongDTO> searchResults = CommonApiUtil.searchSongs(query);
-
-            if (searchResults != null && !searchResults.isEmpty()) {
-                SongDTO songDTO = searchResults.getFirst();
-                java.util.List<PlaylistDTO> playlists = CommonApiUtil.fetchPlaylistByUserId();
-                Optional<PlaylistDTO> playlistWithSong = playlists.stream()
-                        .filter(playlist -> playlist.getSongs()
-                                .stream()
-                                .anyMatch(playlistSong -> playlistSong.getId().equals(songDTO.getId())))
-                        .findFirst();
-
-                playerFacade.setCurrentPlaylist(playlistWithSong.orElse(null));
-
-                CommonApiUtil.logSearchHistory(songDTO.getId(), query);
-
-                showSearchResults(searchResults);
-            } else {
-                GuiUtil.showInfoMessageDialog(this, "No songs found matching your search.");
+            if (recentSearchDropdown != null) {
+                recentSearchDropdown.hidePopup();
             }
+
+            SwingWorker<List<SongDTO>, Void> searchWorker = new SwingWorker<>() {
+                @Override
+                protected List<SongDTO> doInBackground() {
+                    return CommonApiUtil.searchSongs(query);
+                }
+
+                @Override
+                protected void done() {
+                    try {
+                        List<SongDTO> searchResults = get();
+
+                        if (searchResults != null && !searchResults.isEmpty()) {
+                            SongDTO songDTO = searchResults.getFirst();
+                            java.util.List<PlaylistDTO> playlists = CommonApiUtil.fetchPlaylistByUserId();
+                            Optional<PlaylistDTO> playlistWithSong = playlists.stream()
+                                    .filter(playlist -> playlist.getSongs()
+                                            .stream()
+                                            .anyMatch(playlistSong -> playlistSong.getId().equals(songDTO.getId())))
+                                    .findFirst();
+
+                            playerFacade.setCurrentPlaylist(playlistWithSong.orElse(null));
+                            CommonApiUtil.logSearchHistory(songDTO.getId(), query);
+                            showSearchResults(searchResults);
+                        } else {
+                            GuiUtil.showInfoMessageDialog(HomePage.this, "No songs found matching your search.");
+                        }
+                    } catch (Exception e) {
+                        log.error("Error performing search", e);
+                        GuiUtil.showErrorMessageDialog(HomePage.this, "Error performing search");
+                    }
+                }
+            };
+
+            searchWorker.execute();
         } else {
             GuiUtil.showNetworkErrorDialog(this, "Internet connection is unavailable");
         }
-
     }
 
     private void showSearchResults(java.util.List<SongDTO> searchResults) {

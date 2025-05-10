@@ -48,5 +48,7 @@ public interface SongRepository extends JpaRepository<SongEntity, Long> {
     @Query("SELECT s.id FROM SongEntity s")
     List<Long> findAllIds();
 
+    List<SongEntity> findByTitleContainingIgnoreCase(String title);
+
 }
 

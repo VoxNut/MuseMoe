@@ -30,4 +30,6 @@ public interface SongService {
 
     SongDTO findByGoogleDriveId(String driveId);
 
+    List<SongDTO> searchSongs(String query, int limit);
+
 }

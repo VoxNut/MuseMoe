@@ -31,4 +31,6 @@ public interface SongApiClient {
     SongDTO fetchSongByGoogleDriveId(String googleDriveId);
 
     List<SongDTO> fetchRecommendedSongs(int limit);
+
+    List<SongDTO> search(String query, int limit);
 }

@@ -95,6 +95,10 @@ public class CommonApiUtil {
         return getSongApiClient().findAllSongs();
     }
 
+    public static List<SongDTO> searchSongs(String query) {
+        return getSongApiClient().search(query, 20);
+    }
+
     public static List<SongDTO> fetchRecommendedSongs(int limit) {
         return getSongApiClient().fetchRecommendedSongs(limit);
     }
@@ -111,9 +115,6 @@ public class CommonApiUtil {
         return getPlayHistoryApiClient().findRecentPlayHistory(limit);
     }
 
-    public static List<SongDTO> searchSongs(String query) {
-        return findSongsLike(query);
-    }
 
     public static SongDTO fetchSongById(Long id) {
         return getSongApiClient().fetchSongById(id);

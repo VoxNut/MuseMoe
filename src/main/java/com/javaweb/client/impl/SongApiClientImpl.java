@@ -33,6 +33,17 @@ class SongApiClientImpl implements SongApiClient {
     }
 
     @Override
+    public List<SongDTO> search(String query, int limit) {
+        try {
+            String url = apiConfig.buildSongUrl("/search?query=" + query + "&limit=" + limit);
+            return apiClient.getList(url, SongDTO.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
     public List<SongDTO> fetchRecommendedSongs(int limit) {
         try {
             String url = apiConfig.buildRecommendationsUrl("?limit=" + limit);

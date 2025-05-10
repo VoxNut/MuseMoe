@@ -151,5 +151,14 @@ public class SongAPI {
         }
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<List<SongDTO>> search(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "20") int limit) {
+
+        List<SongDTO> results = songService.searchSongs(query, limit);
+        return ResponseEntity.ok(results);
+    }
+
 
 }

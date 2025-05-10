@@ -52,7 +52,8 @@ public class SongEntity extends BaseEntity {
     )
     private Set<TagEntity> tags;
 
-    @OneToOne(mappedBy = "song", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JoinColumn(name = "lyrics_id")
     private LyricsEntity lyrics;
 
     @OneToMany(mappedBy = "song")

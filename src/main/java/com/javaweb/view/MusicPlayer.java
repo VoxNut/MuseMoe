@@ -187,7 +187,6 @@ public class MusicPlayer extends PlaybackListener {
             if (repeatMode == RepeatMode.REPEAT_ONE) {
                 repeatMode = RepeatMode.REPEAT_ALL;
             }
-            //Update MusicPlayerGUI
             mediator.notifyRepeatModeChanged(repeatMode);
             mediator.notifyHomePagePlaybackSlider();
             updateGUI();

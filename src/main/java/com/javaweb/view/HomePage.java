@@ -37,10 +37,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
     private final MusicPlayerFacade playerFacade;
 
-    private JLabel spinningDisc;
-    private JPanel controlButtonsPanel;
-    private JSlider playbackSlider;
-    private Timer spinTimer;
     private JLabel labelBeginning;
     private JLabel labelEnd;
 
@@ -544,197 +540,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     }
 
     private JPanel createMiniMusicPlayerPanel() {
-        JPanel miniMusicPlayerPanel = GuiUtil.createPanel(new BorderLayout());
-        miniMusicPlayerPanel.setBorder(
-                GuiUtil.createTitledBorder("Playing", TitledBorder.LEFT)
-        );
-
-        // Create a more organized layout with FlowLayout center alignment
-        JPanel controlsWrapper = GuiUtil.createPanel(new FlowLayout(FlowLayout.CENTER, 15, 5));
-
-        // Create scrolling text label
-        scrollingLabel = new ScrollingLabel();
-        scrollingLabel.setPreferredSize(new Dimension(200, 30));
-        scrollingLabel.setFont(FontUtil.getSpotifyFont(Font.BOLD, 14));
-        scrollingLabel.setForeground(AppConstant.TEXT_COLOR);
-        scrollingLabel.setVisible(false);
-
-        // Create scroll timer
-        scrollTimer = new Timer(SCROLL_DELAY, e -> {
-            scrollPosition += SCROLL_SPEED;
-            FontMetrics fm = scrollingLabel.getFontMetrics(scrollingLabel.getFont());
-            int textWidth = fm.stringWidth(scrollingLabel.getText());
-            if (scrollPosition >= textWidth) {
-                scrollPosition = 0;
-            }
-            scrollingLabel.repaint();
-        });
-
-        // Spinning disc with song image
-        spinningDisc = new JLabel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2d = (Graphics2D) g.create();
-
-                // Enable smoother rendering
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-                g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-
-                int centerX = getWidth() / 2;
-                int centerY = getHeight() / 2;
-
-                g2d.rotate(rotationAngle, centerX, centerY);
-
-                Icon icon = getIcon();
-                if (icon != null) {
-                    icon.paintIcon(this, g2d, 0, 0);
-                }
-
-                g2d.dispose();
-            }
-        };
-
-        spinTimer = new Timer(TIMER_DELAY, e -> {
-            rotationAngle += SPIN_SPEED;
-            if (rotationAngle >= 2 * Math.PI) {
-                rotationAngle = 0;
-            }
-            spinningDisc.repaint();
-        });
-        spinningDisc.setPreferredSize(new Dimension(50, 50));
-        spinningDisc.setVisible(false);
-
-        // Playback slider
-        JPanel sliderPanel = GuiUtil.createPanel(new BorderLayout());
-        sliderPanel.setPreferredSize(new Dimension(300, 60));
-        sliderPanel.setMaximumSize(new Dimension(300, 60));
-
-        playbackSlider = new JSlider();
-        playbackSlider.setPreferredSize(new Dimension(300, 40));
-        playbackSlider.setMaximumSize(new Dimension(300, 40));
-        playbackSlider.setBackground(AppConstant.BACKGROUND_COLOR);
-        playbackSlider.setForeground(AppConstant.TEXT_COLOR);
-        playbackSlider.setFocusable(false);
-        playbackSlider.setVisible(false);
-        sliderPanel.add(playbackSlider, BorderLayout.CENTER);
-        sliderPanel.add(createLabelsPanel(), BorderLayout.SOUTH);
-
-        playbackSlider.addMouseListener(new MouseAdapter() {
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                if (playerFacade.isHavingAd()) {
-                    return;
-                }
-                playerFacade.pauseSong();
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-
-                if (playerFacade.isHavingAd()) {
-                    return;
-                }
-                int sliderValue = playbackSlider.getValue();
-
-                int newTimeInMilli = (int) (sliderValue
-                        / playerFacade.getCurrentSong().getFrameRatePerMilliseconds());
-
-                playerFacade.setCurrentTimeInMilli(newTimeInMilli);
-                playerFacade.setCurrentFrame(sliderValue);
-                playerFacade.playCurrentSong();
-
-            }
-        });
-
-        playbackSlider.addMouseMotionListener(new MouseMotionAdapter() {
-            @Override
-            public void mouseDragged(MouseEvent e) {
-                playbackSlider.setValueIsAdjusting(true);
-
-                if (playerFacade.isHavingAd()) {
-                    return;
-                }
-
-                // Calculate the value based on drag position
-                int width = playbackSlider.getWidth();
-                int position = e.getX();
-                double percentOfWidth = (double) position / width;
-                int value = (int) (percentOfWidth * playbackSlider.getMaximum());
-
-                // Ensure value is within valid range
-                value = Math.max(0, Math.min(value, playbackSlider.getMaximum()));
-
-                // Set slider value
-                playbackSlider.setValue(value);
-
-                // Update the time label in real-time during dragging
-                if (playerFacade.getCurrentSong() != null) {
-                    double frameRate = playerFacade.getCurrentSong().getFrameRatePerMilliseconds();
-                    int timeInMillis = (int) (value / frameRate);
-                    updateSongTimeLabel(timeInMillis);
-
-                    playerFacade.notifySliderDragging(value, timeInMillis);
-                }
-                SwingUtilities.invokeLater(() -> playbackSlider.setValueIsAdjusting(false));
-            }
-        });
-
-        controlButtonsPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.CENTER, 15, 0));
-        controlButtonsPanel.setBackground(AppConstant.BACKGROUND_COLOR);
-        controlButtonsPanel.setVisible(false);
-
-        // Previous button
-        JButton prevButton = GuiUtil.changeButtonIconColor(AppConstant.PREVIOUS_ICON_PATH, 20, 20);
-        prevButton.addActionListener(e -> playerFacade.prevSong());
-
-        // Play button
-        JButton playButton = GuiUtil.changeButtonIconColor(AppConstant.PLAY_ICON_PATH, 20, 20);
-        playButton.addActionListener(e -> {
-            if (playerFacade.isHavingAd()) {
-                return;
-            }
-            playerFacade.playCurrentSong();
-        });
-
-        // Pause button
-        JButton pauseButton = GuiUtil.changeButtonIconColor(AppConstant.PAUSE_ICON_PATH, 20, 20);
-        pauseButton.setVisible(false);
-        pauseButton.addActionListener(e -> {
-            if (playerFacade.isHavingAd()) {
-                return;
-            }
-            playerFacade.pauseSong();
-        });
-
-        // Next button
-        JButton nextButton = GuiUtil.changeButtonIconColor(AppConstant.NEXT_ICON_PATH, 20, 20);
-        nextButton.addActionListener(e -> playerFacade.nextSong());
-
-        // Add buttons to control panel
-        controlButtonsPanel.add(prevButton);
-        controlButtonsPanel.add(playButton);
-        controlButtonsPanel.add(pauseButton);
-        controlButtonsPanel.add(nextButton);
-
-        // Create layout for player elements
-        JPanel spinAndTextPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        spinAndTextPanel.add(spinningDisc);
-        spinAndTextPanel.add(scrollingLabel);
-
-        // Create panel for controls
-        JPanel playerControlsPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
-        playerControlsPanel.add(controlButtonsPanel);
-
-        // Add all components with better organization
-        controlsWrapper.add(spinAndTextPanel);
-        controlsWrapper.add(sliderPanel);
-        controlsWrapper.add(playerControlsPanel);
-
-        miniMusicPlayerPanel.add(controlsWrapper, BorderLayout.CENTER);
-
-        return miniMusicPlayerPanel;
+        return new MiniPlayerPanel(playerFacade);
     }
 
     private void openMiniplayer() {
@@ -754,19 +560,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
                     // Update UI if there's a current song
                     if (playerFacade.getCurrentSong() != null) {
-                        showPlaybackSlider();
                         ThemeManager.getInstance().setThemeColors(ThemeManager.getInstance().getBackgroundColor(), ThemeManager.getInstance().getTextColor(), ThemeManager.getInstance().getAccentColor());
-                        // Check if player is paused or playing
-                        if (playerFacade.isPaused()) {
-                            enablePlayButtonDisablePauseButton();
-                        } else {
-                            enablePauseButtonDisablePlayButton();
-                        }
-
-                        updatePlaybackSlider(playerFacade.getCurrentSong());
-                        updateSpinningDisc(playerFacade.getCurrentSong());
-                        updateScrollingText(playerFacade.getCurrentSong());
-                        setPlaybackSliderValue(playerFacade.getCalculatedFrame());
                     }
 
                     // Show the player if it's not already visible
@@ -881,98 +675,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         return labelsPanel;
     }
 
-    public void updatePlaybackSlider(SongDTO song) {
-        long totalFrames = song.getFrame();
-        playbackSlider.setMaximum((int) totalFrames);
-
-        labelEnd.setText(song.getSongLength());
-        playbackSlider.setPaintLabels(false);
-        playbackSlider.repaint();
-
-    }
-
-    public void startDiscSpinning() {
-        if (!spinTimer.isRunning()) {
-            spinTimer.start();
-        }
-    }
-
-    public void stopDiscSpinning() {
-        if (spinTimer.isRunning()) {
-            spinTimer.stop();
-        }
-    }
-
-    public void startTextScrolling() {
-        if (!scrollTimer.isRunning()) {
-            scrollTimer.start();
-        }
-    }
-
-    public void stopTextScrolling() {
-        if (scrollTimer.isRunning()) {
-            scrollTimer.stop();
-        }
-        scrollPosition = 0;
-        scrollingLabel.repaint();
-    }
-
-    public void updateSongTimeLabel(int currentTimeInMilli) {
-        int minutes = (currentTimeInMilli / 1000) / 60;
-        int seconds = (currentTimeInMilli / 1000) % 60;
-        String formattedTime = String.format("%02d:%02d", minutes, seconds);
-        labelBeginning.setText(formattedTime);
-    }
-
-    public void updateScrollingText(SongDTO song) {
-        String text = song.getTitle() + " - " + song.getSongArtist() + " ";
-        scrollingLabel.setText(text);
-        scrollingLabel.setVisible(true);
-    }
-
-    public void setPlaybackSliderValue(long frame) {
-        playbackSlider.setValue((int) frame);
-    }
-
-    public void updateSpinningDisc(SongDTO song) {
-        if (song.getSongImage() != null) {
-            spinningDisc.setIcon(GuiUtil.createDiscImageIcon(song.getSongImage(), 50, 50, 7));
-        } else {
-            spinningDisc.setIcon(
-                    GuiUtil.createDiscImageIcon(GuiUtil.createBufferImage(AppConstant.DEFAULT_COVER_PATH), 50, 50, 7));
-        }
-        long totalFrames = song.getFrame();
-        playbackSlider.setMaximum((int) totalFrames);
-    }
-
-    // Methods to toggle play and pause buttons
-    public void enablePauseButtonDisablePlayButton() {
-        JButton playButton = (JButton) controlButtonsPanel.getComponent(1);
-        JButton pauseButton = (JButton) controlButtonsPanel.getComponent(2);
-
-        playButton.setVisible(false);
-        playButton.setEnabled(false);
-
-        pauseButton.setVisible(true);
-        pauseButton.setEnabled(true);
-        startDiscSpinning();
-        startTextScrolling();
-
-    }
-
-    public void enablePlayButtonDisablePauseButton() {
-        JButton playButton = (JButton) controlButtonsPanel.getComponent(1);
-        JButton pauseButton = (JButton) controlButtonsPanel.getComponent(2);
-
-        playButton.setVisible(true);
-        playButton.setEnabled(true);
-
-        pauseButton.setVisible(false);
-        pauseButton.setEnabled(false);
-        stopDiscSpinning();
-        stopTextScrolling();
-
-    }
 
     public String determineUserRole(Set<String> roles) {
         if (roles.contains(AppConstant.ADMIN_ROLE)) {
@@ -986,25 +688,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         }
     }
 
-    public void showPlaybackSlider() {
-        spinningDisc.setVisible(true);
-        playbackSlider.setVisible(true);
-        controlButtonsPanel.setVisible(true);
-        labelBeginning.setVisible(true);
-        labelEnd.setVisible(true);
-        startTextScrolling();
-        startDiscSpinning();
-    }
-
-    public void hidePlaybackSlider() {
-        spinningDisc.setVisible(false);
-        playbackSlider.setVisible(false);
-        controlButtonsPanel.setVisible(false);
-        labelBeginning.setVisible(false);
-        labelEnd.setVisible(false);
-        stopTextScrolling();
-        stopDiscSpinning();
-    }
 
     private JPanel createLibraryPanel() {
         JPanel libraryNav = GuiUtil.createPanel(new BorderLayout());
@@ -1482,7 +1165,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         if (option == JOptionPane.YES_OPTION) {
             this.dispose();
             SwingUtilities.invokeLater(() -> {
-                hidePlaybackSlider();
                 LoginPage loginPage = new LoginPage();
                 UIManager.put("TitlePane.iconSize", new Dimension(24, 24));
                 loginPage.getUsernameField().setText(getCurrentUser().getUsername());
@@ -1730,42 +1412,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     public void onPlayerEvent(PlayerEvent event) {
         SwingUtilities.invokeLater(() -> {
             switch (event.type()) {
-                case SONG_LOADED -> {
-                    SongDTO song = (SongDTO) event.data();
-                    updatePlaybackSlider(song);
-                    setPlaybackSliderValue(0);
-                    updateSpinningDisc(song);
-                    updateScrollingText(song);
-                    showPlaybackSlider();
-                    enablePauseButtonDisablePlayButton();
-                }
-
-                case PLAYBACK_STARTED -> enablePauseButtonDisablePlayButton();
-
-                case PLAYBACK_PAUSED -> enablePlayButtonDisablePauseButton();
-
-                case PLAYBACK_PROGRESS -> {
-                    int[] data = (int[]) event.data();
-                    if (!playbackSlider.getValueIsAdjusting()) {
-                        setPlaybackSliderValue(data[0]);
-                        updateSongTimeLabel(data[1]);
-
-                    }
-                }
-                // Starting to show the playback slider in the Home Page.
-                case HOME_PAGE_SLIDER_CHANGED -> showPlaybackSlider();
-
-                case SLIDER_CHANGED -> setPlaybackSliderValue((int) event.data());
-
-                case SLIDER_DRAGGING -> {
-                    int[] data = (int[]) event.data();
-                    if (playbackSlider.getValueIsAdjusting()) {
-                        return;
-                    }
-                    setPlaybackSliderValue(data[0]);
-
-                    updateSongTimeLabel(data[1]);
-                }
 
                 case SONG_LIKED_CHANGED -> refreshLikedSongsPanel();
 

@@ -43,11 +43,11 @@ public class Test {
     public static void main(String[] args) throws CannotReadException, TagException, InvalidAudioFrameException, ReadOnlyFileException, IOException, CannotWriteException {
         // Specify the package/directory path
         disableJaudiotaggerLogging();
-//        String packagePath = "D:\\MuseMoe resources\\audio";
+        String packagePath = "D:\\MuseMoe resources\\audio";
 //        String packagePath = "D:\\MuseMoe resources\\imgs\\artist_profile";
 //        String packagePath = "src/main/java/com/javaweb/view/mini_musicplayer/advertisement";
 //        String packagePath = "src/main/java/com/javaweb/view/imgs/avatars";
-        String packagePath = "D:\\MuseMoe resources\\imgs\\album_cover";
+//        String packagePath = "D:\\MuseMoe resources\\imgs\\album_cover";
         File directory = new File(packagePath);
 
         if (!directory.exists() || !directory.isDirectory()) {
@@ -83,6 +83,7 @@ public class Test {
                                     String lyrics = tag.getFirst(FieldKey.LYRICS);
                                     String genre = tag.getFirst(FieldKey.GENRE);
                                     String rating = tag.getFirst(FieldKey.RATING);
+                                    String language = tag.getFirst(FieldKey.LANGUAGE);
                                     // Print metadata with fallbacks for empty values
                                     System.out.println("Title: " + (title.isEmpty() ? "[No Title]" : title));
                                     System.out.println("Artist: " + (artist.isEmpty() ? "[Unknown Artist]" : artist));
@@ -93,7 +94,7 @@ public class Test {
                                     System.out.println("Lyrics: " + (lyrics.isEmpty() ? "[Unknown lyrics]" : lyrics));
                                     System.out.println("Genre: " + (genre.isEmpty() ? "[Unknown Genre]" : genre));
                                     System.out.println("Rating: " + (rating.isEmpty() ? "[Unknown Rating]" : rating));
-
+                                    System.out.println("Language: " + (language.isEmpty() ? "[Unknown Language]" : language));
                                     // Check for artwork
                                     Artwork artwork = tag.getFirstArtwork();
                                     System.out.println("Has Artwork: " + (artwork != null));

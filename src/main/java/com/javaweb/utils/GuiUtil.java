@@ -1219,44 +1219,89 @@ public class GuiUtil {
     }
 
     public static ImageIcon createDiscImageIcon(BufferedImage sourceImage, int width, int height, int holeRadius) {
-        // High resolution rendering
-        int highResWidth = width * 2;
-        int highResHeight = height * 2;
+        if (sourceImage == null) {
+            return null;
+        }
 
-        BufferedImage resizedImage = new BufferedImage(highResWidth, highResHeight, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2dResize = resizedImage.createGraphics();
-        g2dResize.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-        g2dResize.drawImage(sourceImage, 0, 0, highResWidth, highResHeight, null);
-        g2dResize.dispose();
+        // Super-sample for higher quality (4x resolution then scale down)
+        int superWidth = width * 4;
+        int superHeight = height * 4;
+        int superHoleRadius = holeRadius * 4;
 
-        BufferedImage highResDiscImage = new BufferedImage(highResWidth, highResHeight, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2dHighRes = highResDiscImage.createGraphics();
+        try {
+            // Create high-res image for better quality
+            BufferedImage highResImage = new BufferedImage(superWidth, superHeight, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2d = highResImage.createGraphics();
 
-        // High-quality rendering hints
-        configureGraphicsForHighQuality(g2dHighRes);
+            // Configure for absolute maximum quality
+            configureGraphicsForHighQuality(g2d);
+            g2d.setRenderingHint(RenderingHints.KEY_DITHERING, RenderingHints.VALUE_DITHER_ENABLE);
 
-        // Draw the circular area
-        g2dHighRes.setClip(new java.awt.geom.Ellipse2D.Double(0, 0, highResWidth, highResHeight));
-        g2dHighRes.drawImage(resizedImage, 0, 0, null);
+            // Resize the source image to our super-sampled size
+            BufferedImage resizedSource = Thumbnails.of(sourceImage)
+                    .size(superWidth, superHeight)
+                    .antialiasing(Antialiasing.ON)
+                    .outputQuality(1.0f)
+                    .asBufferedImage();
 
-        // Cut out the central hole
-        g2dHighRes.setComposite(AlphaComposite.Clear);
-        int highResHoleRadius = holeRadius * 2;
-        int highResCenterX = highResWidth / 2;
-        int highResCenterY = highResHeight / 2;
-        g2dHighRes.fill(new java.awt.geom.Ellipse2D.Double(highResCenterX - highResHoleRadius, highResCenterY - highResHoleRadius, 2 * highResHoleRadius, 2 * highResHoleRadius));
+            // Create a circular clip for the outer edge
+            Ellipse2D.Double outerCircle = new Ellipse2D.Double(0, 0, superWidth, superHeight);
+            g2d.setClip(outerCircle);
 
-        g2dHighRes.dispose();
+            // Draw the resized image
+            g2d.drawImage(resizedSource, 0, 0, superWidth, superHeight, null);
 
-        // Downscale to desired size
-        BufferedImage finalDiscImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2dFinal = finalDiscImage.createGraphics();
-        g2dFinal.drawImage(highResDiscImage, 0, 0, width, height, null);
-        g2dFinal.dispose();
+            // Reset clip and create a circular shape for the center hole
+            g2d.setClip(null);
 
-        // Return as ImageIcon
-        return new ImageIcon(finalDiscImage);
+            // Cut out the center hole
+            g2d.setComposite(AlphaComposite.Clear);
+            int centerX = superWidth / 2;
+            int centerY = superHeight / 2;
+            Ellipse2D.Double innerCircle = new Ellipse2D.Double(
+                    centerX - superHoleRadius,
+                    centerY - superHoleRadius,
+                    superHoleRadius * 2,
+                    superHoleRadius * 2);
+            g2d.fill(innerCircle);
+
+            g2d.setComposite(AlphaComposite.SrcOver);
+            g2d.setColor(new Color(255, 255, 255, 40));
+            g2d.setStroke(new BasicStroke(superWidth / 30f));
+            g2d.draw(outerCircle);
+
+            g2d.setColor(new Color(0, 0, 0, 40));
+            g2d.setStroke(new BasicStroke(superWidth / 40f));
+            g2d.draw(innerCircle);
+
+            g2d.dispose();
+
+            // Scale down the supersampled image to requested dimensions
+            BufferedImage finalImage = Thumbnails.of(highResImage)
+                    .size(width, height)
+                    .antialiasing(Antialiasing.ON)
+                    .outputQuality(1.0f)
+                    .asBufferedImage();
+
+            return new ImageIcon(finalImage);
+        } catch (IOException e) {
+            e.printStackTrace();
+
+            BufferedImage disc = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2d = disc.createGraphics();
+            configureGraphicsForHighQuality(g2d);
+
+            g2d.setColor(Color.DARK_GRAY);
+            g2d.fillOval(0, 0, width, height);
+
+            g2d.setComposite(AlphaComposite.Clear);
+            g2d.fillOval(width / 2 - holeRadius, height / 2 - holeRadius, holeRadius * 2, holeRadius * 2);
+
+            g2d.dispose();
+            return new ImageIcon(disc);
+        }
     }
+
 
     public static double calculateContrast(Color color1, Color color2) {
         double luminance1 = getLuminance(color1);

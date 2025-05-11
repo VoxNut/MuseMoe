@@ -40,6 +40,9 @@ public class SongDTO extends AbstractDTO {
 
     private String albumArtId;
 
+    private String localFilePath;
+    private Boolean isLocalFile = false;
+
     @JsonIgnore
     private BufferedImage songImage;
 

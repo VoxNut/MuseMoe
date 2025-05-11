@@ -50,7 +50,6 @@ public class PlaylistPanel extends JPanel implements ThemeChangeListener {
         add(scrollPane, BorderLayout.CENTER);
 
         // Buttons
-
         buttonPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.RIGHT));
         buttonPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
 

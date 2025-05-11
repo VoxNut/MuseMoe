@@ -235,15 +235,36 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
         playPauseButtonMap.put(song, playPauseButton);
 
         playPauseButton.addActionListener(e -> {
-            if (playerFacade.getCurrentSong() != null &&
-                    playerFacade.getCurrentSong().getId().equals(song.getId())) {
+            SongDTO currentSong = playerFacade.getCurrentSong();
+
+            boolean isSameSong = false;
+            if (currentSong != null && song != null) {
+                if (currentSong.getIsLocalFile() && song.getIsLocalFile()) {
+                    isSameSong = currentSong.getLocalFilePath() != null &&
+                            currentSong.getLocalFilePath().equals(song.getLocalFilePath());
+                } else if (!currentSong.getIsLocalFile() && !song.getIsLocalFile()) {
+                    isSameSong = currentSong.getId() != null &&
+                            song.getId() != null &&
+                            currentSong.getId().equals(song.getId());
+                }
+            }
+
+            if (isSameSong) {
                 if (playerFacade.isPaused()) {
                     playerFacade.playCurrentSong();
                 } else {
                     playerFacade.pauseSong();
                 }
             } else {
-                playerFacade.loadSong(song);
+                if (song.getIsLocalFile()) {
+                    try {
+                        playerFacade.loadLocalSong(song);
+                    } catch (IOException ex) {
+                        log.error("Error loading local song: {}", ex.getMessage());
+                    }
+                } else {
+                    playerFacade.loadSong(song);
+                }
             }
         });
 
@@ -259,6 +280,8 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
         card.add(infoBarPanel);
 
         GuiUtil.addHoverEffect(card);
+
+        GuiUtil.addSongContextMenu(card, song);
 
         return card;
     }
@@ -334,10 +357,23 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
     }
 
     private void updatePlayPauseButtons(SongDTO currentSong, boolean isPlaying) {
-        // Update all play/pause buttons based on current playing song
         SwingUtilities.invokeLater(() -> {
             playPauseButtonMap.forEach((song, button) -> {
-                if (currentSong != null && song.getId().equals(currentSong.getId())) {
+                boolean isSameSong = false;
+
+                if (currentSong != null && song != null) {
+                    if (currentSong.getIsLocalFile() && song.getIsLocalFile()) {
+                        isSameSong = currentSong.getLocalFilePath() != null &&
+                                currentSong.getLocalFilePath().equals(song.getLocalFilePath());
+                    } else if (!currentSong.getIsLocalFile() && !song.getIsLocalFile()) {
+                        // For streaming songs, compare by ID
+                        isSameSong = currentSong.getId() != null &&
+                                song.getId() != null &&
+                                currentSong.getId().equals(song.getId());
+                    }
+                }
+
+                if (isSameSong) {
                     if (isPlaying) {
                         button.setIcon(GuiUtil.createColoredIcon(
                                 AppConstant.PAUSE_ICON_PATH,
@@ -361,5 +397,4 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
             });
         });
     }
-
 }

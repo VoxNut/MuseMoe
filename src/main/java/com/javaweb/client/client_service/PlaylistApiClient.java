@@ -10,4 +10,9 @@ public interface PlaylistApiClient {
 
 
     List<PlaylistDTO> findAllPlaylists();
+
+
+    boolean addSongToPlaylist(Long playlistId, Long songId);
+
+    PlaylistDTO createPlaylist(String name, Long songId);
 }

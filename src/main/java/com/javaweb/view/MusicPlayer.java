@@ -15,6 +15,7 @@ import com.javaweb.view.state.StoppedState;
 import com.javaweb.view.theme.ThemeManager;
 import com.javaweb.view.user.UserSessionManager;
 import javazoom.jl.player.AudioDevice;
+import javazoom.jl.player.FactoryRegistry;
 import javazoom.jl.player.JavaSoundAudioDevice;
 import javazoom.jl.player.advanced.AdvancedPlayer;
 import javazoom.jl.player.advanced.PlaybackEvent;
@@ -117,6 +118,39 @@ public class MusicPlayer extends PlaybackListener {
     private float currentVolumeGain = 0.0f;
 
 
+    public void loadLocalSong(SongDTO song) throws IOException {
+        if (song == null || !song.getIsLocalFile()) {
+            log.error("Attempted to load non-local song with local method");
+            return;
+        }
+
+        // Reset state
+        resetPlaybackPosition();
+        stopSong();
+
+        try {
+            Thread.sleep(50);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        // Set current song and update UI
+        currentSong = song;
+        havingAd = false;
+        mediator.notifyAdOff();
+
+        if (repeatMode == RepeatMode.REPEAT_ONE) {
+            repeatMode = RepeatMode.REPEAT_ALL;
+        }
+
+        mediator.notifyRepeatModeChanged(repeatMode);
+        mediator.notifyHomePagePlaybackSlider();
+        updateGUI();
+
+        playCurrentSong();
+    }
+
+    // Add import for FactoryRegistry at the top of the file
     public void loadSong(SongDTO song) throws IOException {
         if (adManager.shouldShowAd(getCurrentUser()) || song != null) {
             processLoadSong(song);
@@ -328,9 +362,28 @@ public class MusicPlayer extends PlaybackListener {
         try {
             volumeControl = null;
 
-            // Create player from streaming service instead of file system
-            advancedPlayer = streamingPlayer.createPlayer(currentSong, this);
-            this.device = streamingPlayer.getDevice();
+            // Check if this is a local file
+            if (currentSong != null && currentSong.getIsLocalFile() && currentSong.getLocalFilePath() != null) {
+                playLocalSongInternal();
+            } else {
+                // Stream from Google Drive
+                playStreamingSongInternal();
+            }
+
+        } catch (Exception e) {
+            log.error("Error playing song: {}", e.getMessage(), e);
+        }
+    }
+
+
+    private void playLocalSongInternal() {
+        try {
+            fileInputStream = new FileInputStream(currentSong.getLocalFilePath());
+            bufferedInputStream = new BufferedInputStream(fileInputStream);
+
+            device = FactoryRegistry.systemRegistry().createAudioDevice();
+            advancedPlayer = new AdvancedPlayer(bufferedInputStream, device);
+            advancedPlayer.setPlayBackListener(this);
 
             setVolume(currentVolumeGain);
 
@@ -339,10 +392,25 @@ public class MusicPlayer extends PlaybackListener {
                 startMusicThread();
                 startPlaybackSliderThread();
             });
-
-
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error playing local song: {}", e.getMessage(), e);
+        }
+    }
+
+    private void playStreamingSongInternal() {
+        try {
+            advancedPlayer = streamingPlayer.createPlayer(currentSong, this);
+            device = streamingPlayer.getDevice();
+
+            setVolume(currentVolumeGain);
+
+            SwingUtilities.invokeLater(() -> {
+                mediator.notifyToggleCava(true);
+                startMusicThread();
+                startPlaybackSliderThread();
+            });
+        } catch (Exception e) {
+            log.error("Error playing streaming song: {}", e.getMessage(), e);
         }
     }
 
@@ -384,7 +452,6 @@ public class MusicPlayer extends PlaybackListener {
 
         sliderThread = new Thread(() -> {
             try {
-                // Store important values locally to prevent race conditions
                 SongDTO currentSongCopy = currentSong;
                 if (currentSongCopy == null) return;
 
@@ -680,6 +747,8 @@ public class MusicPlayer extends PlaybackListener {
         mediator.notifySongLoaded(currentSong);
         if (currentPlaylist != null) {
             mediator.notifyPlaylistLoaded(currentPlaylist);
+        } else if (currentSong.getSongAlbum() != null) {
+            mediator.notifySongAlbum(currentSong.getSongAlbum());
         }
     }
 

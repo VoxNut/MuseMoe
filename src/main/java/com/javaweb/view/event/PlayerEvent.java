@@ -24,7 +24,8 @@ public record PlayerEvent(EventType type, Object data) {
         SPECTRUM_DATA,
         SPECTRUM_STOP,
         TOGGLE_CAVA,
-
+        LOAD_LOCAL_SONG,
+        SONG_ALBUM
     }
 
 }

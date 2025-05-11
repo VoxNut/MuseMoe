@@ -68,7 +68,6 @@ public class StreamingAudioPlayer {
             // Extract audio properties
             MP3AudioHeader audioHeader = (MP3AudioHeader) audioFile.getAudioHeader();
 
-
             //Bit rate
             songDTO.setBitrate(audioHeader.getBitRateAsNumber());
 

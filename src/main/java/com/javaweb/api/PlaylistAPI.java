@@ -5,11 +5,10 @@ import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.service.PlaylistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/playlists")
@@ -39,6 +38,25 @@ public class PlaylistAPI {
             e.printStackTrace();
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @PostMapping("/add_to_playlist")
+    public ResponseEntity<Boolean> addSongToPlaylist(@RequestBody Map<String, Object> request) {
+
+        Long playlistId = request.containsKey("playlistId") ? Long.valueOf(request.get("playlistId").toString()) : null;
+        Long songId = request.containsKey("songId") ? Long.valueOf(request.get("songId").toString()) : null;
+
+        boolean success = playlistService.addSongToPlaylist(playlistId, songId);
+        return ResponseEntity.ok(success);
+    }
+
+    @PostMapping("/create")
+    public ResponseEntity<PlaylistDTO> createPlaylist(@RequestBody Map<String, Object> request) {
+        String name = (String) request.get("name");
+        Long songId = request.containsKey("songId") ? Long.valueOf(request.get("songId").toString()) : null;
+
+        PlaylistDTO playlist = playlistService.createPlaylist(name, songId);
+        return ResponseEntity.ok(playlist);
     }
 
 }

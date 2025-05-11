@@ -5,10 +5,7 @@ import com.javaweb.constant.AppConstant;
 import com.javaweb.enums.RepeatMode;
 import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
-import com.javaweb.utils.CommonApiUtil;
-import com.javaweb.utils.FontUtil;
-import com.javaweb.utils.GuiUtil;
-import com.javaweb.utils.NetworkChecker;
+import com.javaweb.utils.*;
 import com.javaweb.view.event.MusicPlayerFacade;
 import com.javaweb.view.event.PlayerEvent;
 import com.javaweb.view.event.PlayerEventListener;
@@ -567,7 +564,11 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
     public void updateSongDetails(SongDTO song) {
         updateSongTitleAndArtist(song);
         updateSongImage(song);
-        if (!playerFacade.isHavingAd()) {
+
+        if (song.getIsLocalFile()) {
+            heartButton.setVisible(false);
+            outLineHeartButton.setVisible(false);
+        } else if (!playerFacade.isHavingAd()) {
             updateHeartButtonIcon(song);
         }
     }
@@ -792,6 +793,11 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         playlistNameLabel.setVisible(!isHiding);
     }
 
+    private void setHeartButtonsVisibility(boolean visible) {
+        heartButton.setVisible(visible && CommonApiUtil.checkSongLiked(playerFacade.getCurrentSong().getId()));
+        outLineHeartButton.setVisible(visible && !CommonApiUtil.checkSongLiked(playerFacade.getCurrentSong().getId()));
+    }
+
 
     @Override
     public void onPlayerEvent(PlayerEvent event) {
@@ -810,6 +816,8 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
                     setVolumeSliderValue(Math.round(playerFacade.getCurrentVolumeGain()));
                     enablePauseButtonDisablePlayButton();
                     hidePlaylistNameLabel(true);
+
+
                     try {
                         toggleShuffleButton(false);
                     } catch (IOException e) {
@@ -827,6 +835,20 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
                         setPlaybackSliderValue(data[0]);
                         updateSongTimeLabel(data[1]);
                     }
+                }
+
+                case LOAD_LOCAL_SONG -> {
+                    playlistNameLabel.setText("Local Songs");
+                    hidePlaylistNameLabel(false);
+                    heartButton.setVisible(false);
+                    outLineHeartButton.setVisible(false);
+                }
+
+                case SONG_ALBUM -> {
+                    String songAlbum = (String) event.data();
+                    Font font = FontUtil.getSpotifyFont(Font.BOLD, 15);
+                    playlistNameLabel.setText(StringUtils.getTruncatedTextByWidth(songAlbum, font, 200));
+                    hidePlaylistNameLabel(false);
                 }
 
                 case REPEAT_MODE_CHANGED -> {

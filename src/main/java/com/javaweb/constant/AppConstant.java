@@ -46,16 +46,12 @@ public class AppConstant {
     public static final String CHEVRON_UP_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/chevron-up.png";
     public static final String CHEVRON_DOWN_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/chevron-down.png";
     public static final String REFRESH_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/refresh-icon.png";
-    //SALE PAGE
     public static final String CREATE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/create-icon.png";
     public static final String DELETE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/delete-icon.png";
     public static final String DESELECT_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/deselected-icon.png";
     public static final String LOOKUP_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/lookup-icon.png";
-    //DISCOUNT PAGE
     public static final String DISCOUNT_PATH = "src/main/java/com/javaweb/view/imgs/icon/discount-img.png";
     public static final String CALENDAR_PATH = "src/main/java/com/javeaweb/view/imgs/icon/calendar-icon.png";
-
-    //MUSIC PLAYER
     public static final String PLAY_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/play-icon.png";
     public static final String PAUSE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/pause-icon.png";
     public static final String NEXT_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/next-icon.png";
@@ -74,7 +70,7 @@ public class AppConstant {
     public static final String ON_REPEAT_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/on-repeat-icon.png";
     public static final String REPEAT_1_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/repeat-1-icon.png";
     public static final String LYRICS_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/lyrics-icon.png";
-    public static final Color MUSIC_PLAYER_TEXT_COLOR = Color.decode("#FFFFFF");
+    public static final String FOLDER_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/folder-icon.jpg";
 
     //LOGO
     public static final String MUSE_MOE_LOGO_PATH = "src/main/java/com/javaweb/view/imgs/logo/muse_moe_no_bg.png";
@@ -115,6 +111,8 @@ public class AppConstant {
     };
     public static final String CREDENTIALS_FILE_PATH = "D:\\My WorkSpace\\MuseMoe\\src\\main\\resources\\credentials.json";
     public static final String TOKENS_DIRECTORY_PATH = "src/main/resources/tokens";
+    public static final String DEFAULT_DOWNLOAD_DIR = "D:\\MuseMoe resources\\user_downloaded_songs";
+
 
     //ADS
     public static final String MUSE_MOE_AD = "1LIj0GvIz6R_qGoWjVzIVotLn_Dx5Qlkh";

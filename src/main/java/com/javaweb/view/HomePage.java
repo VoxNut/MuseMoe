@@ -23,10 +23,11 @@ import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.File;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 @Slf4j
@@ -37,22 +38,10 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
     private final MusicPlayerFacade playerFacade;
 
-    private JLabel labelBeginning;
-    private JLabel labelEnd;
-
     private JLabel timerLabel;
     private JLabel statusLabel;
     private Timer loadingTimer;
     private long startTime;
-
-    private double rotationAngle = 0.0;
-    private static final double SPIN_SPEED = Math.PI / 60;
-    private static final int TIMER_DELAY = 16; //
-    private Timer scrollTimer;
-    private JLabel scrollingLabel;
-    private static final int SCROLL_DELAY = 16; // ~60 FPS (1000ms/60)
-    private static final float SCROLL_SPEED = 0.5f;
-    private float scrollPosition = 0.0f;
 
     private JPanel mainPanel;
     private JTextField searchField;
@@ -607,17 +596,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     }
 
     private void handleRecentSongSelected(SongDTO song) {
-        java.util.List<PlaylistDTO> playlists = CommonApiUtil.fetchPlaylistByUserId();
-        Optional<PlaylistDTO> playlistWithSong = playlists
-                .stream()
-                .filter(playlist -> playlist.getSongs()
-                        .stream()
-                        .anyMatch(playlistSong -> playlistSong.getId().equals(song.getId())))
-                .findFirst();
-        playerFacade.setCurrentPlaylist(playlistWithSong.orElse(null));
         playerFacade.loadSong(song);
         searchField.setText(song.getTitle() + " - " + (song.getSongArtist() != null ? song.getSongArtist() : "Unknown"));
-
     }
 
     // Update the performSearch method
@@ -640,14 +620,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
                         if (searchResults != null && !searchResults.isEmpty()) {
                             SongDTO songDTO = searchResults.getFirst();
-                            java.util.List<PlaylistDTO> playlists = CommonApiUtil.fetchPlaylistByUserId();
-                            Optional<PlaylistDTO> playlistWithSong = playlists.stream()
-                                    .filter(playlist -> playlist.getSongs()
-                                            .stream()
-                                            .anyMatch(playlistSong -> playlistSong.getId().equals(songDTO.getId())))
-                                    .findFirst();
-
-                            playerFacade.setCurrentPlaylist(playlistWithSong.orElse(null));
                             CommonApiUtil.logSearchHistory(songDTO.getId(), query);
                             showSearchResults(searchResults);
                         } else {
@@ -672,25 +644,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         // For now, just play the first result as an example
         SongDTO songDTO = searchResults.getFirst();
         playerFacade.loadSong(songDTO);
-    }
-
-    private JPanel createLabelsPanel() {
-        // Create labels panel
-        JPanel labelsPanel = GuiUtil.createPanel(new BorderLayout());
-        labelsPanel.setPreferredSize(new Dimension(getWidth(), 18));
-
-        labelBeginning = GuiUtil.createLabel("00:00", Font.PLAIN, 18);
-        labelBeginning.setVisible(false);
-
-        labelEnd = GuiUtil.createLabel("00:00", Font.PLAIN, 18);
-        labelEnd.setVisible(false);
-
-        // Add labels to labelsPanel
-        labelsPanel.add(labelBeginning, BorderLayout.WEST);
-        labelsPanel.add(labelEnd, BorderLayout.EAST);
-        labelsPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, labelsPanel.getPreferredSize().height));
-
-        return labelsPanel;
     }
 
 
@@ -892,38 +845,188 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
     private void loadDownloadedSongs(JPanel container) {
         try {
-            // Check for network connectivity
-            if (!NetworkChecker.isNetworkAvailable()) {
-                container.add(GuiUtil.createErrorLabel("Network is unavailable!"));
+            java.util.List<SongDTO> downloadedSongs = LocalSongManager.getDownloadedSongs();
+
+            if (downloadedSongs.isEmpty()) {
+                container.add(GuiUtil.createErrorLabel("No downloaded songs found"));
                 return;
             }
 
-            // Fetch liked songs
-            java.util.List<SongDTO> downloadedSongs = CommonApiUtil.fetchUserDownloadedSongs();
-            if (downloadedSongs == null || downloadedSongs.isEmpty()) {
-                container.add(GuiUtil.createErrorLabel("No downloaded songs"));
-                return;
-            }
+            JPanel headerPanel = GuiUtil.createPanel(new BorderLayout());
+            headerPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            headerPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
 
-            JPanel recentLabelPanel = GuiUtil.createPanel(new BorderLayout());
-            recentLabelPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-            recentLabelPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+            JLabel headerLabel = GuiUtil.createLabel("Downloaded Songs", Font.BOLD, 14);
+            headerPanel.add(headerLabel, BorderLayout.WEST);
 
-            JLabel recentLabel = GuiUtil.createLabel("Recently Downloaded", Font.BOLD, 14);
-            recentLabelPanel.add(recentLabel, BorderLayout.WEST);
-
-            container.add(recentLabelPanel);
-
+            container.add(headerPanel);
             container.add(Box.createVerticalStrut(5));
 
+            // Add each downloaded song to the panel
             for (SongDTO downloadedSong : downloadedSongs) {
-                container.add(createSongPanel(downloadedSong));
+                container.add(createLocalSongPanel(downloadedSong));
                 container.add(Box.createVerticalStrut(5));
             }
 
         } catch (Exception e) {
-            log.error("Failed to load downloaded songs", e);
+            log.error("Failed to load downloaded songs: {}", e.getMessage(), e);
             container.add(GuiUtil.createErrorLabel("Failed to load downloaded songs"));
+        }
+    }
+
+
+    private JPanel createLocalSongPanel(SongDTO song) {
+        JPanel songPanel = GuiUtil.createPanel(new BorderLayout(10, 0));
+        songPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+
+        // Create song cover
+        AsyncImageLabel coverLabel = new AsyncImageLabel(40, 40, 15);
+        coverLabel.startLoading();
+
+        if (song.getSongImage() != null) {
+            coverLabel.setLoadedImage(song.getSongImage());
+        } else {
+            coverLabel.setLoadedImage(GuiUtil.createBufferImage(AppConstant.DEFAULT_COVER_PATH));
+        }
+
+        JPanel infoPanel = GuiUtil.createPanel();
+        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+
+        Font titleFont = FontUtil.getSpotifyFont(Font.BOLD, 12);
+        Font artistFont = FontUtil.getSpotifyFont(Font.PLAIN, 10);
+
+        JLabel titleLabel = GuiUtil.createLabel(StringUtils.getTruncatedTextByWidth(song.getTitle(), titleFont), Font.BOLD, 12);
+        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel artistLabel = GuiUtil.createLabel(
+                song.getSongArtist() != null ? StringUtils.getTruncatedTextByWidth(song.getSongArtist(), artistFont) : "Unknown Artist",
+                Font.PLAIN, 10
+        );
+
+        artistLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel localLabel = GuiUtil.createLabel("Local", Font.ITALIC, 9);
+        localLabel.setForeground(ThemeManager.getInstance().getAccentColor());
+        localLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        infoPanel.add(titleLabel);
+        infoPanel.add(artistLabel);
+        infoPanel.add(localLabel);
+
+        songPanel.add(coverLabel, BorderLayout.WEST);
+        songPanel.add(infoPanel, BorderLayout.CENTER);
+
+        // Add hover effect
+        GuiUtil.addHoverEffect(songPanel);
+
+        // Add special context menu for local songs
+        addLocalSongContextMenu(songPanel, song);
+
+        songPanel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    try {
+                        log.info("Local song clicked: {}", song.getTitle());
+                        playerFacade.loadLocalSong(song);
+                    } catch (IOException ex) {
+                        log.error("Error playing local song: {}", ex.getMessage(), ex);
+                        GuiUtil.showErrorMessageDialog(HomePage.this, "Error playing local song");
+                    }
+                }
+            }
+        });
+
+        return songPanel;
+    }
+
+    private void addLocalSongContextMenu(JComponent component, SongDTO song) {
+        JPopupMenu contextMenu = GuiUtil.createPopupMenu(ThemeManager.getInstance().getBackgroundColor(), ThemeManager.getInstance().getTextColor());
+
+        // Play option
+        JMenuItem playItem = GuiUtil.createMenuItem("Play");
+        playItem.addActionListener(e -> {
+            try {
+                playerFacade.loadLocalSong(song);
+            } catch (IOException ex) {
+                GuiUtil.showToast(SwingUtilities.getWindowAncestor(component), "Error playing local song");
+            }
+        });
+        contextMenu.add(playItem);
+
+        // Delete option
+        JMenuItem deleteItem = GuiUtil.createMenuItem("Delete");
+        deleteItem.addActionListener(e -> {
+            int result = JOptionPane.showConfirmDialog(SwingUtilities.getWindowAncestor(component),
+                    "Are you sure you want to delete this song?\n" + song.getTitle(),
+                    "Confirm Delete", JOptionPane.YES_NO_OPTION);
+
+            if (result == JOptionPane.YES_OPTION) {
+                try {
+                    File file = new File(song.getLocalFilePath());
+                    if (file.delete()) {
+                        GuiUtil.showToast(SwingUtilities.getWindowAncestor(component), "Song deleted successfully");
+                        refreshDownloadedSongsPanel();
+                    } else {
+                        GuiUtil.showErrorMessageDialog(SwingUtilities.getWindowAncestor(component), "Could not delete song file");
+                    }
+                } catch (Exception ex) {
+                    GuiUtil.showErrorMessageDialog(SwingUtilities.getWindowAncestor(component), "Error deleting song");
+                }
+            }
+        });
+        contextMenu.add(deleteItem);
+
+        // Open folder option
+        JMenuItem openFolderItem = GuiUtil.createMenuItem("Show in folder");
+        openFolderItem.addActionListener(e -> {
+            try {
+                File file = new File(song.getLocalFilePath());
+                Desktop.getDesktop().open(file.getParentFile());
+            } catch (Exception ex) {
+                GuiUtil.showErrorMessageDialog(SwingUtilities.getWindowAncestor(component), "Could not open folder");
+            }
+        });
+        contextMenu.add(openFolderItem);
+
+        GuiUtil.registerPopupMenuForThemeUpdates(contextMenu);
+
+        component.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    showContextMenu(e);
+                }
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    showContextMenu(e);
+                }
+            }
+
+            private void showContextMenu(MouseEvent e) {
+                contextMenu.show(component, e.getX(), e.getY());
+            }
+        });
+    }
+
+
+    public void refreshDownloadedSongsPanel() {
+        ExpandableCardPanel downloadedSongsCard = GuiUtil.findFirstComponentByType(
+                libraryPanel,
+                ExpandableCardPanel.class,
+                card -> card.getTitle().equals("Downloaded")
+        );
+
+        if (downloadedSongsCard != null) {
+            boolean wasExpanded = downloadedSongsCard.isExpanded();
+            JPanel updatedDownloadedSongsPanel = createDownloadedSongsPanel();
+            downloadedSongsCard.setContent(updatedDownloadedSongsPanel);
+            if (wasExpanded) {
+                downloadedSongsCard.expandPanel();
+            }
         }
     }
 
@@ -981,7 +1084,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         AsyncImageLabel coverLabel = new AsyncImageLabel(40, 40, 15);
         coverLabel.startLoading();
         if (!playlist.getSongs().isEmpty()) {
-            playerFacade.populateSongImage(playlist.getFirstSong(), image -> coverLabel.setLoadedImage(image));
+            playerFacade.populateSongImage(playlist.getFirstSong(), coverLabel::setLoadedImage);
         } else {
             coverLabel.setLoadedImage(GuiUtil.createBufferImage(AppConstant.DEFAULT_COVER_PATH));
         }
@@ -1028,7 +1131,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         // Create song cover
         AsyncImageLabel coverLabel = new AsyncImageLabel(40, 40, 15);
         coverLabel.startLoading();
-        playerFacade.populateSongImage(song, image -> coverLabel.setLoadedImage(image));
+        playerFacade.populateSongImage(song, coverLabel::setLoadedImage);
 
 
         // Create song info panel
@@ -1057,8 +1160,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         boolean isLiked = CommonApiUtil.checkSongLiked(song.getId());
 
         // Only show heartbutton if user has network available
+        JButton heartButton;
         if (NetworkChecker.isNetworkAvailable()) {
-            JButton heartButton = GuiUtil.changeButtonIconColor(
+            heartButton = GuiUtil.changeButtonIconColor(
                     isLiked ? AppConstant.HEART_ICON_PATH : AppConstant.HEART_OUTLINE_ICON_PATH,
                     20, 20
             );
@@ -1103,15 +1207,16 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             songPanel.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
-                    Component clickedComponent = SwingUtilities.getDeepestComponentAt(songPanel, e.getX(), e.getY());
-                    if (clickedComponent != heartButton) {
-                        log.info("Song clicked: {}", song.getTitle());
-                        playerFacade.loadSong(song);
+                    if (SwingUtilities.isLeftMouseButton(e)) {
+                        Component clickedComponent = SwingUtilities.getDeepestComponentAt(songPanel, e.getX(), e.getY());
+                        if (clickedComponent != heartButton) {
+                            log.info("Song clicked: {}", song.getTitle());
+                            playerFacade.loadSong(song);
+                        }
                     }
                 }
             });
         }
-
 
         songPanel.add(coverLabel, BorderLayout.WEST);
         songPanel.add(infoPanel, BorderLayout.CENTER);
@@ -1119,6 +1224,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         // Add hover effect
         GuiUtil.addHoverEffect(songPanel);
+        GuiUtil.addSongContextMenu(songPanel, song);
 
         return songPanel;
     }
@@ -1153,6 +1259,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         // Add hover effect
         GuiUtil.addHoverEffect(artistPanel);
 
+
         return artistPanel;
     }
 
@@ -1174,7 +1281,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         // Start loading and populate the image
         avatarLabel.startLoading();
-        playerFacade.populateUserProfile(getCurrentUser(), image -> avatarLabel.setLoadedImage(image));
+        playerFacade.populateUserProfile(getCurrentUser(), avatarLabel::setLoadedImage);
         return avatarLabel;
     }
 
@@ -1398,32 +1505,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         // Force repaint
         SwingUtilities.invokeLater(this::repaint);
-    }
-
-    private class ScrollingLabel extends JLabel {
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2d = (Graphics2D) g.create();
-            g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-                    RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-
-            // Calculate dimensions relative to component size
-            int height = getHeight();
-            float centerY = height / 2.0f;
-
-            FontMetrics fm = g2d.getFontMetrics();
-            String text = getText();
-            int textWidth = fm.stringWidth(text);
-
-            // Draw text with responsive positioning
-            g2d.setColor(getForeground());
-            float textY = centerY + (float) fm.getAscent() / 2;
-            g2d.drawString(text, -scrollPosition, textY);
-            g2d.drawString(text, textWidth - scrollPosition, textY);
-
-            g2d.dispose();
-        }
     }
 
     @Override

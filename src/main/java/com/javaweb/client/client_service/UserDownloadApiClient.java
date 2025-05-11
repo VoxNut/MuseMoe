@@ -7,4 +7,6 @@ import java.util.List;
 public interface UserDownloadApiClient {
 
     List<SongDTO> findUserDownloadedSongs();
+
+    boolean createUserDownload(SongDTO songDTO);
 }

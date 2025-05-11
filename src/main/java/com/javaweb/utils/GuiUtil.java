@@ -1,11 +1,16 @@
 package com.javaweb.utils;
 
+import com.javaweb.App;
 import com.javaweb.constant.AppConstant;
+import com.javaweb.model.dto.SongDTO;
 import com.javaweb.model.dto.UserDTO;
+import com.javaweb.view.HomePage;
 import com.javaweb.view.components.AsyncImageLabel;
 import com.javaweb.view.custom.spinner.DateLabelFormatter;
 import com.javaweb.view.custom.table.BorderedHeaderRenderer;
 import com.javaweb.view.custom.table.BorderedTableCellRenderer;
+import com.javaweb.view.dialog.PlaylistSelectionDialog;
+import com.javaweb.view.event.MusicPlayerFacade;
 import com.javaweb.view.theme.ThemeManager;
 import de.androidpit.colorthief.ColorThief;
 import net.coobird.thumbnailator.Thumbnails;
@@ -43,10 +48,7 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
@@ -64,6 +66,7 @@ import java.util.logging.Logger;
 public class GuiUtil {
 
     private static final Map<String, BufferedImage> imageCache = new ConcurrentHashMap<>();
+    private static final Set<JPopupMenu> popupMenuRegistry = Collections.synchronizedSet(new HashSet<>());
 
     public static void formatTable(JTable table) {
         // Add table styling
@@ -521,22 +524,9 @@ public class GuiUtil {
         Color textColor = ThemeManager.getInstance().getTextColor();
 
         menuItem.setOpaque(true);
-        menuItem.setBackground(backgroundColor);
-        menuItem.setForeground(textColor);
         menuItem.setFont(FontUtil.getJetBrainsMonoFont(Font.PLAIN, 16));
 
-
-        // Add hover effect
-        Color hoverColor = lightenColor(backgroundColor, 0.1f);
-        menuItem.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                menuItem.setBackground(hoverColor);
-            }
-
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                menuItem.setBackground(backgroundColor);
-            }
-        });
+        styleMenuItem(menuItem, backgroundColor, textColor);
 
         return menuItem;
     }
@@ -646,31 +636,73 @@ public class GuiUtil {
     public static void styleMenuItem(JMenuItem menuItem, Color backgroundColor, Color textColor) {
         if (menuItem == null) return;
 
-        // Basic styling
         menuItem.setOpaque(true);
         menuItem.setBackground(backgroundColor);
         menuItem.setForeground(textColor);
 
-        // Style submenu if this menu item is a JMenu
+        Color hoverColor = lightenColor(backgroundColor, 0.1f);
+        Color accentColor = ThemeManager.getInstance().getAccentColor();
+
+        menuItem.setUI(new javax.swing.plaf.basic.BasicMenuItemUI() {
+            @Override
+            protected void paintBackground(Graphics g, JMenuItem menuItem, Color bgColor) {
+                ButtonModel model = menuItem.getModel();
+                Graphics2D g2d = (Graphics2D) g;
+                int menuWidth = menuItem.getWidth();
+                int menuHeight = menuItem.getHeight();
+
+                if (model.isArmed() || model.isSelected()) {
+                    g2d.setColor(accentColor);
+                    g2d.fillRect(0, 0, menuWidth, menuHeight);
+                } else if (model.isRollover()) {
+                    g2d.setColor(hoverColor);
+                    g2d.fillRect(0, 0, menuWidth, menuHeight);
+                } else {
+                    g2d.setColor(backgroundColor);
+                    g2d.fillRect(0, 0, menuWidth, menuHeight);
+                }
+            }
+
+            @Override
+            protected void paintText(Graphics g, JMenuItem menuItem, Rectangle textRect, String text) {
+                ButtonModel model = menuItem.getModel();
+                Graphics2D g2d = (Graphics2D) g.create();
+                FontMetrics fm = g2d.getFontMetrics(menuItem.getFont());
+
+                if (model.isArmed() || model.isSelected()) {
+                    double contrast = calculateContrast(accentColor, textColor);
+                    if (contrast < 4.5) {
+                        g2d.setColor(calculateContrast(accentColor, Color.WHITE) >
+                                calculateContrast(accentColor, Color.BLACK) ?
+                                Color.WHITE : Color.BLACK);
+                    } else {
+                        g2d.setColor(textColor);
+                    }
+                } else {
+                    g2d.setColor(textColor);
+                }
+
+                g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+                        RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+                int x = textRect.x;
+                int y = textRect.y + fm.getAscent();
+
+                g2d.drawString(text, x, y);
+                g2d.dispose();
+            }
+        });
+
         if (menuItem instanceof JMenu) {
             styleMenu((JMenu) menuItem, backgroundColor, textColor);
         }
 
-        // Add hover effect
-        Color hoverColor = lightenColor(backgroundColor, 0.1f);
-        menuItem.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                menuItem.setBackground(hoverColor);
+        for (MouseListener listener : menuItem.getMouseListeners()) {
+            if (listener instanceof MouseAdapter &&
+                    listener.getClass().getEnclosingMethod() != null &&
+                    listener.getClass().getEnclosingMethod().getName().equals("styleMenuItem")) {
+                menuItem.removeMouseListener(listener);
             }
-
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                menuItem.setBackground(backgroundColor);
-            }
-        });
-
-        // Update accelerator text color if present
-        if (menuItem.getAccelerator() != null) {
-            UIManager.put("MenuItem.acceleratorForeground", textColor);
         }
     }
 
@@ -1401,11 +1433,37 @@ public class GuiUtil {
     }
 
 
+    public static void registerPopupMenuForThemeUpdates(JPopupMenu menu) {
+        popupMenuRegistry.add(menu);
+    }
+
+    public static void updateRegisteredPopupMenus(Color backgroundColor, Color textColor, Color accentColor) {
+        for (JPopupMenu menu : popupMenuRegistry) {
+            updatePopupMenuColors(menu, backgroundColor, textColor, accentColor);
+        }
+    }
+
+    public static void updatePopupMenuColors(JPopupMenu menu, Color backgroundColor, Color textColor, Color accentColor) {
+        menu.setBackground(backgroundColor);
+        menu.setForeground(textColor);
+        menu.setBorder(BorderFactory.createLineBorder(darkenColor(backgroundColor, 0.2f)));
+
+        for (Component comp : menu.getComponents()) {
+            if (comp instanceof JMenuItem menuItem) {
+                styleMenuItem(menuItem, backgroundColor, textColor);
+            }
+        }
+    }
+
+
     public static JPopupMenu createPopupMenu(Color backgroundColor, Color textColor) {
         JPopupMenu popupMenu = new JPopupMenu();
         popupMenu.setBackground(backgroundColor);
         popupMenu.setForeground(textColor);
         popupMenu.setBorder(BorderFactory.createLineBorder(GuiUtil.darkenColor(backgroundColor, 0.2f)));
+
+        popupMenu.setUI(new javax.swing.plaf.basic.BasicPopupMenuUI());
+
         return popupMenu;
     }
 
@@ -1555,6 +1613,116 @@ public class GuiUtil {
 
 
         return chart;
+    }
+
+
+    public static int showDownloadLocationDialog(Window parent, String defaultPath, String title) {
+        Color backgroundColor = ThemeManager.getInstance().getBackgroundColor();
+        Color textColor = ThemeManager.getInstance().getTextColor();
+        Color accentColor = ThemeManager.getInstance().getAccentColor();
+
+        final int[] result = {2}; // Default to cancel (2)
+
+        // Create a custom dialog
+        JDialog dialog = new JDialog(parent, title, Dialog.ModalityType.APPLICATION_MODAL);
+
+        // Main panel with styled background
+        JPanel mainPanel = createPanel(new BorderLayout(20, 20));
+        mainPanel.setOpaque(true);
+        mainPanel.setBackground(backgroundColor);
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(25, 25, 20, 25));
+
+        // Style the dialog frame
+        styleDialog(dialog, backgroundColor, textColor);
+
+        // Create icon
+        Icon icon = createCustomDialogIcon(JOptionPane.QUESTION_MESSAGE, 48, accentColor, backgroundColor);
+        JLabel iconLabel = new JLabel(icon);
+        iconLabel.setVerticalAlignment(SwingConstants.TOP);
+
+        // Create message panel
+        JPanel messagePanel = createPanel(new BorderLayout(0, 15));
+
+        // Create message label
+        JLabel messageLabel = createLabel("Where would you like to save this song?", Font.BOLD, 16, textColor);
+
+        // Create path panel with styled appearance
+        JPanel pathPanel = createPanel(new BorderLayout(10, 0));
+        pathPanel.setBorder(createCompoundBorder(2));
+        pathPanel.setBackground(darkenColor(backgroundColor, 0.1f));
+
+        // Create folder icon
+        JLabel folderIcon = createIconLabel(
+                AppConstant.FOLDER_ICON_PATH,
+                25, textColor);
+
+        // Create path text
+        JLabel pathLabel = createLabel(defaultPath, Font.PLAIN, 20, textColor);
+
+        pathPanel.add(folderIcon, BorderLayout.WEST);
+        pathPanel.add(pathLabel, BorderLayout.CENTER);
+
+        messagePanel.add(messageLabel, BorderLayout.NORTH);
+        messagePanel.add(pathPanel, BorderLayout.CENTER);
+
+        // Create buttons with custom styling
+        JButton defaultButton = createButton("Use Default Location");
+        JButton chooseButton = createButton("Choose Another Location");
+        JButton cancelButton = createButton("Cancel");
+
+
+        // Add action listeners
+        defaultButton.addActionListener(e -> {
+            result[0] = 0; // Use default
+            dialog.dispose();
+        });
+
+        chooseButton.addActionListener(e -> {
+            result[0] = 1; // Choose location
+            dialog.dispose();
+        });
+
+        cancelButton.addActionListener(e -> {
+            result[0] = 2; // Cancel
+            dialog.dispose();
+        });
+
+        // Create button panel with vertical layout
+        JPanel buttonPanel = createPanel(new GridLayout(3, 1, 0, 10));
+        buttonPanel.add(defaultButton);
+        buttonPanel.add(chooseButton);
+        buttonPanel.add(cancelButton);
+
+        // Add components to main panel
+        mainPanel.add(iconLabel, BorderLayout.WEST);
+        mainPanel.add(messagePanel, BorderLayout.CENTER);
+        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        // Set dialog properties
+        dialog.setContentPane(mainPanel);
+        dialog.pack();
+        dialog.setSize(new Dimension(Math.max(450, dialog.getWidth()),
+                dialog.getHeight()));
+        dialog.setLocationRelativeTo(parent);
+        dialog.setResizable(false);
+
+        // Add keyboard shortcuts
+        KeyStroke escapeKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
+        dialog.getRootPane().registerKeyboardAction(e -> {
+            result[0] = 2; // Cancel
+            dialog.dispose();
+        }, escapeKeyStroke, JComponent.WHEN_IN_FOCUSED_WINDOW);
+
+        KeyStroke enterKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0);
+        dialog.getRootPane().registerKeyboardAction(e -> {
+            result[0] = 0; // Default action
+            dialog.dispose();
+        }, enterKeyStroke, JComponent.WHEN_IN_FOCUSED_WINDOW);
+
+        // Show dialog
+        dialog.setVisible(true);
+
+        return result[0];
     }
 
     public static JFreeChart createLineChart(String title, String xAxisLabel, String yAxisLabel, DefaultCategoryDataset dataset, PlotOrientation orientation) {
@@ -1722,25 +1890,20 @@ public class GuiUtil {
     public static void updatePanelColors(Container container, Color backgroundColor, Color textColor, Color accentColor) {
         if (container == null) return;
 
-        // Update the container's own properties if it's a JComponent
+
         if (container instanceof JComponent jComponent) {
-            // Handle different types of borders
             if (jComponent.getBorder() instanceof TitledBorder titledBorder) {
                 titledBorder.setTitleColor(textColor);
-                // Also update the border color itself, not just the title
                 if (titledBorder.getBorder() instanceof LineBorder) {
                     titledBorder.setBorder(BorderFactory.createLineBorder(textColor, 2, true));
                 }
             } else if (jComponent.getBorder() instanceof LineBorder) {
-                // Update plain line borders
                 jComponent.setBorder(BorderFactory.createLineBorder(textColor,
                         ((LineBorder) jComponent.getBorder()).getThickness(),
                         ((LineBorder) jComponent.getBorder()).getRoundedCorners()));
             } else if (jComponent.getBorder() instanceof CompoundBorder compoundBorder) {
                 Border outsideBorder = compoundBorder.getOutsideBorder();
                 Border insideBorder = compoundBorder.getInsideBorder();
-
-                //LineBorder
                 if (outsideBorder instanceof LineBorder) {
                     jComponent.setBorder(BorderFactory.createCompoundBorder(
                             BorderFactory.createLineBorder(textColor,
@@ -1748,9 +1911,7 @@ public class GuiUtil {
                                     ((LineBorder) outsideBorder).getRoundedCorners()),
                             insideBorder
                     ));
-                }
-                // Outside is EmptyBorder and inside is MatteBorder
-                else if (outsideBorder instanceof EmptyBorder && insideBorder instanceof MatteBorder) {
+                } else if (outsideBorder instanceof EmptyBorder && insideBorder instanceof MatteBorder) {
                     Insets outsideInsets = ((EmptyBorder) outsideBorder).getBorderInsets();
                     Insets insideInsets = ((MatteBorder) insideBorder).getBorderInsets();
 
@@ -1776,6 +1937,7 @@ public class GuiUtil {
         if (container instanceof JScrollPane scrollPane) {
             applyModernScrollBar(scrollPane);
         }
+
 
         // Process all components in the container
         Component[] components = container.getComponents();
@@ -1826,12 +1988,12 @@ public class GuiUtil {
                 list.setSelectionBackground(accentColor);
                 list.setSelectionForeground(
                         calculateContrast(accentColor, textColor) > 4.5 ? textColor : backgroundColor);
+                //Combobox
             } else if (component instanceof JComboBox<?> comboBox) {
                 comboBox.setBackground(darkenColor(backgroundColor, 0.1f));
                 comboBox.setForeground(textColor);
                 comboBox.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
 
-                // Replace the entire UI to properly style the arrow button
                 comboBox.setUI(new BasicComboBoxUI() {
                     @Override
                     protected JButton createArrowButton() {
@@ -2088,6 +2250,375 @@ public class GuiUtil {
         });
     }
 
+    public static HomePage findHomePageInstance(Component component) {
+        if (component == null) {
+            return null;
+        }
+
+        if (component instanceof HomePage) {
+            return (HomePage) component;
+        }
+
+        Component parent = component.getParent();
+        while (parent != null) {
+            if (parent instanceof HomePage) {
+                return (HomePage) parent;
+            }
+            parent = parent.getParent();
+        }
+
+        for (Window window : Window.getWindows()) {
+            if (window instanceof HomePage && window.isVisible()) {
+                return (HomePage) window;
+            }
+        }
+
+        return null;
+    }
+
+
+    public static JDialog createProgressDialog(Window parent, String title, String message) {
+        Color backgroundColor = ThemeManager.getInstance().getBackgroundColor();
+        Color textColor = ThemeManager.getInstance().getTextColor();
+        Color accentColor = ThemeManager.getInstance().getAccentColor();
+
+        JDialog dialog = new JDialog(parent, title, Dialog.ModalityType.APPLICATION_MODAL);
+
+        // Main panel with proper styling
+        JPanel mainPanel = createPanel(new BorderLayout(15, 15));
+        mainPanel.setOpaque(true);
+        mainPanel.setBackground(backgroundColor);
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 15, 20));
+
+        // Style the dialog frame
+        styleDialog(dialog, backgroundColor, textColor);
+        styleTitleBar(dialog, backgroundColor, textColor);
+
+        // Create icon for visual indicator
+        JLabel iconLabel = new JLabel(createColoredIcon(AppConstant.DOWNLOAD_ICON_PATH, 48, accentColor));
+        iconLabel.setVerticalAlignment(SwingConstants.TOP);
+
+        // Message panel with icon and text
+        JPanel messagePanel = createPanel(new BorderLayout(15, 0));
+        messagePanel.add(iconLabel, BorderLayout.WEST);
+
+        // Text panel
+        JPanel textPanel = createPanel(new BorderLayout(0, 10));
+
+        // Create message label
+        JLabel messageLabel = createLabel(message, Font.PLAIN, 14, textColor);
+
+        // Create progress bar with theming
+        JProgressBar progressBar = createStyledProgressBar();
+        progressBar.setForeground(accentColor);
+        progressBar.setBackground(darkenColor(backgroundColor, 0.1f));
+        progressBar.setStringPainted(true);
+        progressBar.setMinimum(0);
+        progressBar.setMaximum(100);
+        progressBar.setValue(0);
+        progressBar.setPreferredSize(new Dimension(progressBar.getPreferredSize().width, 20));
+
+        // Add labels and progress bar to text panel
+        textPanel.add(messageLabel, BorderLayout.NORTH);
+        textPanel.add(progressBar, BorderLayout.CENTER);
+
+        // Add text panel to message panel
+        messagePanel.add(textPanel, BorderLayout.CENTER);
+
+        // Add message panel to main panel
+        mainPanel.add(messagePanel, BorderLayout.CENTER);
+
+        // Create panel for the cancel button
+        JPanel buttonPanel = createPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton cancelButton = createButton("Cancel");
+
+        // Style the cancel button
+        cancelButton.setBackground(darkenColor(backgroundColor, 0.15f));
+        cancelButton.setForeground(textColor);
+        cancelButton.setFont(FontUtil.getSpotifyFont(Font.BOLD, 14));
+
+        // Add hover effect to cancel button
+        cancelButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                cancelButton.setBackground(darkenColor(backgroundColor, 0.3f));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                cancelButton.setBackground(darkenColor(backgroundColor, 0.15f));
+            }
+        });
+
+        cancelButton.addActionListener(e -> {
+            int result = showConfirmMessageDialog(
+                    dialog,
+                    "Are you sure you want to cancel the download?",
+                    "Cancel Download"
+            );
+
+            if (result == JOptionPane.YES_OPTION) {
+                dialog.dispose();
+            }
+        });
+
+        buttonPanel.add(cancelButton);
+        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        dialog.setContentPane(mainPanel);
+        dialog.pack();
+
+        int minWidth = 450;
+        if (dialog.getWidth() < minWidth) {
+            dialog.setSize(minWidth, dialog.getHeight());
+        }
+
+        dialog.setLocationRelativeTo(parent);
+        dialog.setResizable(false);
+
+        dialog.getRootPane().registerKeyboardAction(
+                e -> cancelButton.doClick(),
+                KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
+                JComponent.WHEN_IN_FOCUSED_WINDOW
+        );
+
+        return dialog;
+    }
+
+    public static String showStyledInputDialog(Component parent, String message, String title, String initialValue) {
+        Color backgroundColor = ThemeManager.getInstance().getBackgroundColor();
+        Color textColor = ThemeManager.getInstance().getTextColor();
+        Color accentColor = ThemeManager.getInstance().getAccentColor();
+
+        // Create a custom dialog
+        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(parent), title, true);
+
+        // Main panel with gradient background
+        JPanel mainPanel = createPanel(new BorderLayout(20, 20));
+        mainPanel.setOpaque(true);
+        mainPanel.setBackground(backgroundColor);
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        // Style the dialog frame
+        styleDialog(dialog, backgroundColor, textColor);
+
+        // Create message label
+        JLabel messageLabel = new JLabel(message);
+        messageLabel.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
+        messageLabel.setForeground(textColor);
+
+        // Create text field
+        JTextField inputField = new JTextField(20);
+        if (initialValue != null) {
+            inputField.setText(initialValue);
+        }
+        inputField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(darkenColor(accentColor, 0.2f), 1),
+                BorderFactory.createEmptyBorder(5, 7, 5, 7)
+        ));
+        inputField.setBackground(darkenColor(backgroundColor, 0.1f));
+        inputField.setForeground(textColor);
+        inputField.setCaretColor(textColor);
+        inputField.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
+        inputField.selectAll();
+
+        // Add the components to a form panel
+        JPanel formPanel = createPanel(new BorderLayout(10, 10));
+        formPanel.add(messageLabel, BorderLayout.NORTH);
+        formPanel.add(inputField, BorderLayout.CENTER);
+
+        // Add a small icon to the left
+        Icon icon = createCustomDialogIcon(JOptionPane.QUESTION_MESSAGE, 40, accentColor, backgroundColor);
+        JLabel iconLabel = new JLabel(icon);
+        iconLabel.setVerticalAlignment(SwingConstants.TOP);
+        mainPanel.add(iconLabel, BorderLayout.WEST);
+        mainPanel.add(formPanel, BorderLayout.CENTER);
+
+        // Create buttons
+        JButton okButton = createButton("Create");
+        JButton cancelButton = createButton("Cancel");
+
+        // Style buttons
+        okButton.setBackground(accentColor);
+        okButton.setForeground(textColor);
+        okButton.setBorderPainted(false);
+        okButton.setContentAreaFilled(true);
+        okButton.setFont(FontUtil.getSpotifyFont(Font.BOLD, 14));
+
+        cancelButton.setBackground(darkenColor(backgroundColor, 0.15f));
+        cancelButton.setForeground(textColor);
+        cancelButton.setBorderPainted(false);
+        cancelButton.setContentAreaFilled(true);
+        cancelButton.setFont(FontUtil.getSpotifyFont(Font.BOLD, 14));
+
+        // Add hover effects to buttons
+        okButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                okButton.setBackground(darkenColor(accentColor, 0.2f));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                okButton.setBackground(accentColor);
+            }
+        });
+
+        cancelButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                cancelButton.setBackground(darkenColor(backgroundColor, 0.3f));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                cancelButton.setBackground(darkenColor(backgroundColor, 0.15f));
+            }
+        });
+
+        // Result variable for capturing the input
+        final String[] result = {null};
+
+        // Add action listeners to buttons
+        okButton.addActionListener(e -> {
+            String text = inputField.getText().trim();
+            if (!text.isEmpty()) {
+                result[0] = text;
+                dialog.dispose();
+            } else {
+                // Shake animation for empty input
+                new Thread(() -> {
+                    try {
+                        for (int i = 0; i < 5; i++) {
+                            dialog.setLocation(dialog.getX() + 10, dialog.getY());
+                            Thread.sleep(30);
+                            dialog.setLocation(dialog.getX() - 20, dialog.getY());
+                            Thread.sleep(30);
+                            dialog.setLocation(dialog.getX() + 10, dialog.getY());
+                        }
+                    } catch (InterruptedException ex) {
+                        ex.printStackTrace();
+                    }
+                }).start();
+
+                // Highlight the border in red
+                inputField.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(new Color(231, 76, 60), 1),
+                        BorderFactory.createEmptyBorder(5, 7, 5, 7)
+                ));
+            }
+        });
+
+        cancelButton.addActionListener(e -> dialog.dispose());
+
+        // Add keyboard actions
+        Action enterAction = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                okButton.doClick();
+            }
+        };
+
+        Action escAction = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                cancelButton.doClick();
+            }
+        };
+
+        inputField.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "enter");
+        inputField.getActionMap().put("enter", enterAction);
+        inputField.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "esc");
+        inputField.getActionMap().put("esc", escAction);
+
+        // Create button panel
+        JPanel buttonPanel = createPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        buttonPanel.add(cancelButton);
+        buttonPanel.add(okButton);
+        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        // Set content pane and show dialog
+        dialog.setContentPane(mainPanel);
+        dialog.pack();
+        dialog.setLocationRelativeTo(parent);
+        dialog.setResizable(false);
+
+        // Show dialog and request focus for the input field
+        SwingUtilities.invokeLater(inputField::requestFocus);
+        dialog.setVisible(true);
+
+        return result[0];
+    }
+
+    public static void addSongContextMenu(JComponent component, SongDTO song) {
+        JPopupMenu contextMenu = createPopupMenu(ThemeManager.getInstance().getBackgroundColor(), ThemeManager.getInstance().getTextColor());
+
+        JMenuItem playItem = createMenuItem("Play");
+        playItem.addActionListener(e -> {
+            App.getBean(MusicPlayerFacade.class).loadSong(song);
+        });
+        contextMenu.add(playItem);
+
+        JMenuItem addToPlaylistItem = createMenuItem("Add to Playlist");
+        addToPlaylistItem.addActionListener(e -> {
+            PlaylistSelectionDialog dialog = new PlaylistSelectionDialog(
+                    SwingUtilities.getWindowAncestor(component), song);
+            dialog.setVisible(true);
+        });
+        contextMenu.add(addToPlaylistItem);
+
+        // Like/Unlike option
+        boolean isLiked = CommonApiUtil.checkSongLiked(song.getId());
+        JMenuItem likeItem = createMenuItem(isLiked ? "Unlike" : "Like");
+        likeItem.addActionListener(e -> {
+            if (isLiked) {
+                if (CommonApiUtil.deleteSongLikes(song.getId())) {
+                    showToast(component, "Removed from liked songs");
+                } else {
+                    showToast(component, "Failed to unlike song");
+                }
+            } else {
+                if (CommonApiUtil.createSongLikes(song.getId())) {
+                    showToast(component, "Added to liked songs");
+                } else {
+                    showToast(component, "Failed to like song");
+                }
+            }
+        });
+        contextMenu.add(likeItem);
+
+        if (SongDownloadUtil.hasDownloadPermission()) {
+            JMenuItem downloadItem = createMenuItem("Download");
+            downloadItem.addActionListener(e -> {
+                SongDownloadUtil.downloadSong(component, song);
+            });
+            contextMenu.add(downloadItem);
+        }
+
+        registerPopupMenuForThemeUpdates(contextMenu);
+
+        // Add the context menu to the component
+        component.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    showContextMenu(e);
+                }
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    showContextMenu(e);
+                }
+            }
+
+            private void showContextMenu(MouseEvent e) {
+                contextMenu.show(component, e.getX(), e.getY());
+            }
+        });
+    }
+
     public static AsyncImageLabel createInteractiveUserAvatar(UserDTO user, int size,
                                                               Color backgroundColor,
                                                               Color textColor,
@@ -2104,6 +2635,7 @@ public class GuiUtil {
             for (JMenuItem item : popupItems) {
                 popupMenu.add(item);
             }
+            registerPopupMenuForThemeUpdates(popupMenu);
 
             avatarLabel.addMouseListener(new MouseAdapter() {
                 @Override
@@ -2348,6 +2880,24 @@ public class GuiUtil {
         SwingUtilities.updateComponentTreeUI(dialog);
     }
 
+    public static void styleTitleBar(JDialog dialog, Color backgroundColor, Color textColor, int fontSize) {
+        Color titleBarBackground = darkenColor(backgroundColor, 0.1f);
+
+        dialog.getRootPane().putClientProperty("TitlePane.font", FontUtil.getSpotifyFont(Font.BOLD, fontSize));
+
+        dialog.getRootPane().putClientProperty("JRootPane.titleBarBackground", titleBarBackground);
+        dialog.getRootPane().putClientProperty("JRootPane.titleBarForeground", textColor);
+
+        dialog.getRootPane().putClientProperty("JRootPane.titleBarInactiveBackground", titleBarBackground);
+        dialog.getRootPane().putClientProperty("JRootPane.titleBarInactiveForeground", darkenColor(textColor, 0.2f));
+
+        SwingUtilities.updateComponentTreeUI(dialog.getContentPane());
+    }
+
+    public static void styleTitleBar(JDialog dialog, Color backgroundColor, Color textColor) {
+        styleTitleBar(dialog, backgroundColor, textColor, 16);
+    }
+
     public static void styleTitleBar(JFrame frame, Color backgroundColor, Color textColor, int fontSize) {
         // Create a slightly darker background for the title bar
         Color titleBarBackground = darkenColor(backgroundColor, 0.1f);
@@ -2583,6 +3133,11 @@ public class GuiUtil {
             e.printStackTrace();
             return createPlaceholderIcon(size);
         }
+    }
+
+    public static JLabel createIconLabel(String iconPath, int size, Color color) {
+        Icon icon = createColoredIcon(iconPath, size, color);
+        return new JLabel(icon);
     }
 
     public static Icon createColoredIcon(String iconPath, int size, Color color) {

@@ -25,4 +25,7 @@ public interface UserDownloadRepository extends JpaRepository<UserDownloadEntity
     @Query("SELECT ud FROM UserDownloadEntity ud WHERE ud.user.id = :userId " +
             "ORDER BY ud.downloadDate DESC")
     List<UserDownloadEntity> findRecentDownloadsByUser(@Param("userId") Long userId, Pageable pageable);
+
+    UserDownloadEntity findByUserIdAndSongId(Long userId, Long songId);
+
 }

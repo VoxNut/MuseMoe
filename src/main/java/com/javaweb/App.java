@@ -21,6 +21,7 @@ import java.awt.*;
 
 @SpringBootApplication
 @EnableScheduling
+
 public class App {
 
     @Getter

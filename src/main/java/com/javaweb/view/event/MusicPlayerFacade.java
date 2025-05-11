@@ -5,6 +5,7 @@ import com.javaweb.model.dto.ArtistDTO;
 import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.model.dto.UserDTO;
+import com.javaweb.utils.CommonApiUtil;
 import com.javaweb.utils.ImageMediaUtil;
 import com.javaweb.view.MusicPlayer;
 import lombok.Getter;
@@ -26,8 +27,16 @@ public class MusicPlayerFacade {
     private final MusicPlayerMediator mediator;
 
 
+    public void loadLocalSong(SongDTO song) throws IOException {
+        setCurrentPlaylist(null);
+        player.loadLocalSong(song);
+        mediator.notifyLoadLocalSong();
+    }
+
+
     public void loadSong(SongDTO song) {
         try {
+            setCurrentPlaylist(CommonApiUtil.fetchPlaylistContainsThisSong(song.getId()));
             player.loadSong(song);
         } catch (IOException iOE) {
             iOE.printStackTrace();

@@ -1,6 +1,7 @@
 package com.javaweb.view.theme;
 
 import com.javaweb.constant.AppConstant;
+import com.javaweb.utils.GuiUtil;
 import lombok.Getter;
 
 import java.awt.*;
@@ -39,6 +40,9 @@ public class ThemeManager implements ThemeSubject {
 
         // Notify all listeners about the theme change
         notifyListeners();
+
+        GuiUtil.updateRegisteredPopupMenus(backgroundColor, textColor, accentColor);
+
     }
 
     public void addThemeChangeListener(ThemeChangeListener listener) {

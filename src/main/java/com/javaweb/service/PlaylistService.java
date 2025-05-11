@@ -9,4 +9,16 @@ public interface PlaylistService {
     List<PlaylistDTO> findPlaylistsByUserId();
 
     List<PlaylistDTO> findAllPlaylists();
+
+    boolean createPlaylist(PlaylistDTO playlistDTO);
+
+    boolean updatePlaylist(PlaylistDTO playlistDTO);
+
+    boolean deletePlaylist(Long playlistId);
+
+    PlaylistDTO createPlaylist(String name, Long songId);
+
+    boolean addSongToPlaylist(Long playlistId, Long songId);
+
+
 }

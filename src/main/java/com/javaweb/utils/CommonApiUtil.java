@@ -111,6 +111,10 @@ public class CommonApiUtil {
         return getUserDownloadApiClient().findUserDownloadedSongs();
     }
 
+    public static boolean createUserDownload(SongDTO songId) {
+        return getUserDownloadApiClient().createUserDownload(songId);
+    }
+
     public static List<SongDTO> fetchRecentPlayHistory(int limit) {
         return getPlayHistoryApiClient().findRecentPlayHistory(limit);
     }
@@ -147,7 +151,28 @@ public class CommonApiUtil {
         return getPlaylistApiClient().findAllPlaylists();
     }
 
+    public static PlaylistDTO createPlaylist(String name, Long songId) {
+        return getPlaylistApiClient().createPlaylist(name, songId);
+    }
+
+    public static PlaylistDTO fetchPlaylistContainsThisSong(Long songId) {
+        java.util.List<PlaylistDTO> playlists = fetchPlaylistByUserId();
+        return playlists
+                .stream()
+                .filter(playlist -> playlist.getSongs()
+                        .stream()
+                        .anyMatch(playlistSong -> playlistSong.getId().equals(songId)))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public static boolean addSongToPlaylist(Long playlistId, Long songId) {
+        return getPlaylistApiClient().addSongToPlaylist(playlistId, songId);
+    }
+
+
     // Play_History
+
     public static boolean logPlayHistory(Long songId) {
         return getPlayHistoryApiClient().createNewPlayHistory(songId);
     }

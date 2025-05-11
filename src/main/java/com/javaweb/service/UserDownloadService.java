@@ -8,4 +8,6 @@ public interface UserDownloadService {
 
     List<SongDTO> findAllDownloadedSongs();
 
+
+    boolean createNewUserDownload(Long songId);
 }

@@ -4,9 +4,7 @@ import com.javaweb.model.dto.SongDTO;
 import com.javaweb.service.UserDownloadService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -21,6 +19,16 @@ public class UserDownloadAPI {
     public ResponseEntity<List<SongDTO>> findUserDownloadedSongs() {
         try {
             List<SongDTO> res = userDownloadService.findAllDownloadedSongs();
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/create")
+    public ResponseEntity<Boolean> createNewUserDownload(@RequestBody SongDTO songDTO) {
+        try {
+            boolean res = userDownloadService.createNewUserDownload(songDTO.getId());
             return ResponseEntity.ok(res);
         } catch (Exception e) {
             return ResponseEntity.notFound().build();

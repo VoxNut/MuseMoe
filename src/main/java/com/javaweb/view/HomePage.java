@@ -954,27 +954,43 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         });
         contextMenu.add(playItem);
 
-        // Delete option
         JMenuItem deleteItem = GuiUtil.createMenuItem("Delete");
         deleteItem.addActionListener(e -> {
-            int result = JOptionPane.showConfirmDialog(SwingUtilities.getWindowAncestor(component),
+            int result = GuiUtil.showConfirmMessageDialog(SwingUtilities.getWindowAncestor(component),
                     "Are you sure you want to delete this song?\n" + song.getTitle(),
-                    "Confirm Delete", JOptionPane.YES_NO_OPTION);
+                    "Confirm Delete");
 
             if (result == JOptionPane.YES_OPTION) {
                 try {
                     File file = new File(song.getLocalFilePath());
                     if (file.delete()) {
-                        GuiUtil.showToast(SwingUtilities.getWindowAncestor(component), "Song deleted successfully");
-                        refreshDownloadedSongsPanel();
+                        SwingWorker<Void, Void> worker = new SwingWorker<>() {
+                            @Override
+                            protected Void doInBackground() {
+                                GuiUtil.showToast(SwingUtilities.getWindowAncestor(component),
+                                        "Song deleted successfully!");
+
+                                LocalSongManager.getDownloadedSongs();
+                                return null;
+                            }
+
+                            @Override
+                            protected void done() {
+                                SwingUtilities.invokeLater(() -> refreshDownloadedSongsPanel());
+                            }
+                        };
+                        worker.execute();
                     } else {
-                        GuiUtil.showErrorMessageDialog(SwingUtilities.getWindowAncestor(component), "Could not delete song file");
+                        GuiUtil.showErrorMessageDialog(SwingUtilities.getWindowAncestor(component),
+                                "Could not delete song file");
                     }
                 } catch (Exception ex) {
-                    GuiUtil.showErrorMessageDialog(SwingUtilities.getWindowAncestor(component), "Error deleting song");
+                    GuiUtil.showErrorMessageDialog(SwingUtilities.getWindowAncestor(component),
+                            "Error deleting song");
                 }
             }
         });
+
         contextMenu.add(deleteItem);
 
         // Open folder option

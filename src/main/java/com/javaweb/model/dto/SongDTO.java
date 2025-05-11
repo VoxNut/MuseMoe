@@ -8,6 +8,7 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.awt.image.BufferedImage;
+import java.util.Date;
 import java.util.Objects;
 
 @Getter
@@ -42,7 +43,7 @@ public class SongDTO extends AbstractDTO {
 
     private String localFilePath;
     private Boolean isLocalFile = false;
-
+    private Date downloadDate;
     @JsonIgnore
     private BufferedImage songImage;
 

@@ -68,9 +68,9 @@ public class SongDownloadUtil {
         if (option == 0) {
             targetFile = defaultFile;
             if (targetFile.exists()) {
-                int result = JOptionPane.showConfirmDialog(parentComponent,
+                int result = GuiUtil.showConfirmMessageDialog(parentComponent,
                         "File already exists. Do you want to overwrite it?",
-                        "File Exists", JOptionPane.YES_NO_OPTION);
+                        "File Exists");
                 if (result != JOptionPane.YES_OPTION) {
                     return;
                 }

@@ -17,10 +17,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -30,11 +27,7 @@ public class LocalSongManager {
     private static long lastScanTime = 0;
     private static final long SCAN_INTERVAL = 30000; // 30 seconds between rescans
 
-    /**
-     * Gets all downloaded songs from the local download directory
-     *
-     * @return List of song DTOs representing local files
-     */
+
     public static List<SongDTO> getDownloadedSongs() {
         long now = System.currentTimeMillis();
 
@@ -44,34 +37,23 @@ public class LocalSongManager {
             lastScanTime = now;
         }
 
-        return new ArrayList<>(localSongCache.values());
+        return localSongCache.values().stream()
+                .sorted(Comparator.comparing(SongDTO::getDownloadDate, Comparator.nullsLast(Comparator.reverseOrder())))
+                .collect(Collectors.toList());
     }
 
-    /**
-     * Get a specific song by filename
-     *
-     * @param filename the name of the MP3 file
-     * @return SongDTO if found, null otherwise
-     */
+
     public static SongDTO getSongByFilename(String filename) {
         return localSongCache.get(filename);
     }
 
-    /**
-     * Check if a song exists in the local collection
-     *
-     * @param title the song title to look for
-     * @return true if exists, false otherwise
-     */
+
     public static boolean songExists(String title) {
         String sanitizedTitle = sanitizeFileName(title) + ".mp3";
         return localSongCache.containsKey(sanitizedTitle);
     }
 
 
-    /**
-     * Scans the download directory and builds the local song cache
-     */
     private static void scanDownloadDirectory() {
         log.info("Scanning download directory for local songs");
         localSongCache.clear();
@@ -148,6 +130,9 @@ public class LocalSongManager {
                     songDTO.setReleaseYear(Integer.valueOf(tag.getFirst(FieldKey.YEAR)));
                 }
             }
+            songDTO.setId(Long.valueOf(-Math.abs(file.getName().hashCode())));
+            songDTO.setDownloadDate(new Date(file.lastModified()));
+
             songDTO.setLocalFilePath(file.getAbsolutePath());
             songDTO.setIsLocalFile(true);
             extractCoverArt(tag, songDTO);

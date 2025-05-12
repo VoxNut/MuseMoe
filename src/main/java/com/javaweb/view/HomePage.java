@@ -70,6 +70,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
     // Keyboard event dispatch
     private KeyEventDispatcher keyEventDispatcher;
+    private AWTEventListener globalClickListener;
 
     public HomePage() {
 
@@ -97,7 +98,10 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         JPanel initialPanel = createInitialPanel();
         add(initialPanel);
 
-        SwingUtilities.invokeLater(this::startProgressiveLoading);
+        SwingUtilities.invokeLater(() -> {
+            startProgressiveLoading();
+            setupGlobalFocusManagement();
+        });
 
     }
 
@@ -313,15 +317,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                     mainPanel.add(combinedPanel, BorderLayout.CENTER);
                     mainPanel.add(miniMusicPlayerPanel, BorderLayout.SOUTH);
 
-                    // Make UI elements interactive
-                    mainPanel.addMouseListener(new MouseAdapter() {
-                        @Override
-                        public void mouseClicked(MouseEvent e) {
-                            if (searchField.hasFocus() && !searchField.contains(e.getPoint())) {
-                                searchField.transferFocus();
-                            }
-                        }
-                    });
 
                     hideLoadingOverlay();
                     revalidate();
@@ -332,6 +327,35 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 }
             }
         }.execute();
+    }
+
+    private void setupGlobalFocusManagement() {
+        AWTEventListener globalClickListener = event -> {
+            if (event instanceof MouseEvent mouseEvent) {
+                if (mouseEvent.getID() == MouseEvent.MOUSE_PRESSED) {
+                    Component clickedComponent = SwingUtilities.getDeepestComponentAt(
+                            mouseEvent.getComponent(),
+                            mouseEvent.getX(),
+                            mouseEvent.getY()
+                    );
+
+                    if (searchField.hasFocus() &&
+                            !(clickedComponent instanceof JTextField) &&
+                            !(clickedComponent instanceof JTextArea) &&
+                            !(clickedComponent instanceof JEditorPane)) {
+
+                        SwingUtilities.invokeLater(() -> mainPanel.requestFocusInWindow());
+                    }
+                }
+            }
+        };
+
+        Toolkit.getDefaultToolkit().addAWTEventListener(
+                globalClickListener,
+                AWTEvent.MOUSE_EVENT_MASK
+        );
+
+        this.globalClickListener = globalClickListener;
     }
 
     private static class ProgressUpdate {
@@ -356,9 +380,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         mainPanel.addMouseListener(new MouseAdapter() {
             @Override
-            public void mouseClicked(MouseEvent e) {
-                if (searchField.hasFocus() && !searchField.contains(e.getPoint())) {
-                    searchField.transferFocus();
+            public void mousePressed(MouseEvent e) {
+                if (searchField.hasFocus()) {
+                    SwingUtilities.invokeLater(mainPanel::requestFocusInWindow);
                 }
             }
         });
@@ -1546,6 +1570,11 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         if (keyEventDispatcher != null) {
             KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(keyEventDispatcher);
         }
+
+        if (globalClickListener != null) {
+            Toolkit.getDefaultToolkit().removeAWTEventListener(globalClickListener);
+        }
+
         navigationManager.removeNavigationListener(this);
         ThemeManager.getInstance().removeThemeChangeListener(this);
         playerFacade.unsubscribeFromPlayerEvents(this);

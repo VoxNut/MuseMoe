@@ -270,7 +270,7 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
         if (progressPosition >= midpoint) {
             progressTrackBar.setTimeTextColor(backgroundColor);
         } else {
-            progressTrackBar.setTimeTextColor(accentColor);
+            progressTrackBar.setTimeTextColor(textColor);
         }
     }
 

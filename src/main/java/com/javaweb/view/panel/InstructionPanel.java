@@ -1,16 +1,12 @@
 package com.javaweb.view.panel;
 
-import java.awt.Color;
-import java.awt.Font;
-
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-
 import com.javaweb.utils.GuiUtil;
 import com.javaweb.view.theme.ThemeChangeListener;
 import com.javaweb.view.theme.ThemeManager;
-
 import net.miginfocom.swing.MigLayout;
+
+import javax.swing.*;
+import java.awt.*;
 
 public class InstructionPanel extends JPanel implements ThemeChangeListener {
 
@@ -35,10 +31,13 @@ public class InstructionPanel extends JPanel implements ThemeChangeListener {
         JLabel titleLabel = GuiUtil.createLabel("Keyboard Shortcuts", Font.BOLD, 18);
 
         String[][] shortcuts = {
-            {"Shift + V", "Toggle audio visualizer"},
-            {"Shift + C", "Toggle commit history view"},
-            {"B", "Change visualizer bands (when active)"},
-            {"?", "Toggle help panel"}
+                {"Shift + V", "Toggle audio visualizer"},
+                {"Shift + C", "Toggle commit history view"},
+                {"B", "Change visualizer bands (when active)"},
+                {"?", "Toggle help panel"},
+                {"H", "Toggle Home"},
+                {"K or Slash(/)", "Toggle search field"},
+                {"RMB", "You can right click on a song to see a popup menu with varies options"}
         };
 
         JPanel shortcutsPanel = GuiUtil.createPanel(new MigLayout("fillx, wrap 2, insets 5", "[][grow]", ""));

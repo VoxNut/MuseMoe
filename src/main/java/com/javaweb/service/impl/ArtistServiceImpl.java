@@ -20,9 +20,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -147,5 +149,29 @@ public class ArtistServiceImpl implements ArtistService {
     private boolean userHasRole(UserEntity user, RoleType roleCode) {
         return user.getRoles().stream()
                 .anyMatch(role -> roleCode.equals(role.getCode()));
+    }
+
+    @Override
+    public List<ArtistDTO> searchArtists(String query, int limit) {
+        try {
+            if (query == null || query.trim().isEmpty()) {
+                return Collections.emptyList();
+            }
+
+            String normalizedQuery = query.toLowerCase().trim();
+
+            List<ArtistEntity> artists = artistRepository
+                    .findByStageNameContainingIgnoreCaseOrderByFollowersCountDesc(normalizedQuery)
+                    .stream()
+                    .limit(limit)
+                    .collect(Collectors.toList());
+
+            return artists.stream()
+                    .map(artistConverter::toDTO)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Error searching artists: {}", e.getMessage(), e);
+            return Collections.emptyList();
+        }
     }
 }

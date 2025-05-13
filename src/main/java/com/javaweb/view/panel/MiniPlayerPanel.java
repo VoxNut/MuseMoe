@@ -1,5 +1,6 @@
 package com.javaweb.view.panel;
 
+import com.javaweb.App;
 import com.javaweb.constant.AppConstant;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.utils.FontUtil;
@@ -45,8 +46,8 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
     private Color textColor;
     private Color accentColor;
 
-    public MiniPlayerPanel(MusicPlayerFacade playerFacade) {
-        this.playerFacade = playerFacade;
+    public MiniPlayerPanel() {
+        this.playerFacade = App.getBean(MusicPlayerFacade.class);
         this.playerFacade.subscribeToPlayerEvents(this);
 
         setOpaque(false);

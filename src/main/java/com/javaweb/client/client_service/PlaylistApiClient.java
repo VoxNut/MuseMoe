@@ -15,4 +15,8 @@ public interface PlaylistApiClient {
     boolean addSongToPlaylist(Long playlistId, Long songId);
 
     PlaylistDTO createPlaylist(String name, Long songId);
+
+
+    List<PlaylistDTO> searchPlaylists(String query, int limit);
+
 }

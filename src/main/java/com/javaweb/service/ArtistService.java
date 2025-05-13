@@ -10,4 +10,5 @@ public interface ArtistService {
 
     List<Long> getArtistsIdBySongId(Long songId);
 
+    List<ArtistDTO> searchArtists(String query, int limit);
 }

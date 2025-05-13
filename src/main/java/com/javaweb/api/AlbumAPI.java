@@ -7,11 +7,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -37,6 +35,19 @@ public class AlbumAPI {
                     "failed", false,
                     "message", "Failed to create album: " + e.getMessage()
             ));
+        }
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<AlbumDTO>> search(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "20") int limit) {
+        try {
+            List<AlbumDTO> results = albumService.searchAlbums(query, limit);
+            return ResponseEntity.ok(results);
+        } catch (Exception e) {
+            log.error("Error searching albums", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 

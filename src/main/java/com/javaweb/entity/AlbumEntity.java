@@ -28,7 +28,7 @@ public class AlbumEntity {
     @Column(name = "release_year")
     private Integer releaseYear;
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinColumn(name = "cover_art_id")
     private StreamingMediaEntity coverArt;
 

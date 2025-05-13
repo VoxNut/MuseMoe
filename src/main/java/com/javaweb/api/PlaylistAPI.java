@@ -4,6 +4,7 @@ package com.javaweb.api;
 import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.service.PlaylistService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,6 +38,18 @@ public class PlaylistAPI {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<PlaylistDTO>> search(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "20") int limit) {
+        try {
+            List<PlaylistDTO> results = playlistService.searchPlaylists(query, limit);
+            return ResponseEntity.ok(results);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 

@@ -1,6 +1,7 @@
 package com.javaweb.service.impl;
 
 import com.javaweb.converter.AlbumConverter;
+import com.javaweb.entity.AlbumEntity;
 import com.javaweb.model.dto.AlbumDTO;
 import com.javaweb.model.request.AlbumRequestDTO;
 import com.javaweb.repository.AlbumRepository;
@@ -8,6 +9,10 @@ import com.javaweb.service.AlbumService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +39,30 @@ public class AlbumServiceImpl implements AlbumService {
         } catch (Exception e) {
             log.error("Cannot create album: {}", e.getMessage(), e);
             return null;
+        }
+    }
+
+    @Override
+    public List<AlbumDTO> searchAlbums(String query, int limit) {
+        try {
+            if (query == null || query.trim().isEmpty()) {
+                return Collections.emptyList();
+            }
+
+            String normalizedQuery = query.toLowerCase().trim();
+
+            List<AlbumEntity> albums = albumRepository
+                    .findByTitleContainingIgnoreCase(normalizedQuery)
+                    .stream()
+                    .limit(limit)
+                    .collect(Collectors.toList());
+
+            return albums.stream()
+                    .map(albumConverter::toDTO)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Error searching albums: {}", e.getMessage(), e);
+            return Collections.emptyList();
         }
     }
 }

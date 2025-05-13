@@ -81,4 +81,15 @@ public class PlaylistApiClientImpl implements PlaylistApiClient {
             return Collections.emptyList();
         }
     }
+
+    @Override
+    public List<PlaylistDTO> searchPlaylists(String query, int limit) {
+        try {
+            String url = apiConfig.buildPlaylistUrl("/search?query=" + query + "&limit=" + limit);
+            return apiClient.getList(url, PlaylistDTO.class);
+        } catch (Exception e) {
+            log.error("Error searching playlists: {}", e.getMessage(), e);
+            return Collections.emptyList();
+        }
+    }
 }

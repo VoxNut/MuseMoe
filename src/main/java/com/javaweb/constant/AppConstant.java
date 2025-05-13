@@ -116,7 +116,7 @@ public class AppConstant {
 
     //ADS
     public static final String MUSE_MOE_AD = "1LIj0GvIz6R_qGoWjVzIVotLn_Dx5Qlkh";
-    public static final String STUDY_SMART_AD = "1ra1NtQDV2Q0rjAywJkX4l-nslTRh5P9Y";
+    public static final String STUDY_SMART_AD = "13R3QMh-7Gbkek9LlMoPAtH0x3SrxvMzl";
     public static final String BREW_SPOT_AD = "18t4TUrdqgHrYciGYZSQf7J8o3U6dEfIB";
     public static final String INSPIRATION_AD = "1kaLdCrgHZ52GEYFcIMUAuWq33bp0PFyf";
 }

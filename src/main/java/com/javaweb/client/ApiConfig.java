@@ -39,6 +39,13 @@ public class ApiConfig {
     private String recommendationsEndpoint;
 
 
+    @Value("${api.follows.endpoint:/api/artists}")
+    private String artistsEndpoint;
+
+    @Value("${api.follows.endpoint:/api/albums}")
+    private String albumsEndpoint;
+
+
     public String buildUserUrl(String path) {
         return baseUrl + userEndpoint + path;
     }
@@ -76,4 +83,13 @@ public class ApiConfig {
     public String buildRecommendationsUrl(String path) {
         return baseUrl + recommendationsEndpoint + path;
     }
+
+    public String buildArtistsUrl(String path) {
+        return baseUrl + artistsEndpoint + path;
+    }
+
+    public String buildAlbumsUrl(String path) {
+        return baseUrl + albumsEndpoint + path;
+    }
+
 }

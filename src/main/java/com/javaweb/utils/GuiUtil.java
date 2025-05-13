@@ -198,11 +198,13 @@ public class GuiUtil {
         // Add hover effect
         button.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
+                button.setForeground(bgColor);
                 button.setBackground(accentColor);
             }
 
             public void mouseExited(java.awt.event.MouseEvent evt) {
                 button.setBackground(GuiUtil.darkenColor(bgColor, 0.15f));
+                button.setForeground(textColor);
             }
         });
     }
@@ -2573,12 +2575,14 @@ public class GuiUtil {
         likeItem.addActionListener(e -> {
             if (isLiked) {
                 if (CommonApiUtil.deleteSongLikes(song.getId())) {
+                    App.getBean(MusicPlayerFacade.class).notifySongLiked();
                     showToast(component, "Removed from liked songs");
                 } else {
                     showToast(component, "Failed to unlike song");
                 }
             } else {
                 if (CommonApiUtil.createSongLikes(song.getId())) {
+                    App.getBean(MusicPlayerFacade.class).notifySongLiked();
                     showToast(component, "Added to liked songs");
                 } else {
                     showToast(component, "Failed to like song");

@@ -20,5 +20,6 @@ public interface PlaylistService {
 
     boolean addSongToPlaylist(Long playlistId, Long songId);
 
+    List<PlaylistDTO> searchPlaylists(String query, int limit);
 
 }

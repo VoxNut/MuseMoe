@@ -23,7 +23,7 @@ public class ArtistEntity extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String bio;
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinColumn(name = "profile_pic_id")
     private StreamingMediaEntity profilePic;
 

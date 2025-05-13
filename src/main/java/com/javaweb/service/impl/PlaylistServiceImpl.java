@@ -173,4 +173,28 @@ public class PlaylistServiceImpl implements PlaylistService {
 
     }
 
+    @Override
+    public List<PlaylistDTO> searchPlaylists(String query, int limit) {
+        try {
+            if (query == null || query.trim().isEmpty()) {
+                return Collections.emptyList();
+            }
+
+            String normalizedQuery = query.toLowerCase().trim();
+
+            List<PlaylistEntity> playlists = playlistRepository
+                    .findByNameContainingIgnoreCase(normalizedQuery)
+                    .stream()
+                    .limit(limit)
+                    .collect(Collectors.toList());
+
+            return playlists.stream()
+                    .map(playlistConverter::toDTO)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Error searching playlists: {}", e.getMessage(), e);
+            return Collections.emptyList();
+        }
+    }
+
 }

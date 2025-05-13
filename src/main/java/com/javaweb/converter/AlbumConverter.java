@@ -7,6 +7,7 @@ import com.javaweb.entity.StreamingMediaEntity;
 import com.javaweb.model.dto.AlbumDTO;
 import com.javaweb.model.request.AlbumRequestDTO;
 import com.javaweb.repository.ArtistRepository;
+import com.javaweb.repository.StreamingMediaRepository;
 import com.javaweb.service.StreamingMediaService;
 import com.javaweb.service.impl.GoogleDriveService;
 import lombok.RequiredArgsConstructor;
@@ -22,10 +23,24 @@ public class AlbumConverter implements EntityConverter<AlbumEntity, AlbumRequest
     private final ArtistRepository artistRepository;
     private final StreamingMediaService streamingMediaService;
     private final GoogleDriveService googleDriveService;
+    private final StreamingMediaRepository streamingMediaRepository;
 
     @Override
     public AlbumDTO toDTO(AlbumEntity entity) {
-        return modelMapper.map(entity, AlbumDTO.class);
+
+        AlbumDTO dto = modelMapper.map(entity, AlbumDTO.class);
+
+        if (entity.getCoverArt() != null && entity.getCoverArt().getGoogleDriveId() != null) {
+            try {
+                dto.setImageId(entity.getCoverArt().getGoogleDriveId());
+            } catch (Exception e) {
+                log.error("Failed to process album cover picture from Google Drive", e);
+            }
+        }
+        if (entity.getArtist() != null) {
+            dto.setArtistName(entity.getArtist().getStageName());
+        }
+        return dto;
     }
 
     @Override
@@ -50,6 +65,9 @@ public class AlbumConverter implements EntityConverter<AlbumEntity, AlbumRequest
             } catch (Exception e) {
                 log.error("Failed to process album cover picture from Google Drive", e);
             }
+        } else {
+            StreamingMediaEntity mediaEntity = streamingMediaRepository.findById(1039L).orElse(null);
+            entity.setCoverArt(mediaEntity);
         }
 
 

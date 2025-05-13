@@ -67,8 +67,23 @@ public class ApiServiceFactory {
         );
     }
 
+    public ArtistApiClient createArtistApiClient() {
+        return new ArtistApiClientImpl(
+                createApiClient(),
+                apiConfig
+        );
+    }
+
     public UserArtistFollowApiClient createUserArtistFollowApiClient() {
         return new UserArtistFollowApiClientImpl(
+                createApiClient(),
+                createUrlEncoder(),
+                apiConfig
+        );
+    }
+
+    public AlbumApiClient createAlbumApiClient() {
+        return new AlbumApiClientImpl(
                 createApiClient(),
                 createUrlEncoder(),
                 apiConfig

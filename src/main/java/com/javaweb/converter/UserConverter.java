@@ -62,6 +62,10 @@ public class UserConverter implements EntityConverter<UserEntity, UserRequestDTO
             } catch (Exception e) {
                 log.error("Failed to process album cover picture from Google Drive", e);
             }
+        } else {
+            //default profile
+            StreamingMediaEntity mediaEntity = mediaRepository.findById(1038L).orElse(null);
+            entity.setAvatar(mediaEntity);
         }
 
         if (request.getRequestRoles() != null && !request.getRequestRoles().isEmpty()) {

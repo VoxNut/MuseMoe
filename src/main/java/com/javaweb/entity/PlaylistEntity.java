@@ -23,7 +23,7 @@ public class PlaylistEntity extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "cover_image_id")
     private StreamingMediaEntity coverImage;
 

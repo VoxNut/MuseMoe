@@ -825,6 +825,9 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
                         throw new RuntimeException(e);
                     }
                 }
+                case SONG_LIKED_CHANGED -> {
+                    updateHeartButtonIcon(playerFacade.getCurrentSong());
+                }
                 case PLAYBACK_STARTED -> enablePauseButtonDisablePlayButton();
 
                 case PLAYBACK_PAUSED -> enablePlayButtonDisablePauseButton();

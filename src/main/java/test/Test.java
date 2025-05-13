@@ -46,8 +46,8 @@ public class Test {
 //        String packagePath = "D:\\MuseMoe resources\\audio";
 //        String packagePath = "D:\\MuseMoe resources\\imgs\\artist_profile";
 //        String packagePath = "src/main/java/com/javaweb/view/mini_musicplayer/advertisement";
-        String packagePath = "D:\\MuseMoe resources\\imgs\\avatars";
-//        String packagePath = "D:\\MuseMoe resources\\imgs\\album_cover";
+//        String packagePath = "D:\\MuseMoe resources\\imgs\\avatars";
+        String packagePath = "D:\\MuseMoe resources\\imgs\\album_cover";
         File directory = new File(packagePath);
 
         if (!directory.exists() || !directory.isDirectory()) {

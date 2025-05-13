@@ -1,14 +1,10 @@
 package com.javaweb.view.event;
 
 import com.javaweb.enums.RepeatMode;
-import com.javaweb.model.dto.ArtistDTO;
-import com.javaweb.model.dto.PlaylistDTO;
-import com.javaweb.model.dto.SongDTO;
-import com.javaweb.model.dto.UserDTO;
+import com.javaweb.model.dto.*;
 import com.javaweb.utils.CommonApiUtil;
 import com.javaweb.utils.ImageMediaUtil;
 import com.javaweb.view.MusicPlayer;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -21,9 +17,7 @@ import java.util.function.Consumer;
 public class MusicPlayerFacade {
 
     private final MusicPlayer player;
-    @Getter
     private final ImageMediaUtil imageMediaUtil;
-    @Getter
     private final MusicPlayerMediator mediator;
 
 
@@ -175,6 +169,10 @@ public class MusicPlayerFacade {
 
     public void populateSongImage(SongDTO songDTO, Consumer<BufferedImage> callback) {
         imageMediaUtil.populateSongImage(songDTO, callback);
+    }
+
+    public void populateAlbumImage(AlbumDTO albumDTO, Consumer<BufferedImage> callback) {
+        imageMediaUtil.populateAlbumImage(albumDTO, callback);
     }
 
     public void populateArtistProfile(ArtistDTO artistDTO, Consumer<BufferedImage> callback) {

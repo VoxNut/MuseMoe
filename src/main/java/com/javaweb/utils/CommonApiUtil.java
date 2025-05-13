@@ -25,6 +25,10 @@ public class CommonApiUtil {
         return App.getBean(ApiServiceFactory.class).createPlaylistApiClient();
     }
 
+    private static AlbumApiClient getAlbumApiClient() {
+        return App.getBean(ApiServiceFactory.class).createAlbumApiClient();
+    }
+
     private static UserDownloadApiClient getUserDownloadApiClient() {
         return App.getBean(ApiServiceFactory.class).createUserDownloadApiClient();
     }
@@ -43,6 +47,10 @@ public class CommonApiUtil {
 
     private static UserArtistFollowApiClient getUserArtistFollowClient() {
         return App.getBean(ApiServiceFactory.class).createUserArtistFollowApiClient();
+    }
+
+    private static ArtistApiClient getArtistApiClient() {
+        return App.getBean(ApiServiceFactory.class).createArtistApiClient();
     }
 
     // USER
@@ -155,6 +163,10 @@ public class CommonApiUtil {
         return getPlaylistApiClient().createPlaylist(name, songId);
     }
 
+    public static List<PlaylistDTO> searchPlaylists(String query) {
+        return getPlaylistApiClient().searchPlaylists(query, 20);
+    }
+
     public static PlaylistDTO fetchPlaylistContainsThisSong(Long songId) {
         java.util.List<PlaylistDTO> playlists = fetchPlaylistByUserId();
         return playlists
@@ -168,6 +180,16 @@ public class CommonApiUtil {
 
     public static boolean addSongToPlaylist(Long playlistId, Long songId) {
         return getPlaylistApiClient().addSongToPlaylist(playlistId, songId);
+    }
+
+    // Album
+    public static List<AlbumDTO> searchAlbums(String query) {
+        return getAlbumApiClient().searchAlbums(query, 20);
+    }
+
+    // Artist
+    public static List<ArtistDTO> searchArtists(String query) {
+        return getArtistApiClient().searchArtists(query, 20);
     }
 
 

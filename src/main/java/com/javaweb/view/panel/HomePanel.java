@@ -1,5 +1,6 @@
 package com.javaweb.view.panel;
 
+import com.javaweb.App;
 import com.javaweb.constant.AppConstant;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.utils.*;
@@ -30,13 +31,10 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
     private JScrollPane scrollPane;
     private final Map<SongDTO, JButton> playPauseButtonMap = new HashMap<>();
 
-    public HomePanel(MusicPlayerFacade playerFacade) {
-
+    public HomePanel() {
+        playerFacade = App.getBean(MusicPlayerFacade.class);
         playerFacade.subscribeToPlayerEvents(this);
-
-
         setOpaque(false);
-        this.playerFacade = playerFacade;
         setLayout(new BorderLayout());
 
         JPanel mainPanel = GuiUtil.createPanel();

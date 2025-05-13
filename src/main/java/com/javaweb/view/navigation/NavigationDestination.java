@@ -6,6 +6,7 @@ public class NavigationDestination {
     public static final String VISUALIZER = "visualizer";
     public static final String COMMITS = "commits";
     public static final String INSTRUCTIONS = "instructions";
+    public static final String SEARCH_RESULTS = "searchResults";
 
 
     private NavigationDestination() {

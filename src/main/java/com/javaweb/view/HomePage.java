@@ -478,8 +478,12 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         searchField.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_ESCAPE && recentSearchDropdown != null) {
-                    recentSearchDropdown.hidePopup();
+                if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+                    if (recentSearchDropdown != null && recentSearchDropdown.isVisible()) {
+                        recentSearchDropdown.hidePopup();
+                    } else {
+                        mainPanel.requestFocusInWindow();
+                    }
                 } else if (e.getKeyCode() == KeyEvent.VK_ENTER) {
                     if (!searchField.getText().isEmpty()
                             && !searchField.getText().equals("What do you want to muse?...")) {
@@ -553,7 +557,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     }
 
     private JPanel createMiniMusicPlayerPanel() {
-        return new MiniPlayerPanel(playerFacade);
+        return new MiniPlayerPanel();
     }
 
     private void openMiniplayer() {
@@ -624,30 +628,41 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         searchField.setText(song.getTitle() + " - " + (song.getSongArtist() != null ? song.getSongArtist() : "Unknown"));
     }
 
-    // Update the performSearch method
     private void performSearch(String query) {
         if (NetworkChecker.isNetworkAvailable()) {
             if (recentSearchDropdown != null) {
                 recentSearchDropdown.hidePopup();
             }
 
-            SwingWorker<List<SongDTO>, Void> searchWorker = new SwingWorker<>() {
+            SwingWorker<SearchResults, Void> searchWorker = new SwingWorker<>() {
                 @Override
-                protected List<SongDTO> doInBackground() {
-                    return CommonApiUtil.searchSongs(query);
+                protected SearchResults doInBackground() {
+                    SearchResults results = new SearchResults();
+                    results.songs = CommonApiUtil.searchSongs(query);
+                    results.playlists = CommonApiUtil.searchPlaylists(query);
+                    results.albums = CommonApiUtil.searchAlbums(query);
+                    results.artists = CommonApiUtil.searchArtists(query);
+                    return results;
                 }
 
                 @Override
                 protected void done() {
                     try {
-                        List<SongDTO> searchResults = get();
+                        SearchResults results = get();
 
-                        if (searchResults != null && !searchResults.isEmpty()) {
-                            SongDTO songDTO = searchResults.getFirst();
-                            CommonApiUtil.logSearchHistory(songDTO.getId(), query);
-                            showSearchResults(searchResults);
+                        if ((results.songs != null && !results.songs.isEmpty()) ||
+                                (results.artists != null && !results.artists.isEmpty()) ||
+                                (results.albums != null && !results.albums.isEmpty()) ||
+                                (results.playlists != null && !results.playlists.isEmpty())) {
+
+                            if (results.songs != null && !results.songs.isEmpty()) {
+                                SongDTO firstSong = results.songs.getFirst();
+                                CommonApiUtil.logSearchHistory(firstSong.getId(), query);
+                            }
+
+                            showSearchResults(query, results);
                         } else {
-                            GuiUtil.showInfoMessageDialog(HomePage.this, "No songs found matching your search.");
+                            GuiUtil.showInfoMessageDialog(HomePage.this, "No results found matching your search.");
                         }
                     } catch (Exception e) {
                         log.error("Error performing search", e);
@@ -662,12 +677,43 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         }
     }
 
-    private void showSearchResults(java.util.List<SongDTO> searchResults) {
-        // Implement this to show search results
-        // Could be a new panel in the main area, or a popup similar to recent searches
-        // For now, just play the first result as an example
-        SongDTO songDTO = searchResults.getFirst();
-        playerFacade.loadSong(songDTO);
+    private static class SearchResults {
+        List<SongDTO> songs = List.of();
+        List<PlaylistDTO> playlists = List.of();
+        List<AlbumDTO> albums = List.of();
+        List<ArtistDTO> artists = List.of();
+    }
+
+    private void showSearchResults(String query, SearchResults results) {
+        SearchResultsPanel searchResultsPanel = null;
+        for (Component comp : centerCardPanel.getComponents()) {
+            if (comp instanceof SearchResultsPanel) {
+                searchResultsPanel = (SearchResultsPanel) comp;
+                break;
+            }
+        }
+
+        if (searchResultsPanel != null) {
+            searchResultsPanel.updateSearchResults(
+                    query,
+                    results.songs,
+                    results.playlists,
+                    results.albums,
+                    results.artists
+            );
+
+            CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
+            cardLayout.show(centerCardPanel, "searchResults");
+
+            // Set navigation state
+            visualizerActive = false;
+            commitPanelActive = false;
+            instructionPanelActive = false;
+            navigationManager.navigateTo(NavigationDestination.SEARCH_RESULTS, query);
+
+            // Log
+            log.info("Showing search results for: {}", query);
+        }
     }
 
 
@@ -1351,7 +1397,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         centerCardPanel.setBorder(GuiUtil.createTitledBorder("Main", TitledBorder.LEFT));
 
         // Create the home panel
-        JPanel homePanel = new HomePanel(playerFacade);
+        JPanel homePanel = new HomePanel();
         homePanel.setName("home");
         centerCardPanel.add(homePanel, "home");
 
@@ -1369,7 +1415,12 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         instructionPanel.setName("instructions");
         centerCardPanel.add(instructionPanel, "instructions");
 
+        JPanel searchResultsPanel = new SearchResultsPanel();
+        searchResultsPanel.setName("searchResults");
+        centerCardPanel.add(searchResultsPanel, "searchResults");
+
         keyEventDispatcher = e -> {
+
             if (e.getID() == KeyEvent.KEY_PRESSED) {
                 // Do nothing when search field gain focus
                 if (searchField.hasFocus()) {
@@ -1378,6 +1429,11 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 // Shift+V to toggle visualizer
                 if (e.getKeyCode() == KeyEvent.VK_V && e.isShiftDown()) {
                     toggleVisualizer();
+                    return true;
+                }
+                // Press H to toggle home
+                if (e.getKeyCode() == KeyEvent.VK_H) {
+                    toggleHome();
                     return true;
                 }
 
@@ -1394,6 +1450,19 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
                 if (e.getKeyCode() == KeyEvent.VK_SLASH && e.isShiftDown()) {
                     toggleInstructionPanel();
+                    return true;
+                }
+
+
+                // Pressing 'K' focuses the search field
+                if ((e.getKeyCode() == KeyEvent.VK_K || e.getKeyCode() == KeyEvent.VK_SLASH) &&
+                        !searchField.hasFocus() && !e.isShiftDown()) {
+                    SwingUtilities.invokeLater(() -> {
+                        searchField.requestFocusInWindow();
+                        if (searchField.getText().equals("What do you want to muse?...")) {
+                            searchField.selectAll();
+                        }
+                    });
                     return true;
                 }
             }
@@ -1561,6 +1630,23 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                     }
                 }
 
+                case PLAYBACK_STARTED, PLAYBACK_PAUSED -> {
+                    // Find search results panel and update play/pause buttons
+                    SearchResultsPanel searchResultsPanel = null;
+                    for (Component comp : centerCardPanel.getComponents()) {
+                        if (comp instanceof SearchResultsPanel) {
+                            searchResultsPanel = (SearchResultsPanel) comp;
+                            break;
+                        }
+                    }
+
+                    if (searchResultsPanel != null) {
+                        SongDTO songDTO = (SongDTO) event.data();
+                        boolean isPlaying = event.type() == PlayerEvent.EventType.PLAYBACK_STARTED;
+                        searchResultsPanel.updatePlayPauseButtons(songDTO, isPlaying);
+                    }
+                }
+
             }
         });
     }
@@ -1721,6 +1807,13 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 visualizerActive = false;
                 commitPanelActive = false;
                 instructionPanelActive = true;
+            }
+
+            case NavigationDestination.SEARCH_RESULTS -> {
+                cardLayout.show(centerCardPanel, "searchResults");
+                visualizerActive = false;
+                commitPanelActive = false;
+                instructionPanelActive = false;
             }
 
         }

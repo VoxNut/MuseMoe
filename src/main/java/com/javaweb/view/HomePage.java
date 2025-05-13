@@ -125,7 +125,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                         "Exit"
                 );
                 if (option == JOptionPane.YES_OPTION) {
-                    System.exit(0);
+                    dispose();
                 }
             }
         });
@@ -1374,6 +1374,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private void logout() {
         int option = GuiUtil.showConfirmMessageDialog(this, "Do you really want to log out MuseMoe? We'll miss you :(", "Logout confirm");
         if (option == JOptionPane.YES_OPTION) {
+            TokenStorage.clearToken();
+
             this.dispose();
             SwingUtilities.invokeLater(() -> {
                 LoginPage loginPage = new LoginPage();

@@ -78,7 +78,7 @@ public class LoginPage extends JFrame {
                         "Exit"
                 );
                 if (option == JOptionPane.YES_OPTION) {
-                    System.exit(0);
+                    dispose();
                 }
             }
         });
@@ -576,6 +576,7 @@ public class LoginPage extends JFrame {
 
                 UserDTO user = JwtTokenUtil.extractUserFromToken(token);
 
+
                 log.info("username '{}', with token '{}'", user.getUsername(), token);
 
                 if (user == null || user.getAccountStatus().equals(AccountStatus.INACTIVE)) {
@@ -585,6 +586,9 @@ public class LoginPage extends JFrame {
 
                 // Store token in UserSessionManager
                 UserSessionManager.getInstance().initializeSession(user, token);
+                // Save token for auto-login on next start
+                TokenStorage.saveToken(token, user);
+
 
                 GuiUtil.showSuccessMessageDialog(this, "Login successfully!");
                 dispose();

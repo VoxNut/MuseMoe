@@ -12,7 +12,6 @@ import com.javaweb.service.PlayHistoryService;
 import com.javaweb.utils.SecurityUtils;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.actuate.cache.CachesEndpoint;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,7 +27,6 @@ public class PlayHistoryServiceImpl implements PlayHistoryService {
     private final PlayHistoryRepository playHistoryRepository;
     private final SongRepository songRepository;
     private final UserRepository userRepository;
-    private final CachesEndpoint cachesEndpoint;
     private final SongConverter songConverter;
 
     @Override

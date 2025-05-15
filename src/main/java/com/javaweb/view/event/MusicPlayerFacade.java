@@ -183,5 +183,9 @@ public class MusicPlayerFacade {
         imageMediaUtil.populateUserProfile(userDTO, callback);
     }
 
+    public void notifySearchField() {
+        mediator.notifySearchField();
+    }
+
 
 }

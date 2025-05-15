@@ -24,7 +24,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -32,10 +31,16 @@ import java.util.stream.Collectors;
 public class ArtistServiceImpl implements ArtistService {
     private final ArtistConverter artistConverter;
     private final ArtistRepository artistRepository;
+
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+
     private final GoogleDriveService googleDriveService;
     private final PasswordService passwordService;
+    
+
+    private final SharedSearchService sharedSearchService;
+
 
     @Override
     public List<Long> getArtistsIdBySongId(Long songId) {
@@ -154,21 +159,7 @@ public class ArtistServiceImpl implements ArtistService {
     @Override
     public List<ArtistDTO> searchArtists(String query, int limit) {
         try {
-            if (query == null || query.trim().isEmpty()) {
-                return Collections.emptyList();
-            }
-
-            String normalizedQuery = query.toLowerCase().trim();
-
-            List<ArtistEntity> artists = artistRepository
-                    .findByStageNameContainingIgnoreCaseOrderByFollowersCountDesc(normalizedQuery)
-                    .stream()
-                    .limit(limit)
-                    .collect(Collectors.toList());
-
-            return artists.stream()
-                    .map(artistConverter::toDTO)
-                    .collect(Collectors.toList());
+            return sharedSearchService.findArtistsByQuery(query, limit);
         } catch (Exception e) {
             log.error("Error searching artists: {}", e.getMessage(), e);
             return Collections.emptyList();

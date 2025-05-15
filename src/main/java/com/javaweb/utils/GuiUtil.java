@@ -157,7 +157,6 @@ public class GuiUtil {
         button.setOpaque(false);
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         button.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
-        button.setForeground(textColor);
 
         button.putClientProperty("JButton.focusedBackground", button.getBackground());
         button.setHorizontalAlignment(SwingConstants.LEFT);
@@ -165,14 +164,12 @@ public class GuiUtil {
         button.setIconTextGap(8);
         button.setMargin(new Insets(5, 10, 5, 10));
 
-
-        button.setBackground(backgroundColor);
-
         styleButton(button, backgroundColor, textColor, accentColor);
 
 
         return button;
     }
+
 
     public static JButton createPlainButton(String text) {
         JButton button = new JButton(text);
@@ -2312,8 +2309,6 @@ public class GuiUtil {
 
         // Create progress bar with theming
         JProgressBar progressBar = createStyledProgressBar();
-        progressBar.setForeground(accentColor);
-        progressBar.setBackground(darkenColor(backgroundColor, 0.1f));
         progressBar.setStringPainted(true);
         progressBar.setMinimum(0);
         progressBar.setMaximum(100);

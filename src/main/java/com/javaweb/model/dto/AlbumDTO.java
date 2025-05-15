@@ -21,9 +21,10 @@ public class AlbumDTO extends AbstractDTO {
     private String title;
     private Integer releaseYear;
     private StreamingMediaDTO albumCover;
-    private Set<SongDTO> songs;
+    private Set<SongDTO> songDTOS;
     @JsonIgnore
     private BufferedImage albumImage;
     private String imageId;
     private String artistName;
+    private Long artistId;
 }

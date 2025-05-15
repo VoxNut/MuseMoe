@@ -5,6 +5,7 @@ import com.javaweb.entity.AlbumEntity;
 import com.javaweb.entity.ArtistEntity;
 import com.javaweb.entity.StreamingMediaEntity;
 import com.javaweb.model.dto.AlbumDTO;
+import com.javaweb.model.dto.SongDTO;
 import com.javaweb.model.request.AlbumRequestDTO;
 import com.javaweb.repository.ArtistRepository;
 import com.javaweb.repository.StreamingMediaRepository;
@@ -15,6 +16,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
 
+import java.util.Set;
+import java.util.stream.Collectors;
+
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -23,12 +27,21 @@ public class AlbumConverter implements EntityConverter<AlbumEntity, AlbumRequest
     private final ArtistRepository artistRepository;
     private final StreamingMediaService streamingMediaService;
     private final GoogleDriveService googleDriveService;
+    private final SongConverter songConverter;
     private final StreamingMediaRepository streamingMediaRepository;
 
     @Override
     public AlbumDTO toDTO(AlbumEntity entity) {
 
         AlbumDTO dto = modelMapper.map(entity, AlbumDTO.class);
+
+
+        Set<SongDTO> songDTOS = entity.getSongs()
+                .stream()
+                .map(songConverter::toDTO)
+                .collect(Collectors.toSet());
+        dto.setSongDTOS(songDTOS);
+
 
         if (entity.getCoverArt() != null && entity.getCoverArt().getGoogleDriveId() != null) {
             try {
@@ -39,6 +52,7 @@ public class AlbumConverter implements EntityConverter<AlbumEntity, AlbumRequest
         }
         if (entity.getArtist() != null) {
             dto.setArtistName(entity.getArtist().getStageName());
+            dto.setArtistId(entity.getArtist().getId());
         }
         return dto;
     }

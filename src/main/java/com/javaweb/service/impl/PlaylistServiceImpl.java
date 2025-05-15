@@ -4,10 +4,13 @@ import com.javaweb.converter.PlaylistConverter;
 import com.javaweb.entity.*;
 import com.javaweb.exception.EntityNotFoundException;
 import com.javaweb.model.dto.PlaylistDTO;
+import com.javaweb.model.dto.SongDTO;
 import com.javaweb.repository.PlaylistRepository;
 import com.javaweb.repository.SongRepository;
 import com.javaweb.repository.UserRepository;
 import com.javaweb.service.PlaylistService;
+import com.javaweb.service.SongService;
+import com.javaweb.service.UserService;
 import com.javaweb.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +33,8 @@ public class PlaylistServiceImpl implements PlaylistService {
 
     private final UserRepository userRepository;
     private final SongRepository songRepository;
+    private final UserService userService;
+    private final SongService songService;
 
     @Override
     public List<PlaylistDTO> findPlaylistsByUserId() {
@@ -182,13 +187,42 @@ public class PlaylistServiceImpl implements PlaylistService {
 
             String normalizedQuery = query.toLowerCase().trim();
 
-            List<PlaylistEntity> playlists = playlistRepository
-                    .findByNameContainingIgnoreCase(normalizedQuery)
-                    .stream()
-                    .limit(limit)
-                    .collect(Collectors.toList());
+            // 1. Direct name matches (highest priority)
+            List<PlaylistEntity> directMatches = playlistRepository
+                    .findByNameContainingIgnoreCase(normalizedQuery);
+            Set<PlaylistEntity> results = new LinkedHashSet<>(directMatches);
 
-            return playlists.stream()
+            // 2. Find playlists containing songs matching the query
+            if (results.size() < limit) {
+                List<SongDTO> matchingSongs = songService.searchSongs(normalizedQuery, 50);
+                if (!matchingSongs.isEmpty()) {
+                    Set<Long> songIds = matchingSongs.stream()
+                            .map(SongDTO::getId)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toSet());
+
+                    if (!songIds.isEmpty()) {
+                        List<PlaylistEntity> playlistsWithMatchingSongs =
+                                playlistRepository.findPlaylistsContainingSongs(new ArrayList<>(songIds), limit - results.size());
+                        results.addAll(playlistsWithMatchingSongs);
+                    }
+                }
+            }
+
+            // 3. Find playlists by creator name/username if it matches the query
+            if (results.size() < limit && userService != null) {
+                List<UserEntity> matchingUsers = userRepository.findByUsernameContainingIgnoreCase(normalizedQuery);
+                if (!matchingUsers.isEmpty()) {
+                    for (UserEntity user : matchingUsers) {
+                        List<PlaylistEntity> userPlaylists = playlistRepository.findByUser(user);
+                        results.addAll(userPlaylists);
+                    }
+                }
+            }
+
+            // Convert to DTOs and apply limit
+            return results.stream()
+                    .limit(limit)
                     .map(playlistConverter::toDTO)
                     .collect(Collectors.toList());
         } catch (Exception e) {

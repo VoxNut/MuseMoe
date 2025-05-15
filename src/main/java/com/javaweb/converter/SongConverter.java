@@ -48,6 +48,7 @@ public class SongConverter implements EntityConverter<SongEntity, SongRequestDTO
 
         if (entity.getAlbum() != null) {
             dto.setSongAlbum(entity.getAlbum().getTitle());
+            dto.setAlbumId(entity.getAlbum().getId());
             StreamingMediaEntity coverArt = entity.getAlbum().getCoverArt();
             if (entity.getAlbum().getCoverArt() != null) {
                 dto.setAlbumArtId(coverArt.getGoogleDriveId());
@@ -58,6 +59,10 @@ public class SongConverter implements EntityConverter<SongEntity, SongRequestDTO
             dto.setSongArtist(entity.getArtists().stream()
                     .map(ArtistEntity::getStageName)
                     .collect(Collectors.joining(", ")));
+
+            dto.setArtistIds(entity.getArtists().stream()
+                    .map(ArtistEntity::getId)
+                    .toList());
         }
 
         if (entity.getFrame() != null && entity.getDuration() != null) {

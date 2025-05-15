@@ -72,6 +72,10 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private KeyEventDispatcher keyEventDispatcher;
     private AWTEventListener globalClickListener;
 
+    // Search event
+    private Timer searchDelayTimer;
+    private final int SEARCH_DELAY = 500; // milliseconds delay after typing
+
     public HomePage() {
 
         navigationManager = NavigationManager.getInstance();
@@ -456,6 +460,14 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         searchField = GuiUtil.createInputField("What do you want to muse?...", 20);
         searchField.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
 
+        searchDelayTimer = new Timer(SEARCH_DELAY, e -> {
+            String query = searchField.getText();
+            if (!query.isEmpty() && !query.equals("What do you want to muse?...")) {
+                performSearch(query);
+            }
+        });
+        searchDelayTimer.setRepeats(false);
+
         // Add the same focus and key listeners as in your original code
         searchField.addFocusListener(new FocusAdapter() {
             @Override
@@ -494,6 +506,18 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
             @Override
             public void keyReleased(KeyEvent e) {
+                if (searchDelayTimer.isRunning()) {
+                    searchDelayTimer.restart();
+                } else {
+                    searchDelayTimer.start();
+                }
+
+                String query = searchField.getText();
+
+                if ((query.isEmpty() || query.equals("What do you want to muse?..."))) {
+                    toggleHome();
+                }
+
                 if (recentSearchDropdown != null
                         && !searchField.getText().isEmpty()
                         && !searchField.getText().equals("What do you want to muse?...")) {
@@ -662,11 +686,11 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
                             showSearchResults(query, results);
                         } else {
-                            GuiUtil.showInfoMessageDialog(HomePage.this, "No results found matching your search.");
+                            GuiUtil.showToast(HomePage.this, "No results found matching your search.");
                         }
                     } catch (Exception e) {
                         log.error("Error performing search", e);
-                        GuiUtil.showErrorMessageDialog(HomePage.this, "Error performing search");
+                        GuiUtil.showToast(HomePage.this, "Some errors happen when you're searching");
                     }
                 }
             };
@@ -685,13 +709,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     }
 
     private void showSearchResults(String query, SearchResults results) {
-        SearchResultsPanel searchResultsPanel = null;
-        for (Component comp : centerCardPanel.getComponents()) {
-            if (comp instanceof SearchResultsPanel) {
-                searchResultsPanel = (SearchResultsPanel) comp;
-                break;
-            }
-        }
+        SearchResultsPanel searchResultsPanel = GuiUtil.findFirstComponentByType(centerCardPanel, SearchResultsPanel.class);
 
         if (searchResultsPanel != null) {
             searchResultsPanel.updateSearchResults(
@@ -1633,14 +1651,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 }
 
                 case PLAYBACK_STARTED, PLAYBACK_PAUSED -> {
-                    // Find search results panel and update play/pause buttons
-                    SearchResultsPanel searchResultsPanel = null;
-                    for (Component comp : centerCardPanel.getComponents()) {
-                        if (comp instanceof SearchResultsPanel) {
-                            searchResultsPanel = (SearchResultsPanel) comp;
-                            break;
-                        }
-                    }
+                    SearchResultsPanel searchResultsPanel = GuiUtil.findFirstComponentByType(centerCardPanel, SearchResultsPanel.class);
 
                     if (searchResultsPanel != null) {
                         SongDTO songDTO = (SongDTO) event.data();

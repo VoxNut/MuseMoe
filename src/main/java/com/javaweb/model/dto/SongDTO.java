@@ -9,6 +9,7 @@ import lombok.experimental.SuperBuilder;
 
 import java.awt.image.BufferedImage;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 
 @Getter
@@ -46,6 +47,8 @@ public class SongDTO extends AbstractDTO {
     private Date downloadDate;
     @JsonIgnore
     private BufferedImage songImage;
+    private Long albumId;
+    private List<Long> artistIds;
 
 
     @Override

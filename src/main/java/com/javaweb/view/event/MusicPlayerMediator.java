@@ -129,5 +129,9 @@ public class MusicPlayerMediator {
         publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.SONG_ALBUM, songAlbum));
     }
 
+    public void notifySearchField() {
+        publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.SEARCH_SONG, null));
+    }
+
 
 }

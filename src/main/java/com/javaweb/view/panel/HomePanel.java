@@ -395,4 +395,5 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
             });
         });
     }
+
 }

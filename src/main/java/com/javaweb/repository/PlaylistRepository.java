@@ -1,6 +1,7 @@
 package com.javaweb.repository;
 
 import com.javaweb.entity.PlaylistEntity;
+import com.javaweb.entity.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -24,4 +25,9 @@ public interface PlaylistRepository extends JpaRepository<PlaylistEntity, Long> 
 
 
     List<PlaylistEntity> findByNameContainingIgnoreCase(String name);
+
+    @Query("SELECT DISTINCT p FROM PlaylistEntity p JOIN PlaylistSongEntity ps ON p.id = ps.playlist.id WHERE ps.song.id IN :songIds")
+    List<PlaylistEntity> findPlaylistsContainingSongs(@Param("songIds") List<Long> songIds, @Param("limit") int limit);
+
+    List<PlaylistEntity> findByUser(UserEntity user);
 }

@@ -118,7 +118,7 @@ public class MusicPlayer extends PlaybackListener {
     private float currentVolumeGain = 0.0f;
 
 
-    public void loadLocalSong(SongDTO song) throws IOException {
+    public void loadLocalSong(SongDTO song) {
         if (song == null || !song.getIsLocalFile()) {
             log.error("Attempted to load non-local song with local method");
             return;
@@ -150,15 +150,11 @@ public class MusicPlayer extends PlaybackListener {
         playCurrentSong();
     }
 
-    // Add import for FactoryRegistry at the top of the file
     public void loadSong(SongDTO song) throws IOException {
         if (adManager.shouldShowAd(getCurrentUser()) || song != null) {
             processLoadSong(song);
             return;
         }
-
-        // Show loading indicator
-        mediator.notifyLoadingStarted();
 
         // Load song in background
         CompletableFuture.supplyAsync(() -> {
@@ -172,7 +168,6 @@ public class MusicPlayer extends PlaybackListener {
             // Back on UI thread
             SwingUtilities.invokeLater(() -> {
                 try {
-                    mediator.notifyLoadingFinished();
                     processLoadSong(loadedSong);
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -191,7 +186,6 @@ public class MusicPlayer extends PlaybackListener {
             Thread.currentThread().interrupt();
         }
 
-        // Rest of your existing loadSong logic
         if (adManager.shouldShowAd(getCurrentUser())) {
             if (song != null) {
                 adManager.storeLastSong(song);
@@ -240,7 +234,7 @@ public class MusicPlayer extends PlaybackListener {
     }
 
 
-    public void stopSong() throws IOException {
+    public void stopSong() {
         if (sliderThread != null) {
             sliderThread.interrupt();
             try {
@@ -265,15 +259,6 @@ public class MusicPlayer extends PlaybackListener {
             adManager.getUserPlayCounter().put(getCurrentUser().getId(), 0);
         }
 
-        if (fileInputStream != null) {
-            fileInputStream.close();
-            fileInputStream = null;
-        }
-
-        if (bufferedInputStream != null) {
-            bufferedInputStream.close();
-            bufferedInputStream = null;
-        }
 
         mediator.notifyToggleCava(false);
 

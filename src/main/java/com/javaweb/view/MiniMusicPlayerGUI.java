@@ -447,7 +447,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
 
         // Play button
         playButton = GuiUtil.changeButtonIconColor(AppConstant.PLAY_ICON_PATH, 30, 30);
-        playButton.setBounds(190, 0, 40, 40); // Set position and size
+        playButton.setBounds(190, 0, 40, 40);
         playButton.addActionListener(e -> {
             if (playerFacade.isHavingAd()) return;
             playerFacade.playCurrentSong();

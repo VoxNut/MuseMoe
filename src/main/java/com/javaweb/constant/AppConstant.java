@@ -52,8 +52,8 @@ public class AppConstant {
     public static final String LOOKUP_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/lookup-icon.png";
     public static final String DISCOUNT_PATH = "src/main/java/com/javaweb/view/imgs/icon/discount-img.png";
     public static final String CALENDAR_PATH = "src/main/java/com/javeaweb/view/imgs/icon/calendar-icon.png";
-    public static final String PLAY_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/play-button-icon-2.png";
-    public static final String PAUSE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/pause-button-icon-2.png";
+    public static final String PLAY_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/play-icon.png";
+    public static final String PAUSE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/pause-icon.png";
     public static final String NEXT_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/next-icon.png";
     public static final String SPEAKER_ICON = "src/main/java/com/javaweb/view/imgs/icon/speaker-icon.png";
     public static final String SPEAKER_0_ICON = "src/main/java/com/javaweb/view/imgs/icon/0v-speaker-icon.png";

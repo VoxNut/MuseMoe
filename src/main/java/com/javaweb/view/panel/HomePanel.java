@@ -29,7 +29,7 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
     private JPanel recentlyPlayedPanel;
     private JPanel recommendationsPanel;
     private JScrollPane scrollPane;
-    private final Map<SongDTO, JButton> playPauseButtonMap = new HashMap<>();
+    private Map<SongDTO, JButton> playPauseButtonMap = new HashMap<>();
 
     public HomePanel() {
         playerFacade = App.getBean(MusicPlayerFacade.class);
@@ -223,31 +223,18 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
         textInfoPanel.add(titleLabel);
         textInfoPanel.add(artistLabel);
 
-        JPanel controlPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-        controlPanel.setPreferredSize(new Dimension(24, 24));
+        JPanel controlButtonsPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        controlButtonsPanel.setPreferredSize(new Dimension(24, 24));
 
+        // Create play button
         JButton playPauseButton = GuiUtil.changeButtonIconColor(AppConstant.PLAY_ICON_PATH, 24, 24);
         playPauseButton.setPreferredSize(new Dimension(24, 24));
         playPauseButton.setMargin(new Insets(0, 0, 0, 0));
 
-        playPauseButtonMap.put(song, playPauseButton);
 
         playPauseButton.addActionListener(e -> {
             SongDTO currentSong = playerFacade.getCurrentSong();
-
-            boolean isSameSong = false;
-            if (currentSong != null && song != null) {
-                if (currentSong.getIsLocalFile() && song.getIsLocalFile()) {
-                    isSameSong = currentSong.getLocalFilePath() != null &&
-                            currentSong.getLocalFilePath().equals(song.getLocalFilePath());
-                } else if (!currentSong.getIsLocalFile() && !song.getIsLocalFile()) {
-                    isSameSong = currentSong.getId() != null &&
-                            song.getId() != null &&
-                            currentSong.getId().equals(song.getId());
-                }
-            }
-
-            if (isSameSong) {
+            if (isSameSong(currentSong, song)) {
                 if (playerFacade.isPaused()) {
                     playerFacade.playCurrentSong();
                 } else {
@@ -266,11 +253,12 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
             }
         });
 
-        controlPanel.add(playPauseButton);
+        playPauseButtonMap.put(song, playPauseButton);
+        controlButtonsPanel.add(playPauseButton);
 
         // Add text and controls to the info bar
         infoBarPanel.add(textInfoPanel, BorderLayout.CENTER);
-        infoBarPanel.add(controlPanel, BorderLayout.EAST);
+        infoBarPanel.add(controlButtonsPanel, BorderLayout.EAST);
 
 
         card.add(Box.createVerticalStrut(20));
@@ -311,6 +299,7 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
             log.error(".flf files not found!.");
         }
 
+        assert files != null;
         File randomFile = files[(int) (Math.random() * files.length)];
         String fontName = randomFile.getName();
         ProcessBuilder processBuilder = new ProcessBuilder(
@@ -335,10 +324,21 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
 
     }
 
+    private boolean isSameSong(SongDTO song1, SongDTO song2) {
+        if (song1 == null || song2 == null) return false;
+        if (!song1.getIsLocalFile() && !song2.getIsLocalFile()) {
+            return song1.getId() != null &&
+                    song2.getId() != null &&
+                    song1.getId().equals(song2.getId());
+        }
+        return false;
+    }
+
     public void cleanup() {
         playerFacade.unsubscribeFromPlayerEvents(this);
         ThemeManager.getInstance().removeThemeChangeListener(this);
     }
+
 
     @Override
     public void onPlayerEvent(PlayerEvent event) {
@@ -354,24 +354,11 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
         }
     }
 
+
     private void updatePlayPauseButtons(SongDTO currentSong, boolean isPlaying) {
         SwingUtilities.invokeLater(() -> {
             playPauseButtonMap.forEach((song, button) -> {
-                boolean isSameSong = false;
-
-                if (currentSong != null && song != null) {
-                    if (currentSong.getIsLocalFile() && song.getIsLocalFile()) {
-                        isSameSong = currentSong.getLocalFilePath() != null &&
-                                currentSong.getLocalFilePath().equals(song.getLocalFilePath());
-                    } else if (!currentSong.getIsLocalFile() && !song.getIsLocalFile()) {
-                        // For streaming songs, compare by ID
-                        isSameSong = currentSong.getId() != null &&
-                                song.getId() != null &&
-                                currentSong.getId().equals(song.getId());
-                    }
-                }
-
-                if (isSameSong) {
+                if (isSameSong(currentSong, song)) {
                     if (isPlaying) {
                         button.setIcon(GuiUtil.createColoredIcon(
                                 AppConstant.PAUSE_ICON_PATH,
@@ -395,5 +382,6 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
             });
         });
     }
+
 
 }

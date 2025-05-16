@@ -70,9 +70,6 @@ public class MusicPlayerMediator {
         publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.VOLUME_CHANGED, volume));
     }
 
-    public void notifyHeartChanged() {
-        publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.HEART_CHANGED, null));
-    }
 
     public void notifyAdOn() {
         publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.AD_ON, null));
@@ -95,27 +92,10 @@ public class MusicPlayerMediator {
                 new int[]{frame, timeInMillis}));
     }
 
-    public void notifyLoadingStarted() {
-        publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.LOADING_STARTED, null));
-    }
-
-    public void notifyLoadingFinished() {
-        publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.LOADING_FINISHED, null));
-    }
-
     public void notifySongLikedChanged() {
         publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.SONG_LIKED_CHANGED, null));
     }
 
-
-    public void notifySpectrumData(String audioFile) {
-        publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.SPECTRUM_DATA, audioFile));
-    }
-
-    public void notifySpectrumStop() {
-        publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.SPECTRUM_STOP, null));
-
-    }
 
     public void notifyToggleCava(boolean isToggling) {
         publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.TOGGLE_CAVA, isToggling));
@@ -127,10 +107,6 @@ public class MusicPlayerMediator {
 
     public void notifySongAlbum(String songAlbum) {
         publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.SONG_ALBUM, songAlbum));
-    }
-
-    public void notifySearchField() {
-        publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.SEARCH_SONG, null));
     }
 
 

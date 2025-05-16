@@ -25,6 +25,7 @@ public class MusicPlayerFacade {
         setCurrentPlaylist(null);
         player.loadLocalSong(song);
         mediator.notifyLoadLocalSong();
+
     }
 
 
@@ -46,14 +47,6 @@ public class MusicPlayerFacade {
         }
     }
 
-    public void stopSong() {
-        try {
-            player.stopSong();
-//            mediator.notifyPlaybackStopped();
-        } catch (IOException iOE) {
-            iOE.printStackTrace();
-        }
-    }
 
     public void playCurrentSong() {
         player.playCurrentSong();
@@ -155,12 +148,12 @@ public class MusicPlayerFacade {
     }
 
     public void subscribeToPlayerEvents(PlayerEventListener listener) {
-        mediator.getEventPublisher().addObserver(listener);
+        mediator.subscribeToPlayerEvents(listener);
     }
 
 
     public void unsubscribeFromPlayerEvents(PlayerEventListener listener) {
-        mediator.getEventPublisher().removeObserver(listener);
+        mediator.unsubscribeFromPlayerEvents(listener);
     }
 
     public void notifySliderDragging(int value, int timeInMillis) {
@@ -181,10 +174,6 @@ public class MusicPlayerFacade {
 
     public void populateUserProfile(UserDTO userDTO, Consumer<BufferedImage> callback) {
         imageMediaUtil.populateUserProfile(userDTO, callback);
-    }
-
-    public void notifySearchField() {
-        mediator.notifySearchField();
     }
 
 

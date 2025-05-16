@@ -129,7 +129,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                         "Exit"
                 );
                 if (option == JOptionPane.YES_OPTION) {
-                    dispose();
+                    System.exit(0);
                 }
             }
         });
@@ -1651,15 +1651,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 }
 
                 case PLAYBACK_STARTED, PLAYBACK_PAUSED -> {
-                    SearchResultsPanel searchResultsPanel = GuiUtil.findFirstComponentByType(centerCardPanel, SearchResultsPanel.class);
 
-                    if (searchResultsPanel != null) {
-                        SongDTO songDTO = (SongDTO) event.data();
-                        boolean isPlaying = event.type() == PlayerEvent.EventType.PLAYBACK_STARTED;
-                        searchResultsPanel.updatePlayPauseButtons(songDTO, isPlaying);
-                    }
                 }
-
             }
         });
     }

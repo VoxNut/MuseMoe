@@ -528,6 +528,7 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
 
 
     public class ProgressTrackBar extends JPanel {
+        @Getter
         private float progress = 0.0f;
         private static final int CORNER_RADIUS = 3;
         private String timeText = "0:00 / 0:00";
@@ -540,10 +541,6 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
         public void setProgress(float progress) {
             this.progress = Math.max(0, Math.min(1.0f, progress));
             repaint();
-        }
-
-        public float getProgress() {
-            return progress;
         }
 
         public void setTimeText(String text) {

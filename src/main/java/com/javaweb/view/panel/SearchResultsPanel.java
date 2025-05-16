@@ -11,6 +11,8 @@ import com.javaweb.utils.GuiUtil;
 import com.javaweb.utils.StringUtils;
 import com.javaweb.view.components.AsyncImageLabel;
 import com.javaweb.view.event.MusicPlayerFacade;
+import com.javaweb.view.event.PlayerEvent;
+import com.javaweb.view.event.PlayerEventListener;
 import com.javaweb.view.theme.ThemeChangeListener;
 import com.javaweb.view.theme.ThemeManager;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 @Slf4j
-public class SearchResultsPanel extends JPanel implements ThemeChangeListener {
+public class SearchResultsPanel extends JPanel implements ThemeChangeListener, PlayerEventListener {
     private final MusicPlayerFacade playerFacade;
     private JPanel contentPanel;
     private JPanel navigationPanel;
@@ -46,8 +48,27 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener {
     private JScrollPane scrollPane;
 
     private String currentQuery = "";
-    private Map<SongDTO, JButton> playPauseButtonMap = new HashMap<>();
     private String currentTab = "ALL";
+    private final Map<String, JButton> playPauseButtonMap = new HashMap<>();
+
+    @Override
+    public void onPlayerEvent(PlayerEvent event) {
+        switch (event.type()) {
+            case PLAYBACK_STARTED -> {
+                SongDTO currentSong = (SongDTO) event.data();
+                updatePlayPauseButtons(currentSong, true);
+            }
+            case PLAYBACK_PAUSED -> {
+                SongDTO currentSong = (SongDTO) event.data();
+                updatePlayPauseButtons(currentSong, false);
+            }
+        }
+    }
+
+    private String createButtonKey(SongDTO song, String suffix, String location) {
+        String base = "remote:" + song.getId();
+        return base + ":" + suffix + ":" + location;
+    }
 
     public SearchResultsPanel() {
         this.playerFacade = App.getBean(MusicPlayerFacade.class);
@@ -56,6 +77,7 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener {
 
         cardLayout = new CardLayout();
         contentPanel = GuiUtil.createPanel(cardLayout);
+
 
         createNavigationPanel();
 
@@ -66,7 +88,6 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener {
         mainPanel.add(contentPanel, BorderLayout.CENTER);
 
         scrollPane = GuiUtil.createStyledScrollPane(mainPanel);
-        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         add(scrollPane, BorderLayout.CENTER);
 
         ThemeManager.getInstance().addThemeChangeListener(this);
@@ -75,10 +96,12 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener {
                 ThemeManager.getInstance().getTextColor(),
                 ThemeManager.getInstance().getAccentColor()
         );
+        playerFacade.subscribeToPlayerEvents(this);
 
         updateSelectedTab(currentTab);
 
     }
+
 
     private void createNavigationPanel() {
         navigationPanel = GuiUtil.createPanel(new MigLayout("insets 5 10 5 10, fillx", "", "[]"));
@@ -167,6 +190,10 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener {
         cardLayout.show(contentPanel, "ALL");
         updateSelectedTab("ALL");
 
+        if (playerFacade.getCurrentSong() != null) {
+            updatePlayPauseButtons(playerFacade.getCurrentSong(), !playerFacade.isPaused());
+        }
+
         // Refresh UI
         revalidate();
         repaint();
@@ -179,41 +206,48 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener {
             JPanel topResultPanel = createTopResultPanel(songs, artists, albums);
             JPanel songsListPanel = createSongsListPanel(songs);
 
-            // Add panels with split layout
-            JPanel topSection = GuiUtil.createPanel(new MigLayout("fill, insets 0", "[30%][grow]", "[]"));
-            topSection.add(topResultPanel, "width 30%");
-            topSection.add(songsListPanel, "width 70%");
+            JPanel topSection = GuiUtil.createPanel(new MigLayout(
+                    "fill, insets 0, gap 0!",
+                    "[30%!][70%!]",
+                    "[]"));
+
+            topSection.add(topResultPanel, "width 30%!, spany, growy");
+            topSection.add(songsListPanel, "width 70%!, spany, growy");
 
             allPanel.add(topSection, "growx, wrap");
+
         }
 
         // Artists section (if available)
         if (!artists.isEmpty()) {
             JPanel artistsSection = createArtistsSection(artists);
-            allPanel.add(artistsSection, "growx, wrap");
+            allPanel.add(artistsSection, "grow, wrap");
         }
 
         // Albums section (if available)
         if (!albums.isEmpty()) {
             JPanel albumsSection = createAlbumsSection(albums);
-            allPanel.add(albumsSection, "growx, wrap");
+            allPanel.add(albumsSection, "grow, wrap");
         }
 
         // Playlists section (if available)
         if (!playlists.isEmpty()) {
             JPanel playlistsSection = createPlaylistsSection(playlists);
-            allPanel.add(playlistsSection, "growx, wrap");
+            allPanel.add(playlistsSection, "grow, wrap");
         }
     }
 
     private JPanel createTopResultPanel(List<SongDTO> songs, List<ArtistDTO> artists, List<AlbumDTO> albums) {
-        JPanel panel = GuiUtil.createPanel(new BorderLayout(0, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 20));
+        JPanel panel = GuiUtil.createPanel(new MigLayout(
+                "fillx, insets 0 0 10 20",
+                "[]",
+                "[]10[]"));
 
+        // Header
         JLabel headerLabel = GuiUtil.createLabel("Top result", Font.BOLD, 18);
-        panel.add(headerLabel, BorderLayout.NORTH);
+        panel.add(headerLabel, "wrap");
 
-        // Determine the top result (prioritize songs, then artists, then albums)
+        // Content card
         JPanel resultCard = null;
 
         if (!songs.isEmpty()) {
@@ -228,61 +262,92 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener {
         }
 
         if (resultCard != null) {
-            panel.add(resultCard, BorderLayout.CENTER);
+            panel.add(resultCard, "grow");
         }
 
         return panel;
     }
 
     private JPanel createTopSongCard(SongDTO song) {
-        JPanel card = GuiUtil.createPanel(new BorderLayout());
-        card.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 0));
-
-        JPanel contentPanel = GuiUtil.createPanel();
-        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+        JPanel card = GuiUtil.createPanel(new BorderLayout(20, 0));
+        card.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         AsyncImageLabel coverLabel = GuiUtil.createAsyncImageLabel(200, 200, 15);
         coverLabel.startLoading();
         playerFacade.populateSongImage(song, coverLabel::setLoadedImage);
-        coverLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
+        JPanel coverPanel = GuiUtil.createPanel(new BorderLayout());
+        coverPanel.setPreferredSize(new Dimension(200, 200));
+        coverPanel.add(coverLabel, BorderLayout.CENTER);
+
+        JPanel infoPanel = GuiUtil.createPanel(new BorderLayout(0, 10));
+
+        JPanel textPanel = GuiUtil.createPanel();
+        textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.Y_AXIS));
 
         Font titleFont = FontUtil.getSpotifyFont(Font.BOLD, 14);
         Font artistFont = FontUtil.getSpotifyFont(Font.PLAIN, 12);
 
-        JLabel titleLabel = GuiUtil.createLabel(StringUtils.getTruncatedTextByWidth(song.getTitle(), titleFont), Font.BOLD, 14);
-        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JLabel titleLabel = GuiUtil.createLabel(
+                StringUtils.getTruncatedTextByWidth(song.getTitle(), titleFont, 150),
+                Font.BOLD, 14);
+        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel artistLabel = GuiUtil.createLabel(
-                song.getSongArtist() != null ? StringUtils.getTruncatedTextByWidth(song.getSongArtist(), artistFont) : "Unknown Artist",
-                Font.PLAIN, 12
-        );
+                song.getSongArtist() != null ?
+                        StringUtils.getTruncatedTextByWidth(song.getSongArtist(), artistFont) :
+                        "Unknown Artist",
+                Font.PLAIN, 12);
+        artistLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        textPanel.add(titleLabel);
+        textPanel.add(Box.createVerticalStrut(5));
+        textPanel.add(artistLabel);
+
+        JPanel controlButtonsPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+
+        // Create play button
+        JButton playPauseButton = GuiUtil.changeButtonIconColor(AppConstant.PLAY_ICON_PATH, 24, 24);
 
 
-        artistLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        playPauseButton.addActionListener(e -> {
+            SongDTO currentSong = playerFacade.getCurrentSong();
 
-        contentPanel.add(coverLabel);
-        contentPanel.add(Box.createVerticalStrut(10));
-        contentPanel.add(titleLabel);
-        contentPanel.add(Box.createVerticalStrut(5));
-        contentPanel.add(artistLabel);
+            if (isSameSong(currentSong, song)) {
+                if (playerFacade.isPaused()) {
+                    playerFacade.playCurrentSong();
+                } else {
+                    playerFacade.pauseSong();
+                }
+            } else {
+                if (song.getIsLocalFile()) {
+                    try {
+                        playerFacade.loadLocalSong(song);
+                    } catch (IOException ex) {
+                        log.error("Error loading local song: {}", ex.getMessage());
+                    }
+                } else {
+                    playerFacade.loadSong(song);
+                }
+            }
+        });
 
-        card.add(contentPanel, BorderLayout.CENTER);
 
-        JPanel buttonPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.RIGHT));
+        String key = createButtonKey(song, "topSong", "topResult");
+        playPauseButtonMap.put(key, playPauseButton);
 
-        JButton playButton = GuiUtil.changeButtonIconColor(AppConstant.PLAY_ICON_PATH, 40, 40);
-        playButton.addActionListener(e -> playerFacade.loadSong(song));
+        controlButtonsPanel.add(playPauseButton);
 
-        buttonPanel.add(playButton);
 
-        card.add(buttonPanel, BorderLayout.SOUTH);
+        infoPanel.add(textPanel, BorderLayout.NORTH);
+        infoPanel.add(controlButtonsPanel, BorderLayout.WEST);
 
-        // Add hover effect
+        // Add main components to card
+        card.add(coverPanel, BorderLayout.WEST);
+        card.add(infoPanel, BorderLayout.CENTER);
+
         GuiUtil.addHoverEffect(card);
         GuiUtil.addSongContextMenu(card, song);
-
-        playPauseButtonMap.put(song, playButton);
 
         return card;
     }
@@ -321,11 +386,11 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener {
 
     private void createContentPanels() {
         // Create tab panels
-        allPanel = GuiUtil.createPanel(new MigLayout("fillx, wrap", "[grow, fill]", "[]10[]10[]10[]10[]"));
-        songsPanel = GuiUtil.createPanel(new MigLayout("fillx, wrap", "[grow, fill]", "[]10[]"));
-        playlistsPanel = GuiUtil.createPanel(new MigLayout("fillx, wrap", "[grow, fill]", "[]10[]"));
-        albumsPanel = GuiUtil.createPanel(new MigLayout("fillx, wrap", "[grow, fill]", "[]10[]"));
-        artistsPanel = GuiUtil.createPanel(new MigLayout("fillx, wrap", "[grow, fill]", "[]10[]"));
+        allPanel = GuiUtil.createPanel(new MigLayout("fillx, wrap", "[fill]", "[]10[]"));
+        songsPanel = GuiUtil.createPanel(new MigLayout("fillx, wrap", "[fill]", "[]10[]"));
+        playlistsPanel = GuiUtil.createPanel(new MigLayout("fillx, wrap", "[fill]", "[]10[]"));
+        albumsPanel = GuiUtil.createPanel(new MigLayout("fillx, wrap", "[fill]", "[]10[]"));
+        artistsPanel = GuiUtil.createPanel(new MigLayout("fillx, wrap", "[fill]", "[]10[]"));
 
         // Add panels to card layout
         contentPanel.add(allPanel, "ALL");
@@ -387,39 +452,26 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener {
         int limit = Math.min(4, songs.size());
         for (int i = 0; i < limit; i++) {
             SongDTO song = songs.get(i);
-            JPanel songItem = createSongListItem(song);
-            songsListPanel.add(songItem, "growx");
+            JPanel songItem = createSongListItem(song, "allTab");
+            songsListPanel.add(songItem, "grow");
         }
 
         panel.add(songsListPanel, BorderLayout.CENTER);
         return panel;
     }
 
-    private JPanel createSongListItem(SongDTO song) {
-        JPanel songPanel = GuiUtil.createPanel(new MigLayout(
-                "fillx, insets 5",
-                "[30!][grow, fill][50!]",
-                "[]"));
-        // Play button
-        JButton playButton = GuiUtil.changeButtonIconColor(AppConstant.PLAY_ICON_PATH, 24, 24);
-        playPauseButtonMap.put(song, playButton);
+    private JPanel createSongListItem(SongDTO song, String location) {
+        JPanel songPanel = GuiUtil.createPanel(new BorderLayout(10, 0));
+        songPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
-        playButton.addActionListener(e -> {
+        JPanel controlButtonsPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+
+        JButton playPauseButton = GuiUtil.changeButtonIconColor(AppConstant.PLAY_ICON_PATH, 24, 24);
+
+        playPauseButton.addActionListener(e -> {
             SongDTO currentSong = playerFacade.getCurrentSong();
-            boolean isSameSong = false;
 
-            if (currentSong != null && song != null) {
-                if (currentSong.getIsLocalFile() && song.getIsLocalFile()) {
-                    isSameSong = currentSong.getLocalFilePath() != null &&
-                            currentSong.getLocalFilePath().equals(song.getLocalFilePath());
-                } else if (!currentSong.getIsLocalFile() && !song.getIsLocalFile()) {
-                    isSameSong = currentSong.getId() != null &&
-                            song.getId() != null &&
-                            currentSong.getId().equals(song.getId());
-                }
-            }
-
-            if (isSameSong) {
+            if (isSameSong(currentSong, song)) {
                 if (playerFacade.isPaused()) {
                     playerFacade.playCurrentSong();
                 } else {
@@ -438,34 +490,54 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener {
             }
         });
 
-        // Song title and artist
+        String key = createButtonKey(song, "songItem", location);
+        playPauseButtonMap.put(key, playPauseButton);
+
+
+        controlButtonsPanel.add(playPauseButton);
+
         JPanel infoPanel = GuiUtil.createPanel(new BorderLayout());
         String title = song.getTitle();
         String artist = song.getSongArtist() != null ? song.getSongArtist() : "Unknown Artist";
 
+        JPanel labelPanel = GuiUtil.createPanel();
+        labelPanel.setLayout(new BoxLayout(labelPanel, BoxLayout.Y_AXIS));
+
         JLabel songLabel = GuiUtil.createLabel(title, Font.BOLD, 14);
         JLabel artistLabel = GuiUtil.createLabel(artist, Font.PLAIN, 12);
 
-        JPanel labelPanel = GuiUtil.createPanel();
-        labelPanel.setLayout(new BoxLayout(labelPanel, BoxLayout.Y_AXIS));
         labelPanel.add(songLabel);
         labelPanel.add(artistLabel);
-
         infoPanel.add(labelPanel, BorderLayout.CENTER);
 
-        JLabel durationLabel = GuiUtil.createLabel(song.getSongLength(), Font.BOLD, 14, ThemeManager.getInstance().getAccentColor());
-        durationLabel.setPreferredSize(new Dimension(50, 24)); // Set fixed width
-        durationLabel.setHorizontalAlignment(SwingConstants.RIGHT); // Right-align text
+        JPanel durationPanel = GuiUtil.createPanel(new BorderLayout());
+        durationPanel.setPreferredSize(new Dimension(50, 30));
 
-        songPanel.add(playButton, "width 30!");   // Fixed width cell
-        songPanel.add(infoPanel, "growx");        // Grow horizontally
-        songPanel.add(durationLabel, "width 50!"); // Fixed width cell
+        JLabel durationLabel = GuiUtil.createLabel(song.getSongLength(), Font.BOLD, 14,
+                ThemeManager.getInstance().getAccentColor());
+        durationLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+        durationPanel.add(durationLabel, BorderLayout.CENTER);
+
+        songPanel.add(controlButtonsPanel, BorderLayout.WEST);
+        songPanel.add(infoPanel, BorderLayout.CENTER);
+        songPanel.add(durationPanel, BorderLayout.EAST);
 
         GuiUtil.addHoverEffect(songPanel);
         GuiUtil.addSongContextMenu(songPanel, song);
 
         return songPanel;
     }
+
+    private boolean isSameSong(SongDTO song1, SongDTO song2) {
+        if (song1 == null || song2 == null) return false;
+        if (!song1.getIsLocalFile() && !song2.getIsLocalFile()) {
+            return song1.getId() != null &&
+                    song2.getId() != null &&
+                    song1.getId().equals(song2.getId());
+        }
+        return false;
+    }
+
 
     private JPanel createArtistsSection(List<ArtistDTO> artists) {
         JPanel section = GuiUtil.createPanel(new MigLayout("fillx, wrap", "[grow,fill]", "[]10[]"));
@@ -474,7 +546,7 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener {
         section.add(headerLabel, "wrap");
 
         JPanel artistsGrid = GuiUtil.createPanel(new MigLayout(
-                "wrap 8, fillx, gapx 20, gapy 20",
+                "wrap 8, fillx, gapx 5, gapy 20",
                 "[grow, fill][grow, fill][grow, fill][grow, fill][grow, fill][grow, fill][grow, fill][grow, fill]",
                 ""));
 
@@ -525,7 +597,7 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener {
         section.add(headerLabel, "wrap");
 
         JPanel albumsGrid = GuiUtil.createPanel(new MigLayout(
-                "wrap 8, fillx, gapx 20, gapy 20",
+                "wrap 8, fillx, gapx 5, gapy 20",
                 "[grow, fill][grow, fill][grow, fill][grow, fill][grow, fill][grow, fill][grow, fill][grow, fill]",
                 ""));
 
@@ -548,7 +620,6 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener {
         AsyncImageLabel coverLabel = GuiUtil.createAsyncImageLabel(120, 120, 15);
         coverLabel.startLoading();
         playerFacade.populateAlbumImage(album, coverLabel::setLoadedImage);
-
 
         coverLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
@@ -583,7 +654,7 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener {
 
         // Playlists grid using MigLayout
         JPanel playlistsGrid = GuiUtil.createPanel(new MigLayout(
-                "wrap 8, fillx, gapx 20, gapy 20",
+                "wrap 8, fillx, gapx 5, gapy 20",
                 "[grow, fill][grow, fill][grow, fill][grow, fill][grow, fill][grow, fill][grow, fill][grow, fill]",
                 ""));
 
@@ -602,32 +673,43 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener {
         JPanel card = GuiUtil.createPanel();
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
 
-        // Create playlist cover
-        AsyncImageLabel coverLabel = new AsyncImageLabel(120, 120, 15);
+        AsyncImageLabel coverLabel = GuiUtil.createAsyncImageLabel(120, 120, 15);
+        coverLabel.setAlignmentX(Component.CENTER_ALIGNMENT); // Fix alignment
         coverLabel.startLoading();
 
-        if (!playlist.getSongs().isEmpty()) {
+        if (!playlist.getSongs().isEmpty() && playlist.getFirstSong() != null) {
             playerFacade.populateSongImage(playlist.getFirstSong(), coverLabel::setLoadedImage);
         } else {
-            coverLabel.setLoadedImage(GuiUtil.createBufferImage(com.javaweb.constant.AppConstant.DEFAULT_COVER_PATH));
+            coverLabel.setLoadedImage(GuiUtil.createBufferImage(AppConstant.DEFAULT_COVER_PATH));
         }
 
+        JPanel textPanel = GuiUtil.createPanel();
+        textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.Y_AXIS));
+        textPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        textPanel.setOpaque(false);
 
-        // Playlist name and song count
-        JLabel nameLabel = GuiUtil.createLabel(playlist.getName(), Font.BOLD, 12);
+        // Playlist name with truncation
+        Font nameFont = FontUtil.getSpotifyFont(Font.BOLD, 12);
+        JLabel nameLabel = GuiUtil.createLabel(
+                StringUtils.getTruncatedTextByWidth(playlist.getName(), nameFont),
+                Font.BOLD, 12);
         nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
+        // Song count with consistent styling
         String countText = playlist.getSongs().size() + " song" + (playlist.getSongs().size() != 1 ? "s" : "");
         JLabel countLabel = GuiUtil.createLabel(countText, Font.PLAIN, 11);
         countLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Add components
+        // Add components with consistent spacing
         card.add(coverLabel);
-        card.add(Box.createVerticalStrut(5));
-        card.add(nameLabel);
-        card.add(countLabel);
+        card.add(Box.createVerticalStrut(8)); // Consistent spacing
 
-        // Add hover effect
+        textPanel.add(nameLabel);
+        textPanel.add(Box.createVerticalStrut(2)); // Small space between name and count
+        textPanel.add(countLabel);
+        card.add(textPanel);
+
+        // Add hover effect with clearer focus
         GuiUtil.addHoverEffect(card);
 
         // Add click handler
@@ -658,7 +740,7 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener {
             songsPanel.add(noResultsLabel, "wrap");
         } else {
             for (SongDTO song : songs) {
-                JPanel songItem = createSongListItem(song);
+                JPanel songItem = createSongListItem(song, "songsTab");
                 songsListPanel.add(songItem, "growx");
             }
             songsPanel.add(songsListPanel, "grow");
@@ -678,8 +760,8 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener {
 
         // Create artists grid
         JPanel grid = GuiUtil.createPanel(new MigLayout(
-                "wrap 4, fillx, gapx 20, gapy 20",
-                "[grow, fill][grow, fill][grow, fill][grow, fill]",
+                "wrap 8, fillx, gapx 5, gapy 20",
+                "[grow, fill][grow, fill][grow, fill][grow, fill][grow, fill][grow, fill][grow, fill][grow, fill]",
                 "[]"
         ));
 
@@ -703,8 +785,8 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener {
 
         // Create albums grid
         JPanel grid = GuiUtil.createPanel(new MigLayout(
-                "wrap 4, fillx, gapx 20, gapy 20",
-                "[grow, fill][grow, fill][grow, fill][grow, fill]",
+                "wrap 8, fillx, gapx 5, gapy 20",
+                "[grow, fill][grow, fill][grow, fill][grow, fill][grow, fill][grow, fill][grow, fill][grow, fill]",
                 "[]"
         ));
 
@@ -728,8 +810,8 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener {
 
         // Create playlists grid
         JPanel grid = GuiUtil.createPanel(new MigLayout(
-                "wrap 4, fillx, gapx 20, gapy 20",
-                "[grow, fill][grow, fill][grow, fill][grow, fill]",
+                "wrap 8, fillx, gapx 5, gapy 20",
+                "[grow, fill][grow, fill][grow, fill][grow, fill][grow, fill][grow, fill][grow, fill][grow, fill]",
                 "[]"
         ));
 
@@ -740,38 +822,6 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener {
         playlistsPanel.add(grid, "grow");
     }
 
-    public void updatePlayPauseButtons(SongDTO currentSong, boolean isPlaying) {
-        SwingUtilities.invokeLater(() -> playPauseButtonMap.forEach((song, button) -> {
-            boolean isSameSong = false;
-
-            if (currentSong != null && song != null) {
-                if (currentSong.getIsLocalFile() && song.getIsLocalFile()) {
-                    isSameSong = currentSong.getLocalFilePath() != null &&
-                            currentSong.getLocalFilePath().equals(song.getLocalFilePath());
-                } else if (!currentSong.getIsLocalFile() && !song.getIsLocalFile()) {
-                    isSameSong = currentSong.getId() != null &&
-                            song.getId() != null &&
-                            currentSong.getId().equals(song.getId());
-                }
-            }
-
-            if (isSameSong) {
-                if (isPlaying) {
-                    button = GuiUtil.changeButtonIconColor(AppConstant.PAUSE_ICON_PATH, ThemeManager.getInstance().getTextColor(), 24, 24);
-                    playPauseButtonMap.put(song, button);
-                } else {
-                    button = GuiUtil.changeButtonIconColor(AppConstant.PLAY_ICON_PATH, ThemeManager.getInstance().getTextColor(), 24, 24);
-                    playPauseButtonMap.put(song, button);
-                }
-            } else {
-                button = GuiUtil.changeButtonIconColor(AppConstant.PLAY_ICON_PATH, ThemeManager.getInstance().getTextColor(), 24, 24);
-                playPauseButtonMap.put(song, button);
-            }
-
-            revalidate();
-            repaint();
-        }));
-    }
 
     @Override
     public void onThemeChanged(Color backgroundColor, Color textColor, Color accentColor) {
@@ -782,6 +832,34 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener {
 
         revalidate();
         repaint();
+    }
+
+    private void updatePlayPauseButtons(SongDTO currentSong, boolean isPlaying) {
+        if (currentSong == null) return;
+        String songIdentifier = "remote:" + currentSong.getId();
+
+        for (Map.Entry<String, JButton> entry : playPauseButtonMap.entrySet()) {
+            String key = entry.getKey();
+            JButton button = entry.getValue();
+            if (key.startsWith(songIdentifier + ":")) {
+                if (isPlaying) {
+                    button.setIcon(GuiUtil.createColoredIcon(
+                            AppConstant.PAUSE_ICON_PATH,
+                            ThemeManager.getInstance().getTextColor(),
+                            24, 24));
+                } else {
+                    button.setIcon(GuiUtil.createColoredIcon(
+                            AppConstant.PLAY_ICON_PATH,
+                            ThemeManager.getInstance().getTextColor(),
+                            24, 24));
+                }
+            } else {
+                button.setIcon(GuiUtil.createColoredIcon(
+                        AppConstant.PLAY_ICON_PATH,
+                        ThemeManager.getInstance().getTextColor(),
+                        24, 24));
+            }
+        }
     }
 
 }

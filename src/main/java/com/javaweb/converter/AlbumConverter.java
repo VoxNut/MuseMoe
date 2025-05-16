@@ -35,12 +35,13 @@ public class AlbumConverter implements EntityConverter<AlbumEntity, AlbumRequest
 
         AlbumDTO dto = modelMapper.map(entity, AlbumDTO.class);
 
-
-        Set<SongDTO> songDTOS = entity.getSongs()
-                .stream()
-                .map(songConverter::toDTO)
-                .collect(Collectors.toSet());
-        dto.setSongDTOS(songDTOS);
+        if (entity.getSongs() != null) {
+            Set<SongDTO> songDTOS = entity.getSongs()
+                    .stream()
+                    .map(songConverter::toDTO)
+                    .collect(Collectors.toSet());
+            dto.setSongDTOS(songDTOS);
+        }
 
 
         if (entity.getCoverArt() != null && entity.getCoverArt().getGoogleDriveId() != null) {

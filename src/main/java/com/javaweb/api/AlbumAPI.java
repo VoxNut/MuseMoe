@@ -20,7 +20,6 @@ public class AlbumAPI {
 
     private final AlbumService albumService;
 
-
     @PostMapping("/create")
     public ResponseEntity<?> createAlbum(@ModelAttribute AlbumRequestDTO albumRequestDTO) {
         try {
@@ -47,6 +46,49 @@ public class AlbumAPI {
             return ResponseEntity.ok(results);
         } catch (Exception e) {
             log.error("Error searching albums", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/recommendations")
+    public ResponseEntity<List<AlbumDTO>> getRecommendedAlbums(
+            @RequestParam(defaultValue = "8") int limit) {
+        try {
+            List<AlbumDTO> recommendations = albumService.getRecommendedAlbums(limit);
+            return ResponseEntity.ok(recommendations);
+        } catch (Exception e) {
+            log.error("Error fetching recommended albums", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/albums")
+    public ResponseEntity<AlbumDTO> getRecommendedAlbums(@RequestParam Long songId) {
+        try {
+            AlbumDTO recommendations = albumService.getAlbumContainsThisSong(songId);
+            return ResponseEntity.ok(recommendations);
+        } catch (Exception e) {
+            log.error("Error fetching recommended albums", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/albums-by-artist")
+    public ResponseEntity<List<AlbumDTO>> getAlbumsByArtistId(@RequestParam Long artistId) {
+        try {
+            List<AlbumDTO> res = albumService.getAlbumsByArtistId(artistId);
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/album")
+    public ResponseEntity<AlbumDTO> fetchAlbumById(@RequestParam Long albumId) {
+        try {
+            AlbumDTO res = albumService.fetchAlbumById(albumId);
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

@@ -90,9 +90,23 @@ public class CommonApiUtil {
         return getUserApiClient().fetchUserByEmail(email);
     }
 
+    // User Artist Follow
+
+    public static boolean unfollowArtist(Long artistId) {
+        return getUserArtistFollowClient().unfollowArtist(artistId);
+    }
+
+    public static boolean followArtist(Long artistId) {
+        return getUserArtistFollowClient().followArtist(artistId);
+    }
+
     // Song
     public static List<SongDTO> findSongsLike(String title) {
         return getSongApiClient().findSongsLike(title);
+    }
+
+    public static List<SongDTO> fetchPopularTracksByArtistId(Long artistId) {
+        return getSongApiClient().fetchPopularTracksByArtistId(artistId);
     }
 
     public static SongDTO fetchSongByUrl(String songUrl) {
@@ -178,8 +192,12 @@ public class CommonApiUtil {
                 .orElse(null);
     }
 
-    public static boolean addSongToPlaylist(Long playlistId, Long songId) {
-        return getPlaylistApiClient().addSongToPlaylist(playlistId, songId);
+    public static boolean addSongToPlaylist(PlaylistDTO playlistDTO) {
+        return addSongsToPlaylist(playlistDTO);
+    }
+
+    public static boolean addSongsToPlaylist(PlaylistDTO playlistDTO) {
+        return getPlaylistApiClient().addSongsToPlaylist(playlistDTO);
     }
 
     // Album
@@ -187,11 +205,39 @@ public class CommonApiUtil {
         return getAlbumApiClient().searchAlbums(query, 20);
     }
 
+    public static List<AlbumDTO> fetchRecommendedAlbums(int limit) {
+        return getAlbumApiClient().getRecommendedAlbums(limit);
+    }
+
+    public static AlbumDTO fetchAlbumById(Long albumId) {
+        return getAlbumApiClient().getAlbumById(albumId);
+    }
+
+
+    public static AlbumDTO fetchAlbumContainsThisSong(Long songId) {
+        return getAlbumApiClient().getAlbumContainsThisSong(songId);
+    }
+
+    public static List<AlbumDTO> fetchAlbumsByArtistId(Long artistId) {
+        return getAlbumApiClient().getAlbumsByArtistId(artistId);
+    }
+
     // Artist
     public static List<ArtistDTO> searchArtists(String query) {
         return getArtistApiClient().searchArtists(query, 20);
     }
 
+    public static List<ArtistDTO> findArtistsBySongId(Long songId) {
+        return getArtistApiClient().findArtistsBySongId(songId);
+    }
+
+    public static boolean checkArtistFollowed(Long artistId) {
+        return getArtistApiClient().checkArtistFollowed(artistId);
+    }
+
+    public static ArtistDTO findArtistById(Long artistId) {
+        return getArtistApiClient().findArtistById(artistId);
+    }
 
     // Play_History
 

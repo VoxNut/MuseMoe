@@ -49,6 +49,7 @@ public class SongDTO extends AbstractDTO {
     private BufferedImage songImage;
     private Long albumId;
     private List<Long> artistIds;
+    private List<ArtistDTO> artistDTOs;
 
 
     @Override

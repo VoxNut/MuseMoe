@@ -4,7 +4,6 @@ import com.javaweb.converter.ArtistConverter;
 import com.javaweb.converter.UserConverter;
 import com.javaweb.entity.ArtistEntity;
 import com.javaweb.entity.UserArtistFollowEntity;
-import com.javaweb.entity.UserArtistFollowId;
 import com.javaweb.entity.UserEntity;
 import com.javaweb.model.dto.ArtistDTO;
 import com.javaweb.model.dto.UserDTO;
@@ -94,16 +93,8 @@ public class UserArtistFollowServiceImpl implements UserArtistFollowService {
     public boolean unfollowArtist(Long artistId) {
         try {
             Long userId = Objects.requireNonNull(SecurityUtils.getPrincipal()).getId();
-            UserEntity follower = userRepository.findById(userId)
-                    .orElseThrow(() -> new EntityNotFoundException("User not found"));
-            UserEntity artist = userRepository.findById(artistId)
-                    .orElseThrow(() -> new EntityNotFoundException("Artist not found"));
-
-            UserArtistFollowId id = new UserArtistFollowId(follower.getId(), artist.getId());
-
-            userArtistFollowRepository.deleteById(id);
-
-
+            UserArtistFollowEntity userArtistFollowEntity = userArtistFollowRepository.findByArtist_IdAndFollower_Id(artistId, userId);
+            userArtistFollowRepository.delete(userArtistFollowEntity);
             return true;
         } catch (Exception e) {
             e.printStackTrace();

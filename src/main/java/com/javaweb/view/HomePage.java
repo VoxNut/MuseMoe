@@ -24,10 +24,11 @@ import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
-import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Slf4j
@@ -594,7 +595,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                     MiniMusicPlayerGUI.getInstance().addWindowListener(new WindowAdapter() {
                         @Override
                         public void windowClosing(WindowEvent e) {
-                            // Hide the window instead of disposing it
                             MiniMusicPlayerGUI.getInstance().setVisible(false);
                         }
                     });
@@ -1014,16 +1014,12 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (SwingUtilities.isLeftMouseButton(e)) {
-                    try {
-                        log.info("Local song clicked: {}", song.getTitle());
-                        playerFacade.loadLocalSong(song);
-                    } catch (IOException ex) {
-                        log.error("Error playing local song: {}", ex.getMessage(), ex);
-                        GuiUtil.showErrorMessageDialog(HomePage.this, "Error playing local song");
-                    }
+                    log.info("Local song clicked: {}", song.getTitle());
+                    playerFacade.loadLocalSong(song);
                 }
             }
         });
+
 
         return songPanel;
     }
@@ -1034,11 +1030,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         // Play option
         JMenuItem playItem = GuiUtil.createMenuItem("Play");
         playItem.addActionListener(e -> {
-            try {
-                playerFacade.loadLocalSong(song);
-            } catch (IOException ex) {
-                GuiUtil.showToast(SwingUtilities.getWindowAncestor(component), "Error playing local song");
-            }
+            playerFacade.loadLocalSong(song);
         });
         contextMenu.add(playItem);
 
@@ -1171,10 +1163,10 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             @Override
             public void mouseClicked(MouseEvent e) {
                 log.info("Liked Songs collection clicked");
-                playerFacade.setCurrentPlaylist(likedSongsPlaylist);
                 if (!likedSongsPlaylist.getSongs().isEmpty()) {
-                    playerFacade.loadSong(likedSongsPlaylist.getSongs().getFirst());
+                    playerFacade.loadSongWithContext(likedSongsPlaylist.getSongs().getFirst(), likedSongsPlaylist, MusicPlayerFacade.PlaylistSourceType.LIKED_SONGS);
                 }
+
             }
         });
 
@@ -1218,9 +1210,18 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             @Override
             public void mouseClicked(MouseEvent e) {
                 log.info("Playlist clicked: {}", playlist.getName());
-                playerFacade.setCurrentPlaylist(playlist);
                 if (!playlist.getSongs().isEmpty()) {
-                    playerFacade.loadSong(playlist.getSongs().getFirst());
+                    playerFacade.loadSongWithContext(playlist.getSongs().getFirst(), playlist, MusicPlayerFacade.PlaylistSourceType.USER_PLAYLIST);
+                }
+            }
+        });
+
+        coverLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    log.info("playlist clicked: {}", playlist.getName());
+                    navigateToPlaylistView(playlist, MusicPlayerFacade.PlaylistSourceType.USER_PLAYLIST);
                 }
             }
         });
@@ -1228,7 +1229,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         return playlistPanel;
     }
 
-    private JPanel createSongPanel(SongDTO song) {
+    private JPanel createSongPanel(SongDTO song, PlaylistDTO likedSongs) {
         JPanel songPanel = GuiUtil.createPanel(new BorderLayout(10, 0));
         songPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
 
@@ -1315,11 +1316,25 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                         Component clickedComponent = SwingUtilities.getDeepestComponentAt(songPanel, e.getX(), e.getY());
                         if (clickedComponent != heartButton) {
                             log.info("Song clicked: {}", song.getTitle());
-                            playerFacade.loadSong(song);
+                            playerFacade.loadSongWithContext(song, likedSongs, MusicPlayerFacade.PlaylistSourceType.LIKED_SONGS);
                         }
                     }
                 }
             });
+
+            coverLabel.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    if (SwingUtilities.isLeftMouseButton(e)) {
+                        Component clickedComponent = SwingUtilities.getDeepestComponentAt(songPanel, e.getX(), e.getY());
+                        if (!(clickedComponent instanceof JButton)) {
+                            log.info("Song clicked: {}", song.getTitle());
+                            navigateToSongDetailsView(song);
+                        }
+                    }
+                }
+            });
+
         }
 
         songPanel.add(coverLabel, BorderLayout.WEST);
@@ -1363,6 +1378,13 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         // Add hover effect
         GuiUtil.addHoverEffect(artistPanel);
 
+        artistProfile.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                log.info("Artist clicked: {}", artist.getStageName());
+                navigateToArtistView(artist);
+            }
+        });
 
         return artistPanel;
     }
@@ -1439,56 +1461,67 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         searchResultsPanel.setName("searchResults");
         centerCardPanel.add(searchResultsPanel, "searchResults");
 
-        keyEventDispatcher = e -> {
+        JPanel albumViewPanel = new AlbumViewPanel();
+        albumViewPanel.setName("albumView");
+        centerCardPanel.add(albumViewPanel, "albumView");
 
+        JPanel songDetailsPanel = new SongDetailsPanel();
+        songDetailsPanel.setName("songDetails");
+        centerCardPanel.add(songDetailsPanel, "songDetails");
+
+        JPanel artistProfilePanel = new ArtistProfilePanel();
+        artistProfilePanel.setName("artistProfile");
+        centerCardPanel.add(artistProfilePanel, "artistProfile");
+
+        keyEventDispatcher = e -> {
             if (e.getID() == KeyEvent.KEY_PRESSED) {
-                // Do nothing when search field gain focus
                 if (searchField.hasFocus()) {
                     return false;
                 }
-                // Shift+V to toggle visualizer
-                if (e.getKeyCode() == KeyEvent.VK_V && e.isShiftDown()) {
-                    toggleVisualizer();
-                    return true;
-                }
-                // Press H to toggle home
-                if (e.getKeyCode() == KeyEvent.VK_H) {
-                    toggleHome();
-                    return true;
-                }
-
-                // Shift+C to toggle commit view
-                if (e.getKeyCode() == KeyEvent.VK_C && e.isShiftDown()) {
-                    toggleCommitPanel();
-                    return true;
-                }
-
-                if (e.getKeyCode() == KeyEvent.VK_B && visualizerActive) {
-                    toggleVisualizerBands();
-                    return true;
-                }
-
-                if (e.getKeyCode() == KeyEvent.VK_SLASH && e.isShiftDown()) {
-                    toggleInstructionPanel();
-                    return true;
-                }
-
-
-                // Pressing 'K' focuses the search field
-                if ((e.getKeyCode() == KeyEvent.VK_K || e.getKeyCode() == KeyEvent.VK_SLASH) &&
-                        !searchField.hasFocus() && !e.isShiftDown()) {
-                    SwingUtilities.invokeLater(() -> {
-                        searchField.requestFocusInWindow();
-                        if (searchField.getText().equals("What do you want to muse?...")) {
-                            searchField.selectAll();
+                switch (e.getKeyCode()) {
+                    case KeyEvent.VK_LEFT -> {
+                        handleNavigationBack();
+                        return true;
+                    }
+                    case KeyEvent.VK_RIGHT -> {
+                        handleNavigationForward();
+                        return true;
+                    }
+                    case KeyEvent.VK_V -> {
+                        if (e.isShiftDown()) {
+                            toggleVisualizer();
+                            return true;
                         }
-                    });
-                    return true;
+                    }
+                    case KeyEvent.VK_H -> {
+                        toggleHome();
+                        return true;
+                    }
+                    case KeyEvent.VK_C -> {
+                        if (e.isShiftDown()) {
+                            toggleCommitPanel();
+                            return true;
+                        }
+                    }
+                    case KeyEvent.VK_SLASH -> {
+                        if (e.isShiftDown()) {
+                            toggleInstructionPanel();
+                            return true;
+                        }
+                    }
+                    case KeyEvent.VK_K -> {
+                        SwingUtilities.invokeLater(() -> {
+                            searchField.requestFocusInWindow();
+                            if (searchField.getText().equals("What do you want to muse?...")) {
+                                searchField.selectAll();
+                            }
+                        });
+                        return true;
+                    }
                 }
             }
             return false;
         };
-
         // Add global keyboard listener for toggling between views
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(keyEventDispatcher);
 
@@ -1725,6 +1758,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             protected List<SongDTO> doInBackground() {
                 try {
                     List<SongLikesDTO> songLikesDTOList = CommonApiUtil.findAllSongLikes();
+
                     return songLikesDTOList.stream()
                             .map(SongLikesDTO::getSongDTO)
                             .toList();
@@ -1756,9 +1790,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                         recentLabelPanel.add(recentLabel, BorderLayout.WEST);
                         targetContainer.add(recentLabelPanel);
                         targetContainer.add(Box.createVerticalStrut(5));
-
+                        PlaylistDTO playlistDTO = playerFacade.convertSongListToPlaylist(likedSongs, "Liked Songs");
                         for (int i = 0; i < Math.min(5, likedSongs.size()); i++) {
-                            targetContainer.add(createSongPanel(likedSongs.get(i)));
+                            targetContainer.add(createSongPanel(likedSongs.get(i), playlistDTO));
                             targetContainer.add(Box.createVerticalStrut(5));
                         }
                     }
@@ -1783,6 +1817,105 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             }
         };
         worker.execute();
+    }
+
+
+    public void navigateToAlbumView(AlbumDTO album) {
+        AlbumViewPanel albumViewPanel = GuiUtil.findFirstComponentByType(
+                centerCardPanel,
+                AlbumViewPanel.class,
+                panel -> true
+        );
+
+        if (albumViewPanel != null) {
+            albumViewPanel.displayAlbum(album);
+
+            CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
+            cardLayout.show(centerCardPanel, "albumView");
+
+            visualizerActive = false;
+            commitPanelActive = false;
+            instructionPanelActive = false;
+
+            Map<String, Object> navigationData = new HashMap<>();
+            navigationData.put(NavigationDestination.ALBUM_DATA, album);
+
+            navigationManager.navigateTo(NavigationDestination.ALBUM_VIEW, navigationData);
+
+            log.info("Navigated to album view: {}", album.getTitle());
+        }
+    }
+
+    public void navigateToArtistView(ArtistDTO artist) {
+        ArtistProfilePanel artistProfilePanel = GuiUtil.findFirstComponentByType(
+                centerCardPanel,
+                ArtistProfilePanel.class,
+                panel -> true
+        );
+
+        if (artistProfilePanel != null) {
+            artistProfilePanel.displayArtist(artist);
+            CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
+            cardLayout.show(centerCardPanel, "artistProfile");
+
+            visualizerActive = false;
+            commitPanelActive = false;
+            instructionPanelActive = false;
+
+            Map<String, Object> navigationData = new HashMap<>();
+            navigationData.put(NavigationDestination.ARTIST_DATA, "Artist: " + artist.getStageName());
+            navigationManager.navigateTo(NavigationDestination.ARTIST_PROFILE, navigationData);
+        }
+    }
+
+    public void navigateToPlaylistView(PlaylistDTO playlist, MusicPlayerFacade.PlaylistSourceType sourceType) {
+        AlbumViewPanel albumViewPanel = GuiUtil.findFirstComponentByType(
+                centerCardPanel,
+                AlbumViewPanel.class,
+                panel -> true
+        );
+
+        if (albumViewPanel != null) {
+            albumViewPanel.displayPlaylist(playlist, sourceType);
+
+            CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
+            cardLayout.show(centerCardPanel, "albumView");
+
+            visualizerActive = false;
+            commitPanelActive = false;
+            instructionPanelActive = false;
+
+            Map<String, Object> navigationData = new HashMap<>();
+            navigationData.put(NavigationDestination.PLAYLIST_DATA, playlist);
+            navigationData.put(NavigationDestination.PLAYLIST_SOURCE_TYPE, sourceType);
+
+            navigationManager.navigateTo(NavigationDestination.ALBUM_VIEW, navigationData);
+
+            log.info("Navigated to playlist view: {}", playlist.getName());
+        }
+    }
+
+    public void navigateToSongDetailsView(SongDTO song) {
+        SongDetailsPanel songDetailsPanel = GuiUtil.findFirstComponentByType(
+                centerCardPanel,
+                SongDetailsPanel.class,
+                panel -> true
+        );
+
+        if (songDetailsPanel != null) {
+            songDetailsPanel.displaySong(song);
+            CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
+            cardLayout.show(centerCardPanel, "songDetails");
+
+            visualizerActive = false;
+            commitPanelActive = false;
+            instructionPanelActive = false;
+
+            Map<String, Object> navigationData = new HashMap<>();
+            navigationData.put(NavigationDestination.SONG_DATA, song);
+            navigationManager.navigateTo(NavigationDestination.SONG_DETAILS, navigationData);
+        }
+
     }
 
     private void applyNavigationState(NavigationManager.NavigationItem item) {
@@ -1817,6 +1950,49 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
             case NavigationDestination.SEARCH_RESULTS -> {
                 cardLayout.show(centerCardPanel, "searchResults");
+                visualizerActive = false;
+                commitPanelActive = false;
+                instructionPanelActive = false;
+            }
+
+            case NavigationDestination.SONG_DETAILS -> {
+                cardLayout.show(centerCardPanel, "songDetails");
+                visualizerActive = false;
+                commitPanelActive = false;
+                instructionPanelActive = false;
+            }
+
+            case NavigationDestination.ARTIST_PROFILE -> {
+                cardLayout.show(centerCardPanel, "artistProfile");
+                visualizerActive = false;
+                commitPanelActive = false;
+                instructionPanelActive = false;
+            }
+
+            case NavigationDestination.ALBUM_VIEW -> {
+                if (item.data() instanceof Map) {
+                    Map<String, Object> navigationData = (Map<String, Object>) item.data();
+                    AlbumViewPanel albumViewPanel = GuiUtil.findFirstComponentByType(
+                            centerCardPanel,
+                            AlbumViewPanel.class,
+                            panel -> true
+                    );
+
+                    if (albumViewPanel != null) {
+                        if (navigationData.containsKey(NavigationDestination.ALBUM_DATA)) {
+                            AlbumDTO album = (AlbumDTO) navigationData.get(NavigationDestination.ALBUM_DATA);
+                            albumViewPanel.displayAlbum(album);
+                        } else if (navigationData.containsKey(NavigationDestination.PLAYLIST_DATA) &&
+                                navigationData.containsKey(NavigationDestination.PLAYLIST_SOURCE_TYPE)) {
+                            PlaylistDTO playlist = (PlaylistDTO) navigationData.get(NavigationDestination.PLAYLIST_DATA);
+                            MusicPlayerFacade.PlaylistSourceType sourceType =
+                                    (MusicPlayerFacade.PlaylistSourceType) navigationData.get(NavigationDestination.PLAYLIST_SOURCE_TYPE);
+                            albumViewPanel.displayPlaylist(playlist, sourceType);
+                        }
+                    }
+                }
+
+                cardLayout.show(centerCardPanel, "albumView");
                 visualizerActive = false;
                 commitPanelActive = false;
                 instructionPanelActive = false;

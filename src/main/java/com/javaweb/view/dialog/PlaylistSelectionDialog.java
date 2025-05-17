@@ -1,5 +1,6 @@
 package com.javaweb.view.dialog;
 
+import com.javaweb.constant.AppConstant;
 import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.utils.CommonApiUtil;
@@ -15,6 +16,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.Collections;
 import java.util.List;
 
 @Slf4j
@@ -26,8 +28,8 @@ public class PlaylistSelectionDialog extends JDialog implements ThemeChangeListe
     private Color backgroundColor = ThemeManager.getInstance().getBackgroundColor();
     private Color accentColor = ThemeManager.getInstance().getAccentColor();
 
-    public PlaylistSelectionDialog(Window parent, SongDTO song) {
-        super(parent, "Add to Playlist", Dialog.ModalityType.APPLICATION_MODAL);
+    public PlaylistSelectionDialog(Component parent, SongDTO song) {
+        super((Window) parent, "Add to Playlist", Dialog.ModalityType.APPLICATION_MODAL);
         this.song = song;
         this.playerFacade = com.javaweb.App.getBean(MusicPlayerFacade.class);
 
@@ -111,7 +113,7 @@ public class PlaylistSelectionDialog extends JDialog implements ThemeChangeListe
         if (!playlist.getSongs().isEmpty()) {
             playerFacade.populateSongImage(playlist.getFirstSong(), coverLabel::setLoadedImage);
         } else {
-            coverLabel.setLoadedImage(GuiUtil.createBufferImage(com.javaweb.constant.AppConstant.DEFAULT_COVER_PATH));
+            coverLabel.setLoadedImage(GuiUtil.createBufferImage(AppConstant.DEFAULT_COVER_PATH));
         }
 
         // Playlist info
@@ -137,7 +139,8 @@ public class PlaylistSelectionDialog extends JDialog implements ThemeChangeListe
         panel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                boolean success = CommonApiUtil.addSongToPlaylist(playlist.getId(), song.getId());
+                playlist.setSongIds(Collections.singletonList(song.getId()));
+                boolean success = CommonApiUtil.addSongToPlaylist(playlist);
                 if (success) {
                     GuiUtil.showToast(PlaylistSelectionDialog.this,
                             "Added to " + playlist.getName());

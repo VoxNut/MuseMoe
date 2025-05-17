@@ -9,6 +9,7 @@ import com.javaweb.view.user.UserSessionManager;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
+import java.awt.*;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -31,7 +32,7 @@ public class SongDownloadUtil {
                 roles.contains(AppConstant.ROLE_ADMIN);
     }
 
-    public static void downloadSong(JComponent parentComponent, SongDTO song) {
+    public static void downloadSong(Component parentComponent, SongDTO song) {
         if (!hasDownloadPermission()) {
             GuiUtil.showToast(parentComponent,
                     "You need a premium subscription to download songs");
@@ -129,7 +130,7 @@ public class SongDownloadUtil {
     }
 
 
-    private static void downloadSongInBackground(JComponent parentComponent, SongDTO song, File targetFile) {
+    private static void downloadSongInBackground(Component parentComponent, SongDTO song, File targetFile) {
         JDialog progressDialog = GuiUtil.createProgressDialog(
                 SwingUtilities.getWindowAncestor(parentComponent),
                 "Downloading Song",
@@ -223,7 +224,7 @@ public class SongDownloadUtil {
         }
     }
 
-    private static String sanitizeFileName(String input) {
+    public static String sanitizeFileName(String input) {
         return input.replaceAll("[\\\\/:*?\"<>|]", "_");
     }
 }

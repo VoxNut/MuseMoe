@@ -32,4 +32,6 @@ public interface SongService {
 
     List<SongDTO> searchSongs(String query, int limit);
 
+    List<SongDTO> fetchPopularTracksByArtistId(Long artistId, int limit);
+
 }

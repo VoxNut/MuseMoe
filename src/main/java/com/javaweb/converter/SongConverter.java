@@ -32,6 +32,7 @@ public class SongConverter implements EntityConverter<SongEntity, SongRequestDTO
     private final GoogleDriveService googleDriveService;
     private final StreamingAudioPlayer streamingPlayer;
     private final StreamingMediaService streamingMediaService;
+    private final ArtistConverter artistConverter;
 
 
     @Override
@@ -63,6 +64,10 @@ public class SongConverter implements EntityConverter<SongEntity, SongRequestDTO
             dto.setArtistIds(entity.getArtists().stream()
                     .map(ArtistEntity::getId)
                     .toList());
+
+            dto.setArtistDTOs(entity.getArtists().stream()
+                    .map(artistConverter::toDTO)
+                    .toList());
         }
 
         if (entity.getFrame() != null && entity.getDuration() != null) {
@@ -70,6 +75,11 @@ public class SongConverter implements EntityConverter<SongEntity, SongRequestDTO
             dto.setLengthInMilliseconds(dto.getDuration() * 1000);
             dto.setFrameRatePerMilliseconds(getFrameRatePerMilliseconds(dto));
         }
+
+        if (entity.getLyrics() != null) {
+            dto.setSongLyrics(entity.getLyrics().getContent());
+        }
+
 
         return dto;
     }

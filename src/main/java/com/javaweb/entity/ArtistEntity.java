@@ -34,4 +34,8 @@ public class ArtistEntity extends BaseEntity {
     private Set<SongEntity> songs = new HashSet<>();
 
 
+    @OneToMany(mappedBy = "artist")
+    private Set<UserArtistFollowEntity> followers;
+
+
 }

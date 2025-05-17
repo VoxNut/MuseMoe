@@ -60,7 +60,7 @@ public class UserEntity extends BaseEntity {
     private Set<QueueEntity> queues = new HashSet<>();
 
     @OneToMany(mappedBy = "follower")
-    private Set<UserArtistFollowEntity> following = new HashSet<>();
+    private Set<UserArtistFollowEntity> artists;
 
 
 }

@@ -16,8 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
 
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -36,11 +35,16 @@ public class AlbumConverter implements EntityConverter<AlbumEntity, AlbumRequest
         AlbumDTO dto = modelMapper.map(entity, AlbumDTO.class);
 
         if (entity.getSongs() != null) {
-            Set<SongDTO> songDTOS = entity.getSongs()
+            List<SongDTO> songDTOS = entity.getSongs()
                     .stream()
                     .map(songConverter::toDTO)
-                    .collect(Collectors.toSet());
+                    .toList();
+
             dto.setSongDTOS(songDTOS);
+
+            dto.setAlbumLength(formatDuration(songDTOS.stream()
+                    .mapToInt(SongDTO::getDuration)
+                    .sum()));
         }
 
 
@@ -92,5 +96,12 @@ public class AlbumConverter implements EntityConverter<AlbumEntity, AlbumRequest
         }
 
         return entity;
+    }
+
+
+    private String formatDuration(int totalDuration) {
+        long minutes = totalDuration / 60;
+        long remainingSeconds = totalDuration % 60;
+        return String.format("%02d:%02d", minutes, remainingSeconds);
     }
 }

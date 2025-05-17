@@ -53,15 +53,16 @@ public class PlaylistAPI {
         }
     }
 
-    @PostMapping("/add_to_playlist")
-    public ResponseEntity<Boolean> addSongToPlaylist(@RequestBody Map<String, Object> request) {
+    @PostMapping("/add_songs_to_playlist")
+    public ResponseEntity<Boolean> addSongsToPlaylist(@RequestBody PlaylistDTO playlistDTO) {
 
-        Long playlistId = request.containsKey("playlistId") ? Long.valueOf(request.get("playlistId").toString()) : null;
-        Long songId = request.containsKey("songId") ? Long.valueOf(request.get("songId").toString()) : null;
+        Long playlistId = playlistDTO.getId();
+        List<Long> songIds = playlistDTO.getSongIds();
 
-        boolean success = playlistService.addSongToPlaylist(playlistId, songId);
+        boolean success = playlistService.addSongToPlaylist(playlistId, songIds);
         return ResponseEntity.ok(success);
     }
+
 
     @PostMapping("/create")
     public ResponseEntity<PlaylistDTO> createPlaylist(@RequestBody Map<String, Object> request) {

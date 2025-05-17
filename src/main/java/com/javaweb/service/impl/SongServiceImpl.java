@@ -30,7 +30,7 @@ public class SongServiceImpl implements SongService {
     private final SongRepository songRepository;
 
     private final SongConverter songConverter;
-    
+
 
     private final TagService tagService;
 
@@ -209,6 +209,16 @@ public class SongServiceImpl implements SongService {
         return sharedSearchService.findSongsByQuery(query, limit);
     }
 
+    @Override
+    public List<SongDTO> fetchPopularTracksByArtistId(Long artistId, int limit) {
+        try {
+            List<SongEntity> songEntities = songRepository.fetchPopularTracksByArtistId(artistId, limit);
+            return songEntities.stream().map(songConverter::toDTO).collect(Collectors.toList());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return List.of();
+        }
 
+    }
 }
 

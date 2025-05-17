@@ -160,5 +160,14 @@ public class SongAPI {
         return ResponseEntity.ok(results);
     }
 
+    @GetMapping("/popular_tracks_by_artist")
+    public ResponseEntity<List<SongDTO>> fetchPopularTracksByArtistId(
+            @RequestParam Long artistId,
+            @RequestParam(defaultValue = "5") int limit) {
+
+        List<SongDTO> results = songService.fetchPopularTracksByArtistId(artistId, limit);
+        return ResponseEntity.ok(results);
+    }
+
 
 }

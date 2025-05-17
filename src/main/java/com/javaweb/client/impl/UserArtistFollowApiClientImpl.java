@@ -24,12 +24,31 @@ public class UserArtistFollowApiClientImpl implements UserArtistFollowApiClient 
 
     @Override
     public Boolean followArtist(Long artistId) {
-        return null;
+        try {
+            String url = apiConfig.buildFollowsUrl("/artists?artistId=" + artistId);
+
+            return apiClient.post(
+                    url,
+                    ArtistDTO.builder()
+                            .id(artistId)
+                            .build(),
+                    Boolean.class);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     @Override
     public Boolean unfollowArtist(Long artistId) {
-        return null;
+        try {
+            String url = apiConfig.buildFollowsUrl("/artists?artistId=" + artistId);
+            return apiClient.delete(url, Boolean.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     @Override

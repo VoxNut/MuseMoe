@@ -53,5 +53,38 @@ public class ArtistAPI {
         }
     }
 
+    @GetMapping("/artists-by-song")
+    public ResponseEntity<List<ArtistDTO>> findArtistsBySongId(@RequestParam Long songId) {
+        try {
+            List<ArtistDTO> results = artistService.findArtistsBySongId(songId);
+            return ResponseEntity.ok(results);
+        } catch (Exception e) {
+            log.error("Error searching artists", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/artist_followed")
+    public ResponseEntity<Boolean> checkArtistFollowed(@RequestParam Long artistId) {
+        try {
+            Boolean res = artistService.checkArtistFollowed(artistId);
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            log.error("Error searching artists", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/artist")
+    public ResponseEntity<ArtistDTO> findArtistById(@RequestParam Long artistId) {
+        try {
+            ArtistDTO res = artistService.findArtistById(artistId);
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            log.error("Error searching artists", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
 
 }

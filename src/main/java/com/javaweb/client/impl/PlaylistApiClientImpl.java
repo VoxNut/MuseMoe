@@ -32,24 +32,6 @@ public class PlaylistApiClientImpl implements PlaylistApiClient {
         }
     }
 
-    @Override
-    public boolean addSongToPlaylist(Long playlistId, Long songId) {
-        try {
-            String url = apiConfig.buildPlaylistUrl("/add_to_playlist");
-            Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("playlistId", playlistId);
-            if (songId != null) {
-                requestBody.put("songId", songId);
-            }
-
-            Boolean result = apiClient.post(url, requestBody, Boolean.class);
-
-            return result != null && result;
-        } catch (Exception e) {
-            log.error("Error adding song to playlist: {}", e.getMessage(), e);
-            return false;
-        }
-    }
 
     @Override
     public PlaylistDTO createPlaylist(String name, Long songId) {
@@ -79,6 +61,19 @@ public class PlaylistApiClientImpl implements PlaylistApiClient {
         } catch (Exception e) {
             e.printStackTrace();
             return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public boolean addSongsToPlaylist(PlaylistDTO playlistDTO) {
+        try {
+            String url = apiConfig.buildPlaylistUrl("/add_songs_to_playlist");
+
+            Boolean result = apiClient.post(url, playlistDTO, Boolean.class);
+            return result != null && result;
+        } catch (Exception e) {
+            log.error("Error adding songs to playlist: {}", e.getMessage(), e);
+            return false;
         }
     }
 

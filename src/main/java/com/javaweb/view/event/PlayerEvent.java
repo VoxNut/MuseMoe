@@ -19,8 +19,6 @@ public record PlayerEvent(EventType type, Object data) {
         SLIDER_DRAGGING,
         SONG_LIKED_CHANGED,
         TOGGLE_CAVA,
-        LOAD_LOCAL_SONG,
-        SONG_ALBUM,
     }
 
 }

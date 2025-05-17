@@ -147,6 +147,18 @@ class SongApiClientImpl implements SongApiClient {
     }
 
     @Override
+    public List<SongDTO> fetchPopularTracksByArtistId(Long artistId) {
+        try {
+            String url = apiConfig.buildSongUrl("/popular_tracks_by_artist?artistId=" + artistId);
+            List<SongDTO> songs = apiClient.getList(url, SongDTO.class);
+            return songs;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
     public List<SongDTO> searchSongs(String query) {
         return List.of();
     }

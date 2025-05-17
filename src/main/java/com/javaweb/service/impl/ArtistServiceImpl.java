@@ -10,9 +10,11 @@ import com.javaweb.model.dto.ArtistDTO;
 import com.javaweb.model.request.ArtistRequestDTO;
 import com.javaweb.repository.ArtistRepository;
 import com.javaweb.repository.RoleRepository;
+import com.javaweb.repository.UserArtistFollowRepository;
 import com.javaweb.repository.UserRepository;
 import com.javaweb.service.ArtistService;
 import com.javaweb.service.PasswordService;
+import com.javaweb.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -20,10 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -37,9 +36,11 @@ public class ArtistServiceImpl implements ArtistService {
 
     private final GoogleDriveService googleDriveService;
     private final PasswordService passwordService;
-    
+
 
     private final SharedSearchService sharedSearchService;
+
+    private final UserArtistFollowRepository userArtistFollowRepository;
 
 
     @Override
@@ -51,6 +52,23 @@ public class ArtistServiceImpl implements ArtistService {
                         .toList();
         List<Long> artistIds = artistDTOS.stream().map(ArtistDTO::getId).toList();
         return artistIds;
+    }
+
+    @Override
+    public List<ArtistDTO> findArtistsBySongId(Long songId) {
+        List<ArtistDTO> artistDTOS =
+                artistRepository.findBySongsId(songId)
+                        .stream()
+                        .map(artistConverter::toDTO)
+                        .toList();
+        return artistDTOS;
+    }
+
+    @Override
+    public ArtistDTO findArtistById(Long artistId) {
+        return artistConverter.toDTO(artistRepository.findById(artistId)
+                .orElseThrow(() -> new RuntimeException("Artist with ID " + artistId + " not found"))
+        );
     }
 
     @Override
@@ -163,6 +181,18 @@ public class ArtistServiceImpl implements ArtistService {
         } catch (Exception e) {
             log.error("Error searching artists: {}", e.getMessage(), e);
             return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public Boolean checkArtistFollowed(Long artistId) {
+        try {
+            Long userId = Objects.requireNonNull(SecurityUtils.getPrincipal()).getId();
+            boolean res = userArtistFollowRepository.existsByArtist_IdAndFollower_Id(artistId, userId);
+            return res;
+        } catch (Exception e) {
+            log.error("Error checking artist followed: {}", e.getMessage(), e);
+            return false;
         }
     }
 }

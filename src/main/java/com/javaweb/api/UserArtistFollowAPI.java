@@ -9,7 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/follows")
@@ -40,10 +39,10 @@ public class UserArtistFollowAPI {
         }
     }
 
-    @PostMapping("/artists/{artistId}")
-    public ResponseEntity<Boolean> followArtist(@PathVariable Long artistId) {
+    @PostMapping("/artists")
+    public ResponseEntity<Boolean> followArtist(@RequestBody ArtistDTO artistDTO) {
         try {
-            boolean result = userArtistFollowService.followArtist(artistId);
+            boolean result = userArtistFollowService.followArtist(artistDTO.getId());
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             e.printStackTrace();
@@ -51,25 +50,8 @@ public class UserArtistFollowAPI {
         }
     }
 
-    @PostMapping("/artists")
-    public ResponseEntity<?> followArtists(@RequestBody List<Long> artistIds) {
-        try {
-            return ResponseEntity.ok().body(Map.of(
-                            "success: ", userArtistFollowService.followArtists(artistIds),
-                            "message: ", "Successfully followed artists"
-                    )
-            );
-        } catch (Exception e) {
-            return ResponseEntity.ok().body(Map.of(
-                            "success: ", userArtistFollowService.followArtists(artistIds),
-                            "message: ", "Failed to follow artists: " + e.getMessage()
-                    )
-            );
-        }
-    }
-
-    @DeleteMapping("/artists/{artistId}")
-    public ResponseEntity<Boolean> unfollowArtist(@PathVariable Long artistId) {
+    @DeleteMapping("/artists")
+    public ResponseEntity<Boolean> unfollowArtist(@RequestParam Long artistId) {
         try {
             boolean result = userArtistFollowService.unfollowArtist(artistId);
             return ResponseEntity.ok(result);
@@ -78,6 +60,23 @@ public class UserArtistFollowAPI {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+//    @PostMapping("/artists")
+//    public ResponseEntity<?> followArtists(@RequestBody List<Long> artistIds) {
+//        try {
+//            return ResponseEntity.ok().body(Map.of(
+//                            "success: ", userArtistFollowService.followArtists(artistIds),
+//                            "message: ", "Successfully followed artists"
+//                    )
+//            );
+//        } catch (Exception e) {
+//            return ResponseEntity.ok().body(Map.of(
+//                            "success: ", userArtistFollowService.followArtists(artistIds),
+//                            "message: ", "Failed to follow artists: " + e.getMessage()
+//                    )
+//            );
+//        }
+//    }
 
 
 }

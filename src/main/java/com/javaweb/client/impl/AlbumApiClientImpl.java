@@ -27,4 +27,46 @@ public class AlbumApiClientImpl implements AlbumApiClient {
             return Collections.emptyList();
         }
     }
+
+    @Override
+    public AlbumDTO getAlbumById(Long albumId) {
+        try {
+            String url = apiConfig.buildAlbumsUrl("/album?albumId=" + albumId);
+            return apiClient.get(url, AlbumDTO.class);
+        } catch (Exception e) {
+            log.error("Error searching albums: {}", e.getMessage(), e);
+            return null;
+        }
+    }
+
+    @Override
+    public List<AlbumDTO> getRecommendedAlbums(int limit) {
+        try {
+            String url = apiConfig.buildAlbumsUrl("/recommendations?limit=" + limit);
+            return apiClient.getList(url, AlbumDTO.class);
+        } catch (Exception e) {
+            log.error("Error fetching recommended albums: {}", e.getMessage(), e);
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public AlbumDTO getAlbumContainsThisSong(Long songId) {
+        try {
+            String url = apiConfig.buildAlbumsUrl("/albums?songId=" + songId);
+            return apiClient.get(url, AlbumDTO.class);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    @Override
+    public List<AlbumDTO> getAlbumsByArtistId(Long artistId) {
+        try {
+            String url = apiConfig.buildAlbumsUrl("/albums-by-artist?artistId=" + artistId);
+            return apiClient.getList(url, AlbumDTO.class);
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
+    }
 }

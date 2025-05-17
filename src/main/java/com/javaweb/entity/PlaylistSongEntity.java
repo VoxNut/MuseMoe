@@ -3,6 +3,7 @@ package com.javaweb.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
@@ -11,6 +12,7 @@ import java.time.LocalDateTime;
 @Table(name = "playlist_song")
 @Getter
 @Setter
+@NoArgsConstructor
 public class PlaylistSongEntity {
 
     @EmbeddedId
@@ -33,6 +35,22 @@ public class PlaylistSongEntity {
     @MapsId("songId")
     @JoinColumn(name = "song_id")
     private SongEntity song;
+
+    public PlaylistSongEntity(PlaylistEntity playlist, SongEntity song) {
+        this.playlist = playlist;
+        this.song = song;
+        this.id = new PlaylistSongId(playlist.getId(), song.getId());
+        this.addedAt = LocalDateTime.now();
+        this.position = 1;
+    }
+
+    public PlaylistSongEntity(PlaylistEntity playlist, SongEntity song, int position) {
+        this.playlist = playlist;
+        this.song = song;
+        this.id = new PlaylistSongId(playlist.getId(), song.getId());
+        this.addedAt = LocalDateTime.now();
+        this.position = position + 1;
+    }
 
 
 }

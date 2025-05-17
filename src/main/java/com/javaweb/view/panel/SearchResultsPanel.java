@@ -9,6 +9,7 @@ import com.javaweb.model.dto.SongDTO;
 import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
 import com.javaweb.utils.StringUtils;
+import com.javaweb.view.HomePage;
 import com.javaweb.view.components.AsyncImageLabel;
 import com.javaweb.view.event.MusicPlayerFacade;
 import com.javaweb.view.event.PlayerEvent;
@@ -22,7 +23,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -321,11 +321,7 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
                 }
             } else {
                 if (song.getIsLocalFile()) {
-                    try {
-                        playerFacade.loadLocalSong(song);
-                    } catch (IOException ex) {
-                        log.error("Error loading local song: {}", ex.getMessage());
-                    }
+                    playerFacade.loadLocalSong(song);
                 } else {
                     playerFacade.loadSong(song);
                 }
@@ -348,6 +344,21 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
 
         GuiUtil.addHoverEffect(card);
         GuiUtil.addSongContextMenu(card, song);
+
+        card.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    Component clickedComponent = SwingUtilities.getDeepestComponentAt(card, e.getX(), e.getY());
+                    // Only navigate if not clicking on play button
+                    if (!(clickedComponent instanceof JButton)) {
+                        log.info("Song clicked: {}", song.getTitle());
+                        HomePage homePage = (HomePage) SwingUtilities.getWindowAncestor(SearchResultsPanel.this);
+                        homePage.navigateToSongDetailsView(song);
+                    }
+                }
+            }
+        });
 
         return card;
     }
@@ -479,11 +490,7 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
                 }
             } else {
                 if (song.getIsLocalFile()) {
-                    try {
-                        playerFacade.loadLocalSong(song);
-                    } catch (IOException ex) {
-                        log.error("Error loading local song: {}", ex.getMessage());
-                    }
+                    playerFacade.loadLocalSong(song);
                 } else {
                     playerFacade.loadSong(song);
                 }
@@ -524,6 +531,20 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
 
         GuiUtil.addHoverEffect(songPanel);
         GuiUtil.addSongContextMenu(songPanel, song);
+
+        songPanel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    Component clickedComponent = SwingUtilities.getDeepestComponentAt(songPanel, e.getX(), e.getY());
+                    if (!(clickedComponent instanceof JButton)) {
+                        log.info("Song clicked: {}", song.getTitle());
+                        HomePage homePage = (HomePage) SwingUtilities.getWindowAncestor(SearchResultsPanel.this);
+                        homePage.navigateToSongDetailsView(song);
+                    }
+                }
+            }
+        });
 
         return songPanel;
     }
@@ -587,6 +608,17 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
         // Add hover effect
         GuiUtil.addHoverEffect(card);
 
+        profileLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                log.info("Artist clicked: {}", artist.getStageName());
+                HomePage homePage = (HomePage) SwingUtilities.getWindowAncestor(SearchResultsPanel.this);
+                if (homePage != null) {
+                    homePage.navigateToArtistView(artist);
+                }
+            }
+        });
+
         return card;
     }
 
@@ -641,6 +673,19 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
 
         // Add hover effect
         GuiUtil.addHoverEffect(card);
+
+        card.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    log.info("Album clicked: {}", album.getTitle());
+
+                    // Navigate to album view
+                    HomePage homePage = (HomePage) SwingUtilities.getWindowAncestor(SearchResultsPanel.this);
+                    homePage.navigateToAlbumView(album);
+                }
+            }
+        });
 
         return card;
     }
@@ -713,13 +758,20 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
         GuiUtil.addHoverEffect(card);
 
         // Add click handler
+//        card.addMouseListener(new MouseAdapter() {
+//            @Override
+//            public void mouseClicked(MouseEvent e) {
+//                playerFacade.setCurrentPlaylist(playlist);
+//                if (!playlist.getSongs().isEmpty()) {
+//                    playerFacade.loadSongWithContext(playlist.getSongs().getFirst(), playlist, MusicPlayerFacade.PlaylistSourceType.USER_PLAYLIST);
+//                }
+//            }
+//        });
         card.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                playerFacade.setCurrentPlaylist(playlist);
-                if (!playlist.getSongs().isEmpty()) {
-                    playerFacade.loadSong(playlist.getSongs().getFirst());
-                }
+                HomePage homePage = (HomePage) SwingUtilities.getWindowAncestor(SearchResultsPanel.this);
+                homePage.navigateToPlaylistView(playlist, MusicPlayerFacade.PlaylistSourceType.USER_PLAYLIST);
             }
         });
 
@@ -847,17 +899,32 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
                             AppConstant.PAUSE_ICON_PATH,
                             ThemeManager.getInstance().getTextColor(),
                             24, 24));
+                    button.setRolloverIcon(GuiUtil.createColoredIcon(
+                            AppConstant.PAUSE_ICON_PATH,
+                            GuiUtil.lightenColor(ThemeManager.getInstance().getTextColor(), 0.3f),
+                            24, 24)
+                    );
                 } else {
                     button.setIcon(GuiUtil.createColoredIcon(
                             AppConstant.PLAY_ICON_PATH,
                             ThemeManager.getInstance().getTextColor(),
                             24, 24));
+                    button.setRolloverIcon(GuiUtil.createColoredIcon(
+                            AppConstant.PLAY_ICON_PATH,
+                            GuiUtil.lightenColor(ThemeManager.getInstance().getTextColor(), 0.3f),
+                            24, 24)
+                    );
                 }
             } else {
                 button.setIcon(GuiUtil.createColoredIcon(
                         AppConstant.PLAY_ICON_PATH,
                         ThemeManager.getInstance().getTextColor(),
                         24, 24));
+                button.setRolloverIcon(GuiUtil.createColoredIcon(
+                        AppConstant.PLAY_ICON_PATH,
+                        GuiUtil.lightenColor(ThemeManager.getInstance().getTextColor(), 0.3f),
+                        24, 24)
+                );
             }
         }
     }

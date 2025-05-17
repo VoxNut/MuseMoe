@@ -332,7 +332,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
 
 
                 // Fetch all downloaded songs;
-                List<SongDTO> songs = CommonApiUtil.fetchUserDownloadedSongs();
+                List<SongDTO> songs = LocalSongManager.getDownloadedSongs();
 
                 if (songs.isEmpty()) {
                     JOptionPane.showMessageDialog(this, "No songs downloaded!", "Info", JOptionPane.INFORMATION_MESSAGE);
@@ -352,7 +352,8 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
                     SongDTO selectedSong = (SongDTO) evt.getNewValue();
                     songDialog.dispose();
                     // Load the selected song into the music player
-                    playerFacade.loadSong(selectedSong);
+                    playerFacade.loadLocalSong(selectedSong);
+
                 });
 
                 songSelectionPanel.addPropertyChangeListener("cancel",
@@ -484,7 +485,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
 
     }
 
-    public void toggleShuffleButton(boolean enabled) throws IOException {
+    public void toggleShuffleButton(boolean enabled) {
         if (!enabled) {
             shuffleButton.setIcon(GuiUtil.changeButtonIconColor(AppConstant.SHUFFLE_ICON_PATH, ThemeManager.getInstance().getTextColor(), 25, 25).getIcon());
         } else {
@@ -774,7 +775,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
             songPanel.addPropertyChangeListener("songSelected", evt -> {
                 SongDTO selectedSong = (SongDTO) evt.getNewValue();
                 songPlaylistDialog.dispose();
-                playerFacade.loadSong(selectedSong);
+                playerFacade.loadSongWithContext(selectedSong, playlist, MusicPlayerFacade.PlaylistSourceType.USER_PLAYLIST);
             });
 
             songPanel.addPropertyChangeListener("cancel", evt -> {
@@ -818,12 +819,9 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
                     hidePlaylistNameLabel(true);
 
 
-                    try {
-                        toggleShuffleButton(false);
-                    } catch (IOException e) {
+                    toggleShuffleButton(false);
 
-                        throw new RuntimeException(e);
-                    }
+
                 }
                 case SONG_LIKED_CHANGED -> {
                     updateHeartButtonIcon(playerFacade.getCurrentSong());
@@ -840,20 +838,6 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
                     }
                 }
 
-                case LOAD_LOCAL_SONG -> {
-                    playlistNameLabel.setText("Local Songs");
-                    hidePlaylistNameLabel(false);
-                    heartButton.setVisible(false);
-                    outLineHeartButton.setVisible(false);
-                }
-
-                case SONG_ALBUM -> {
-                    String songAlbum = (String) event.data();
-                    Font font = FontUtil.getSpotifyFont(Font.BOLD, 15);
-                    playlistNameLabel.setText(StringUtils.getTruncatedTextByWidth(songAlbum, font, 200));
-                    hidePlaylistNameLabel(false);
-                }
-
                 case REPEAT_MODE_CHANGED -> {
                     try {
                         updateRepeatButtonIcon((RepeatMode) event.data());
@@ -864,21 +848,23 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
 
                 case PLAYLIST_LOADED -> {
                     PlaylistDTO playlist = (PlaylistDTO) event.data();
+
+                    Font font = FontUtil.getSpotifyFont(Font.BOLD, 15);
                     if (playlist != null) {
-                        playlistNameLabel.setText(playlist.getName());
+
+                        playlistNameLabel.setText(StringUtils.getTruncatedTextByWidth(playlist.getName(), font, 200));
+
                         hidePlaylistNameLabel(false);
-                        try {
-                            toggleShuffleButton(true);
-                        } catch (IOException e) {
-                            e.printStackTrace();
+                        toggleShuffleButton(true);
+
+                        if (playlist.getName().equals("Local Songs")) {
+                            heartButton.setVisible(false);
+                            outLineHeartButton.setVisible(false);
                         }
+
                     } else {
                         playlistNameLabel.setVisible(false);
-                        try {
-                            toggleShuffleButton(false);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                        toggleShuffleButton(false);
                     }
                 }
                 case AD_ON -> {

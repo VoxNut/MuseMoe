@@ -8,6 +8,7 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.awt.image.BufferedImage;
+import java.util.List;
 import java.util.Set;
 
 
@@ -21,10 +22,12 @@ public class AlbumDTO extends AbstractDTO {
     private String title;
     private Integer releaseYear;
     private StreamingMediaDTO albumCover;
-    private Set<SongDTO> songDTOS;
+    private List<SongDTO> songDTOS;
     @JsonIgnore
     private BufferedImage albumImage;
     private String imageId;
     private String artistName;
     private Long artistId;
+    private String albumLength;
+
 }

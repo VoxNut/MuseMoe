@@ -43,9 +43,7 @@ import javax.swing.border.*;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import javax.swing.plaf.basic.BasicComboBoxUI;
-import javax.swing.table.JTableHeader;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumn;
+import javax.swing.table.*;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.*;
@@ -68,14 +66,101 @@ public class GuiUtil {
     private static final Map<String, BufferedImage> imageCache = new ConcurrentHashMap<>();
     private static final Set<JPopupMenu> popupMenuRegistry = Collections.synchronizedSet(new HashSet<>());
 
+
+    public static JTable createStyledTable(String[] columnNames, int[] columnWidths) {
+        Color textColor = ThemeManager.getInstance().getTextColor();
+        Color backgroundColor = ThemeManager.getInstance().getBackgroundColor();
+        Color accentColor = ThemeManager.getInstance().getAccentColor();
+
+        DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+
+        JTable table = new JTable(tableModel) {
+            @Override
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+                Component comp = super.prepareRenderer(renderer, row, column);
+
+                Color bg = ThemeManager.getInstance().getBackgroundColor();
+                Color fg = ThemeManager.getInstance().getTextColor();
+                Color accent = ThemeManager.getInstance().getAccentColor();
+
+                boolean isSel = isCellSelected(row, column);
+                if (isSel) {
+                    comp.setBackground(accent);
+                    comp.setForeground(bg);
+                } else if (row % 2 == 0) {
+                    comp.setBackground(GuiUtil.darkenColor(bg, 0.05f));
+                    comp.setForeground(fg);
+                } else {
+                    comp.setBackground(bg);
+                    comp.setForeground(fg);
+                }
+                return comp;
+            }
+        };
+
+        // Style table
+        table.setRowHeight(40);
+        table.setShowGrid(false);
+        table.setIntercellSpacing(new Dimension(0, 0));
+        table.setFillsViewportHeight(true);
+        table.setSelectionBackground(accentColor);
+        table.setSelectionForeground(backgroundColor);
+        table.setOpaque(false);
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+
+        // Style header
+        JTableHeader header = table.getTableHeader();
+        header.setBackground(backgroundColor);
+        header.setForeground(GuiUtil.darkenColor(textColor, 0.3f));
+        header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, GuiUtil.darkenColor(textColor, 0.7f)));
+        header.setFont(FontUtil.getSpotifyFont(Font.BOLD, 12));
+        header.setReorderingAllowed(false);
+
+
+        // Set column widths with proportional values
+        TableColumnModel columnModel = table.getColumnModel();
+        int totalWidth = table.getPreferredSize().width;
+
+        int[] columnWeights = {5, 45, 25, 10, 15};
+
+        for (int i = 0; i < columnModel.getColumnCount(); i++) {
+            TableColumn column = columnModel.getColumn(i);
+            if (columnWidths[i] > 0) {
+                column.setMaxWidth(columnWidths[i]);
+                column.setMinWidth(columnWidths[i]);
+                column.setPreferredWidth(columnWidths[i]);
+            } else {
+                // Proportional width based on weights
+                int preferredWidth = (totalWidth * columnWeights[i]) / 100;
+                column.setPreferredWidth(preferredWidth);
+            }
+        }
+
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+        table.getColumnModel().getColumn(0).setCellRenderer(centerRenderer); // # column
+        table.getColumnModel().getColumn(3).setCellRenderer(centerRenderer); // Plays column
+        table.getColumnModel().getColumn(4).setCellRenderer(centerRenderer); // Duration column
+
+        return table;
+    }
+
     public static void formatTable(JTable table) {
+        Color textColor = ThemeManager.getInstance().getTextColor();
+        Color backgroundColor = ThemeManager.getInstance().getBackgroundColor();
+        Color accentColor = ThemeManager.getInstance().getAccentColor();
         // Add table styling
         table.setRowHeight(30);
         table.setFont(FontUtil.getJetBrainsMonoFont(Font.PLAIN, 16));
-        table.setForeground(ThemeManager.getInstance().getTextColor());
-        table.setBackground(ThemeManager.getInstance().getBackgroundColor());
-        table.setGridColor(AppConstant.BORDER_COLOR);
-        table.setBorder(new LineBorder(AppConstant.BORDER_COLOR));
+        table.setForeground(textColor);
+        table.setBackground(backgroundColor);
+        table.setGridColor(accentColor);
+        table.setBorder(new LineBorder(accentColor));
         table.setFocusable(false);
 
 
@@ -83,8 +168,8 @@ public class GuiUtil {
         JTableHeader header = table.getTableHeader();
         header.setDefaultRenderer(new BorderedHeaderRenderer());
         header.setReorderingAllowed(false);
-        header.setBackground(AppConstant.HEADER_BACKGROUND_COLOR);
-        header.setForeground(AppConstant.TEXT_COLOR);
+        header.setBackground(accentColor);
+        header.setForeground(textColor);
 
         for (int column = 0; column < table.getColumnCount(); column++) {
             TableColumn tableColumn = table.getColumnModel().getColumn(column);
@@ -218,10 +303,6 @@ public class GuiUtil {
         return button;
     }
 
-    public static void isDisableButton(JButton button) {
-        button.setBackground(AppConstant.DISABLE_BACKGROUND_BUTTON);
-        button.setForeground(AppConstant.DISABLE_TEXT_BUTTON);
-    }
 
     public static JButton createButton(String text, int width, int height, float fontSize) {
         JButton button = createButton(text, width, height);
@@ -233,6 +314,12 @@ public class GuiUtil {
     public static JLabel createLabel(String text, Font font) {
         JLabel label = createLabel(text);
         label.setFont(font);
+        return label;
+    }
+
+    public static JLabel createLabel(String text, int position) {
+        JLabel label = createLabel(text);
+        label.setHorizontalAlignment(position);
         return label;
     }
 
@@ -471,15 +558,19 @@ public class GuiUtil {
     }
 
 
-    public static JTextArea createTextArea(String content, int fontStyle, int fontSize) {
+    public static JTextArea createTextArea(String content, Font font) {
         JTextArea textArea = new JTextArea(content);
         textArea.setEditable(false);
         textArea.setOpaque(false);
         textArea.setFocusable(false);
-        textArea.setFont(FontUtil.getMonoSpacedFont(fontStyle, fontSize));
+        textArea.setFont(font);
         textArea.setForeground(ThemeManager.getInstance().getTextColor());
 
         return textArea;
+    }
+
+    public static JTextArea createTextArea(String content) {
+        return createTextArea(content, FontUtil.getMonoSpacedFont(Font.BOLD, 15));
     }
 
 
@@ -1366,11 +1457,6 @@ public class GuiUtil {
         return new CompoundBorder(titledBorder, emptyBorder);
     }
 
-    public static JPanel createPanel(TitledBorder title) {
-        JPanel panel = createPanel();
-        panel.setBorder(title);
-        return panel;
-    }
 
     public static JPanel createPanel(LayoutManager layoutManager, TitledBorder title) {
         JPanel panel = createPanel(layoutManager);
@@ -1429,6 +1515,13 @@ public class GuiUtil {
         int green = (int) Math.max(0, color.getGreen() - 255 * fraction);
         int blue = (int) Math.max(0, color.getBlue() - 255 * fraction);
         return new Color(red, green, blue);
+    }
+
+    public static JSeparator createSeparator() {
+        JSeparator separator = new JSeparator();
+        separator.setPreferredSize(new Dimension(1, 3));
+        separator.setForeground(GuiUtil.darkenColor(ThemeManager.getInstance().getAccentColor(), 0.2f));
+        return separator;
     }
 
 
@@ -1936,6 +2029,40 @@ public class GuiUtil {
         if (container instanceof JScrollPane scrollPane) {
             applyModernScrollBar(scrollPane);
         }
+        if (container instanceof JScrollBar) {
+            return;
+        }
+
+        // JTable
+        if (container instanceof JTable table) {
+            // Update table colors
+            table.setSelectionBackground(accentColor);
+            table.setSelectionForeground(Color.WHITE);
+
+            // Update table header colors
+            JTableHeader header = table.getTableHeader();
+            if (header != null) {
+                header.setBackground(backgroundColor);
+                header.setForeground(GuiUtil.darkenColor(textColor, 0.3f));
+                header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, GuiUtil.darkenColor(textColor, 0.7f)));
+            }
+
+            // Update cell renderer for consistent styling
+            table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+                @Override
+                public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                    Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                    if (isSelected) {
+                        comp.setBackground(accentColor);
+                        comp.setForeground(Color.WHITE);
+                    } else {
+                        comp.setBackground(row % 2 == 0 ? GuiUtil.darkenColor(backgroundColor, 0.05f) : backgroundColor);
+                        comp.setForeground(textColor);
+                    }
+                    return comp;
+                }
+            });
+        }
 
 
         // Process all components in the container
@@ -2070,6 +2197,12 @@ public class GuiUtil {
             // ToolBar
             else if (component instanceof JToolBar toolBar) {
                 styleToolBar(toolBar, darkenColor(backgroundColor, 0.1), textColor);
+            }
+            //JTextArea
+            else if (component instanceof JTextArea textArea) {
+                textArea.setForeground(textColor);
+                textArea.setBackground(backgroundColor);
+                textArea.setCaretColor(textColor);
             }
 
             // Recursively update child containers
@@ -2547,8 +2680,17 @@ public class GuiUtil {
         return result[0];
     }
 
-    public static void addSongContextMenu(JComponent component, SongDTO song) {
+    public static void addSongContextMenu(Component component, SongDTO song) {
         JPopupMenu contextMenu = createPopupMenu(ThemeManager.getInstance().getBackgroundColor(), ThemeManager.getInstance().getTextColor());
+
+        JMenuItem viewDetailsItem = createMenuItem("View Details");
+        viewDetailsItem.addActionListener(e -> {
+            HomePage homePage = findHomePageInstance(component);
+            if (homePage != null) {
+                homePage.navigateToSongDetailsView(song);
+            }
+        });
+        contextMenu.add(viewDetailsItem);
 
         JMenuItem playItem = createMenuItem("Play");
         playItem.addActionListener(e -> {
@@ -2558,8 +2700,7 @@ public class GuiUtil {
 
         JMenuItem addToPlaylistItem = createMenuItem("Add to Playlist");
         addToPlaylistItem.addActionListener(e -> {
-            PlaylistSelectionDialog dialog = new PlaylistSelectionDialog(
-                    SwingUtilities.getWindowAncestor(component), song);
+            PlaylistSelectionDialog dialog = new PlaylistSelectionDialog(SwingUtilities.getWindowAncestor(component), song);
             dialog.setVisible(true);
         });
         contextMenu.add(addToPlaylistItem);
@@ -2588,9 +2729,7 @@ public class GuiUtil {
 
         if (SongDownloadUtil.hasDownloadPermission()) {
             JMenuItem downloadItem = createMenuItem("Download");
-            downloadItem.addActionListener(e -> {
-                SongDownloadUtil.downloadSong(component, song);
-            });
+            downloadItem.addActionListener(e -> SongDownloadUtil.downloadSong(component, song));
             contextMenu.add(downloadItem);
         }
 
@@ -2623,7 +2762,6 @@ public class GuiUtil {
                                                               Color textColor,
                                                               JMenuItem... popupItems) {
         AsyncImageLabel avatarLabel = createUserAvatarLabel(size);
-        avatarLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         if (user.getAvatarImage() == null && user.getAvatarId() == null) {
             avatarLabel.setLoadedImage(createCharacterProfile(user.getUsername(), size));

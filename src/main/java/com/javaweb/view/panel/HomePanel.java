@@ -2,8 +2,11 @@ package com.javaweb.view.panel;
 
 import com.javaweb.App;
 import com.javaweb.constant.AppConstant;
+import com.javaweb.model.dto.AlbumDTO;
+import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.utils.*;
+import com.javaweb.view.HomePage;
 import com.javaweb.view.components.AsyncImageLabel;
 import com.javaweb.view.event.MusicPlayerFacade;
 import com.javaweb.view.event.PlayerEvent;
@@ -15,6 +18,8 @@ import net.miginfocom.swing.MigLayout;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -28,6 +33,7 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
     private final MusicPlayerFacade playerFacade;
     private JPanel recentlyPlayedPanel;
     private JPanel recommendationsPanel;
+    private JPanel recommendationAlbumsPanel;
     private JScrollPane scrollPane;
     private Map<SongDTO, JButton> playPauseButtonMap = new HashMap<>();
 
@@ -60,11 +66,13 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
 
         createRecentlyPlayedSection();
         createRecommendationsSection();
-
+        createRecommendationAlbumsSection();
 
         mainPanel.add(recentlyPlayedPanel, "grow, wrap");
 
-        mainPanel.add(recommendationsPanel, "grow");
+        mainPanel.add(recommendationsPanel, "grow, wrap");
+
+        mainPanel.add(recommendationAlbumsPanel, "grow");
     }
 
     private JPanel createWelcomePanel() {
@@ -75,7 +83,7 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
         String selectedMessage = welcomeMessages[randomIndex];
         String asciiArt = generateFigletArt(selectedMessage);
 
-        JTextArea asciiArtTextArea = GuiUtil.createTextArea(asciiArt, Font.BOLD, 15);
+        JTextArea asciiArtTextArea = GuiUtil.createTextArea(asciiArt);
         panel.add(asciiArtTextArea, "left, top, growx");
 
         return panel;
@@ -88,11 +96,6 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
         JLabel headerLabel = GuiUtil.createLabel("Recently played", Font.BOLD, 18);
         headerPanel.add(headerLabel, BorderLayout.WEST);
 
-        JButton showAllButton = GuiUtil.createButton("Show all");
-        showAllButton.addActionListener(e -> {
-            log.info("Show all recently played songs clicked");
-        });
-        headerPanel.add(showAllButton, BorderLayout.EAST);
 
         recentlyPlayedPanel.add(headerPanel, "growx, wrap");
 
@@ -105,6 +108,30 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
         recentlyPlayedPanel.add(songGridPanel, "grow");
     }
 
+
+    private void loadRecentlyPlayedSongs(JPanel container) {
+        if (!NetworkChecker.isNetworkAvailable()) {
+            container.add(GuiUtil.createErrorLabel("Network unavailable!"), "span");
+            return;
+        }
+
+        try {
+            List<SongDTO> recentlyPlayed = CommonApiUtil.fetchRecentPlayHistory(20);
+
+            if (recentlyPlayed.isEmpty()) {
+                container.add(GuiUtil.createErrorLabel("No recently played songs"), "span");
+                return;
+            }
+
+            for (SongDTO song : recentlyPlayed) {
+                container.add(createSongCard(song));
+            }
+        } catch (Exception e) {
+            log.error("Failed to load recently played songs", e);
+            container.add(GuiUtil.createErrorLabel("Failed to load recently played songs"), "span");
+        }
+    }
+
     private void createRecommendationsSection() {
         recommendationsPanel = GuiUtil.createPanel(new MigLayout("fillx, wrap", "[grow,fill]", "[]10[]"));
 
@@ -112,11 +139,6 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
         JLabel headerLabel = GuiUtil.createLabel("Recommended for you!", Font.BOLD, 18);
         headerPanel.add(headerLabel, BorderLayout.WEST);
 
-        JButton showAllButton = GuiUtil.createButton("Show all");
-        showAllButton.addActionListener(e -> {
-            log.info("Show all recommendations clicked");
-        });
-        headerPanel.add(showAllButton, BorderLayout.EAST);
 
         recommendationsPanel.add(headerPanel, "growx, wrap");
 
@@ -154,28 +176,122 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
         }
     }
 
+    private void createRecommendationAlbumsSection() {
+        recommendationAlbumsPanel = GuiUtil.createPanel(new MigLayout("fillx, wrap", "[grow,fill]", "[]10[]"));
 
-    private void loadRecentlyPlayedSongs(JPanel container) {
+        JPanel headerPanel = GuiUtil.createPanel(new BorderLayout());
+        JLabel headerLabel = GuiUtil.createLabel("Albums you might like!", Font.BOLD, 18);
+        headerPanel.add(headerLabel, BorderLayout.WEST);
+
+
+        recommendationAlbumsPanel.add(headerPanel, "growx, wrap");
+
+        // Grid panel for song items
+        JPanel albumGridPanel = GuiUtil.createPanel(new MigLayout(
+                "wrap 8, fillx, gapx 20, gapy 20",
+                "[grow, fill][grow, fill][grow, fill][grow, fill][grow, fill][grow, fill][grow, fill][grow, fill]",
+                ""));
+
+        loadRecommendedAlbums(albumGridPanel);
+        recommendationAlbumsPanel.add(albumGridPanel, "grow");
+
+    }
+
+    private void loadRecommendedAlbums(JPanel container) {
         if (!NetworkChecker.isNetworkAvailable()) {
             container.add(GuiUtil.createErrorLabel("Network unavailable!"), "span");
             return;
         }
 
         try {
-            List<SongDTO> recentlyPlayed = CommonApiUtil.fetchRecentPlayHistory(20);
+            // Use the new method from CommonApiUtil
+            List<AlbumDTO> recommendedAlbums = CommonApiUtil.fetchRecommendedAlbums(20);
 
-            if (recentlyPlayed.isEmpty()) {
-                container.add(GuiUtil.createErrorLabel("No recently played songs"), "span");
+            if (recommendedAlbums.isEmpty()) {
+                container.add(GuiUtil.createErrorLabel("No album recommendations available"), "span");
                 return;
             }
 
-            for (SongDTO song : recentlyPlayed) {
-                container.add(createSongCard(song));
+            for (AlbumDTO album : recommendedAlbums) {
+                container.add(createAlbumCard(album));
             }
         } catch (Exception e) {
-            log.error("Failed to load recently played songs", e);
-            container.add(GuiUtil.createErrorLabel("Failed to load recently played songs"), "span");
+            log.error("Failed to load recommended albums", e);
+            container.add(GuiUtil.createErrorLabel("Failed to load album recommendations"), "span");
         }
+    }
+
+    // Create album card method
+    private JPanel createAlbumCard(AlbumDTO album) {
+        JPanel card = GuiUtil.createPanel();
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+
+        // Create square album cover with rounded corners
+        AsyncImageLabel coverLabel = GuiUtil.createAsyncImageLabel(150, 150, 15);
+        coverLabel.startLoading();
+        playerFacade.populateAlbumImage(album, coverLabel::setLoadedImage);
+        coverLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // Create info panel for text
+        JPanel infoPanel = GuiUtil.createPanel();
+        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+        infoPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        infoPanel.setOpaque(false);
+
+        Font titleFont = FontUtil.getSpotifyFont(Font.BOLD, 12);
+
+        // Album title with truncation and tooltip
+        JLabel titleLabel = GuiUtil.createLabel(
+                StringUtils.getTruncatedTextByWidth(album.getTitle(), titleFont, 140),
+                Font.BOLD, 12);
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        titleLabel.setToolTipText(album.getTitle());
+
+        // Artist name with tooltip
+        JLabel artistLabel = GuiUtil.createLabel(album.getArtistName(), Font.PLAIN, 11);
+        artistLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        artistLabel.setToolTipText(album.getArtistName());
+
+        // Add components
+        card.add(coverLabel);
+        card.add(Box.createVerticalStrut(8));
+        infoPanel.add(titleLabel);
+        infoPanel.add(Box.createVerticalStrut(2));
+        infoPanel.add(artistLabel);
+        card.add(infoPanel);
+
+        // Add hover effect
+        GuiUtil.addHoverEffect(card);
+
+//        card.addMouseListener(new MouseAdapter() {
+//            @Override
+//            public void mouseClicked(MouseEvent e) {
+//                if (SwingUtilities.isLeftMouseButton(e)) {
+//                    log.info("Album clicked: {}", album.getTitle());
+//                    PlaylistDTO playlistDTO = playerFacade.convertSongListToPlaylist(album.getSongDTOS(), album.getTitle());
+//                    if (album.getSongDTOS() != null && !album.getSongDTOS().isEmpty()) {
+//                        playerFacade.loadSongWithContext(album.getSongDTOS().iterator().next(), playlistDTO, MusicPlayerFacade.PlaylistSourceType.ALBUM);
+//                    }
+//                }
+//            }
+//        });
+
+        card.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    log.info("Album clicked: {}", album.getTitle());
+
+                    HomePage homePage = (HomePage) SwingUtilities.getWindowAncestor(HomePanel.this);
+                    homePage.navigateToAlbumView(album);
+
+                    PlaylistDTO playlistDTO = playerFacade.convertSongListToPlaylist(album.getSongDTOS(), album.getTitle());
+                    playerFacade.setCurrentPlaylist(playlistDTO);
+                }
+            }
+        });
+
+        return card;
     }
 
     private JPanel createSongCard(SongDTO song) {
@@ -242,11 +358,7 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
                 }
             } else {
                 if (song.getIsLocalFile()) {
-                    try {
-                        playerFacade.loadLocalSong(song);
-                    } catch (IOException ex) {
-                        log.error("Error loading local song: {}", ex.getMessage());
-                    }
+                    playerFacade.loadLocalSong(song);
                 } else {
                     playerFacade.loadSong(song);
                 }
@@ -268,6 +380,20 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
         GuiUtil.addHoverEffect(card);
 
         GuiUtil.addSongContextMenu(card, song);
+
+        card.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    Component clickedComponent = SwingUtilities.getDeepestComponentAt(card, e.getX(), e.getY());
+                    if (!(clickedComponent instanceof JButton)) {
+                        log.info("Song clicked: {}", song.getTitle());
+                        HomePage homePage = (HomePage) SwingUtilities.getWindowAncestor(HomePanel.this);
+                        homePage.navigateToSongDetailsView(song);
+                    }
+                }
+            }
+        });
 
         return card;
     }
@@ -365,10 +491,20 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
                                 ThemeManager.getInstance().getTextColor(),
                                 24, 24)
                         );
+                        button.setRolloverIcon(GuiUtil.createColoredIcon(
+                                AppConstant.PAUSE_ICON_PATH,
+                                GuiUtil.lightenColor(ThemeManager.getInstance().getTextColor(), 0.3f),
+                                24, 24)
+                        );
                     } else {
                         button.setIcon(GuiUtil.createColoredIcon(
                                 AppConstant.PLAY_ICON_PATH,
                                 ThemeManager.getInstance().getTextColor(),
+                                24, 24)
+                        );
+                        button.setRolloverIcon(GuiUtil.createColoredIcon(
+                                AppConstant.PLAY_ICON_PATH,
+                                GuiUtil.lightenColor(ThemeManager.getInstance().getTextColor(), 0.3f),
                                 24, 24)
                         );
                     }
@@ -376,6 +512,11 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
                     button.setIcon(GuiUtil.createColoredIcon(
                             AppConstant.PLAY_ICON_PATH,
                             ThemeManager.getInstance().getTextColor(),
+                            24, 24)
+                    );
+                    button.setRolloverIcon(GuiUtil.createColoredIcon(
+                            AppConstant.PLAY_ICON_PATH,
+                            GuiUtil.lightenColor(ThemeManager.getInstance().getTextColor(), 0.3f),
                             24, 24)
                     );
                 }

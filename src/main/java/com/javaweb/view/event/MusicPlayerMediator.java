@@ -100,14 +100,6 @@ public class MusicPlayerMediator {
     public void notifyToggleCava(boolean isToggling) {
         publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.TOGGLE_CAVA, isToggling));
     }
-
-    public void notifyLoadLocalSong() {
-        publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.LOAD_LOCAL_SONG, null));
-    }
-
-    public void notifySongAlbum(String songAlbum) {
-        publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.SONG_ALBUM, songAlbum));
-    }
-
+    
 
 }

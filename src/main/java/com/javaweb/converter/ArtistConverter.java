@@ -5,8 +5,6 @@ import com.javaweb.entity.ArtistEntity;
 import com.javaweb.entity.StreamingMediaEntity;
 import com.javaweb.model.dto.ArtistDTO;
 import com.javaweb.model.request.ArtistRequestDTO;
-import com.javaweb.repository.StreamingMediaRepository;
-import com.javaweb.repository.UserRepository;
 import com.javaweb.service.StreamingMediaService;
 import com.javaweb.service.impl.GoogleDriveService;
 import lombok.RequiredArgsConstructor;
@@ -19,8 +17,6 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class ArtistConverter implements EntityConverter<ArtistEntity, ArtistRequestDTO, ArtistDTO> {
     private final ModelMapper modelMapper;
-    private final UserRepository userRepository;
-    private final StreamingMediaRepository mediaRepository;
     private final GoogleDriveService googleDriveService;
     private final StreamingMediaService streamingMediaService;
 
@@ -34,6 +30,10 @@ public class ArtistConverter implements EntityConverter<ArtistEntity, ArtistRequ
 
         if (entity.getProfilePic() != null) {
             artistDTO.setProfilePictureId(entity.getProfilePic().getGoogleDriveId());
+        }
+
+        if (entity.getFollowers() != null) {
+            artistDTO.setFollowerCount(entity.getFollowers().size());
         }
 
         return artistDTO;

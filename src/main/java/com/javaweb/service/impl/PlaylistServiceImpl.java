@@ -1,7 +1,10 @@
 package com.javaweb.service.impl;
 
 import com.javaweb.converter.PlaylistConverter;
-import com.javaweb.entity.*;
+import com.javaweb.entity.PlaylistEntity;
+import com.javaweb.entity.PlaylistSongEntity;
+import com.javaweb.entity.SongEntity;
+import com.javaweb.entity.UserEntity;
 import com.javaweb.exception.EntityNotFoundException;
 import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
@@ -17,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -91,12 +93,7 @@ public class PlaylistServiceImpl implements PlaylistService {
                 SongEntity song = songRepository.findById(songId)
                         .orElseThrow(() -> new EntityNotFoundException("Song not found with ID: " + songId));
 
-                PlaylistSongEntity playlistSong = new PlaylistSongEntity();
-                playlistSong.setPlaylist(savedPlaylist);
-                playlistSong.setSong(song);
-                playlistSong.setId(new PlaylistSongId(savedPlaylist.getId(), songId));
-                playlistSong.setAddedAt(LocalDateTime.now());
-                playlistSong.setPosition(0); // First song in the playlist
+                PlaylistSongEntity playlistSong = new PlaylistSongEntity(playlist, song);
 
                 // Add the song to the playlist's songs collection
                 savedPlaylist.getPlaylistSongEntities().add(playlistSong);
@@ -112,54 +109,37 @@ public class PlaylistServiceImpl implements PlaylistService {
 
         } catch (Exception e) {
             log.error("Error creating playlist '{}': {}", name, e.getMessage(), e);
-            throw e; // Rethrow to allow proper error handling in controller
+            throw e;
         }
     }
 
-    @Override
-    public boolean addSongToPlaylist(Long playlistId, Long songId) {
+
+    public boolean addSongToPlaylist(Long playlistId, List<Long> songIds) {
         try {
-            Long userId = Objects.requireNonNull(SecurityUtils.getPrincipal()).getId();
+            log.info("Adding songs {} to playlist {}", songIds, playlistId);
 
             PlaylistEntity playlist = playlistRepository.findById(playlistId)
-                    .orElseThrow(() -> new EntityNotFoundException("Playlist not found with ID: " + playlistId));
+                    .orElseThrow(() -> new EntityNotFoundException("Playlist not found " + playlistId));
 
-            if (!playlist.getUser().getId().equals(userId)) {
-                log.warn("User {} attempted to modify playlist {} owned by user {}", userId, playlistId, playlist.getUser().getId());
-                return false;
+            Set<Long> existing = playlist.getPlaylistSongEntities().stream()
+                    .map(ps -> ps.getSong().getId())
+                    .collect(Collectors.toSet());
+
+            for (Long songId : songIds) {
+                if (existing.contains(songId)) continue;
+
+                SongEntity song = songRepository.findById(songId)
+                        .orElseThrow(() -> new EntityNotFoundException("Song not found " + songId));
+
+                PlaylistSongEntity link = new PlaylistSongEntity(playlist, song, playlist.getPlaylistSongEntities().size() + 1);
+                playlist.getPlaylistSongEntities().add(link);
             }
-
-            SongEntity song = songRepository.findById(songId)
-                    .orElseThrow(() -> new EntityNotFoundException("Song not found with ID: " + songId));
-
-            boolean songExists = playlist.getPlaylistSongEntities().stream()
-                    .anyMatch(ps -> ps.getSong().getId().equals(songId));
-
-            if (songExists) {
-                log.info("Song {} is already in playlist {}", songId, playlistId);
-                return true;
-            }
-
-            PlaylistSongEntity playlistSong = new PlaylistSongEntity();
-            playlistSong.setPlaylist(playlist);
-            playlistSong.setSong(song);
-            playlistSong.setId(new PlaylistSongId(playlistId, songId));
-            playlistSong.setAddedAt(LocalDateTime.now());
-
-            int nextPosition = playlist.getPlaylistSongEntities().size();
-            playlistSong.setPosition(nextPosition + 1);
-
-            playlist.getPlaylistSongEntities().add(playlistSong);
-
-            playlist.setLastUpdated(new Date());
 
             playlistRepository.save(playlist);
-
-            log.info("Added song {} to playlist {}", songId, playlistId);
             return true;
 
         } catch (Exception e) {
-            log.error("Error adding song {} to playlist {}: {}", songId, playlistId, e.getMessage(), e);
+            log.error("Error adding songs {} to playlist {}: {}", songIds, playlistId, e.getMessage(), e);
             return false;
         }
     }

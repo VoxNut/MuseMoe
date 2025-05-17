@@ -37,7 +37,10 @@ public class InstructionPanel extends JPanel implements ThemeChangeListener {
                 {"?", "Toggle help panel"},
                 {"H", "Toggle Home"},
                 {"K or Slash(/)", "Toggle search field"},
-                {"RMB", "You can right click on a song to see a popup menu with varies options"}
+                {"RMB", "You can right click on a song to see a popup menu with varies options"},
+                {"LMB", "You can left click on an album, playlist to see its details"},
+                {"Right Arrow", "Go forward"},
+                {"Left Arrow", "Go backward"}
         };
 
         JPanel shortcutsPanel = GuiUtil.createPanel(new MigLayout("fillx, wrap 2, insets 5", "[][grow]", ""));

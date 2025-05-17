@@ -42,6 +42,7 @@ public class AsyncImageLabel extends JLabel {
             loadingAngle = (loadingAngle + ANIMATION_STEP) % 360;
             repaint();
         });
+        setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
     }
 
     public void startLoading() {

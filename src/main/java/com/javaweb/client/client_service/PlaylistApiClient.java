@@ -12,11 +12,10 @@ public interface PlaylistApiClient {
     List<PlaylistDTO> findAllPlaylists();
 
 
-    boolean addSongToPlaylist(Long playlistId, Long songId);
-
     PlaylistDTO createPlaylist(String name, Long songId);
 
 
     List<PlaylistDTO> searchPlaylists(String query, int limit);
 
+    boolean addSongsToPlaylist(PlaylistDTO playlistDTO);
 }

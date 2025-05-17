@@ -33,4 +33,6 @@ public interface SongApiClient {
     List<SongDTO> fetchRecommendedSongs(int limit);
 
     List<SongDTO> search(String query, int limit);
+
+    List<SongDTO> fetchPopularTracksByArtistId(Long artistId);
 }

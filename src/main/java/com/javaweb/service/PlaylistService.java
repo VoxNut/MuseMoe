@@ -18,7 +18,7 @@ public interface PlaylistService {
 
     PlaylistDTO createPlaylist(String name, Long songId);
 
-    boolean addSongToPlaylist(Long playlistId, Long songId);
+    boolean addSongToPlaylist(Long playlistId, List<Long> songIds);
 
     List<PlaylistDTO> searchPlaylists(String query, int limit);
 

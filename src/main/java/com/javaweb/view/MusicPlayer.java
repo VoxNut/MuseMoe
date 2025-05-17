@@ -150,7 +150,7 @@ public class MusicPlayer extends PlaybackListener {
         playCurrentSong();
     }
 
-    public void loadSong(SongDTO song) throws IOException {
+    public void loadSong(SongDTO song) {
         if (adManager.shouldShowAd(getCurrentUser()) || song != null) {
             processLoadSong(song);
             return;
@@ -167,16 +167,13 @@ public class MusicPlayer extends PlaybackListener {
         }).thenAccept(loadedSong -> {
             // Back on UI thread
             SwingUtilities.invokeLater(() -> {
-                try {
-                    processLoadSong(loadedSong);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                processLoadSong(loadedSong);
+
             });
         });
     }
 
-    private void processLoadSong(SongDTO song) throws IOException {
+    private void processLoadSong(SongDTO song) {
         resetPlaybackPosition();
         stopSong();
 
@@ -200,7 +197,7 @@ public class MusicPlayer extends PlaybackListener {
             currentSong = song;
             mediator.notifyAdOff();
 
-            if (currentSong != null && !havingAd) {
+            if (currentSong != null && !havingAd && !currentSong.getIsLocalFile()) {
                 CommonApiUtil.logPlayHistory(currentSong.getId());
             }
         }
@@ -540,11 +537,7 @@ public class MusicPlayer extends PlaybackListener {
             // This user is initialized through login. So no need to fetch from db again.
             adManager.resetUserCounter(getCurrentUser().getId());
             currentSong = adManager.getLastSongDTO();
-            try {
-                loadSong(currentSong);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            loadSong(currentSong);
         } else {
             if (isPaused) {
                 // If paused, update the current frame for resuming later
@@ -570,23 +563,17 @@ public class MusicPlayer extends PlaybackListener {
                 adManager.updateUserPlayCounter(getCurrentUser());
                 if (currentPlaylist == null) {
                     // Single song mode
-                    try {
-                        handleSingleSongCompletion();
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
+                    handleSingleSongCompletion();
                 } else {
-                    try {
-                        handlePlaylistSongCompletion();
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
+                    handlePlaylistSongCompletion();
+
                 }
+                resetPlaybackPosition();
             }
         }
     }
 
-    private void handleSingleSongCompletion() throws IOException {
+    private void handleSingleSongCompletion() {
         if (repeatMode == RepeatMode.REPEAT_ONE || repeatMode == RepeatMode.REPEAT_ALL) {
             resetPlaybackPosition();
             playCurrentSong();
@@ -596,7 +583,7 @@ public class MusicPlayer extends PlaybackListener {
         }
     }
 
-    private void handlePlaylistSongCompletion() throws IOException {
+    private void handlePlaylistSongCompletion() {
         if (currentPlaylistIndex == currentPlaylist.size() - 1) {
             if (repeatMode == RepeatMode.REPEAT_ALL) {
                 currentPlaylistIndex = 0;
@@ -730,10 +717,9 @@ public class MusicPlayer extends PlaybackListener {
         imageMediaUtil.loadAndWaitForImage(currentSong, 700);
         updateThemeFromSong(currentSong);
         mediator.notifySongLoaded(currentSong);
+
         if (currentPlaylist != null) {
             mediator.notifyPlaylistLoaded(currentPlaylist);
-        } else if (currentSong.getSongAlbum() != null) {
-            mediator.notifySongAlbum(currentSong.getSongAlbum());
         }
     }
 

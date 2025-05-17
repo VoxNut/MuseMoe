@@ -23,6 +23,7 @@ public class PlaylistDTO extends AbstractDTO {
     private String coverImage;
     private String totalDuration;
     private List<SongDTO> songs;
+    private List<Long> songIds;
 
 
     public SongDTO getSongAt(Integer position) {

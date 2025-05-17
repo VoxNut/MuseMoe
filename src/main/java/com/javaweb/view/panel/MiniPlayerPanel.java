@@ -2,6 +2,7 @@ package com.javaweb.view.panel;
 
 import com.javaweb.App;
 import com.javaweb.constant.AppConstant;
+import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
@@ -45,6 +46,8 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
     private Color backgroundColor;
     private Color textColor;
     private Color accentColor;
+
+    private JLabel sourceTypeLabel;
 
     public MiniPlayerPanel() {
         this.playerFacade = App.getBean(MusicPlayerFacade.class);
@@ -141,6 +144,26 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
         JPanel centerPanel = GuiUtil.createPanel(new BorderLayout(0, 5));
         centerPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
 
+        JPanel upperControlPanel = GuiUtil.createPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+
+        sourceTypeLabel = GuiUtil.createLabel("");
+        sourceTypeLabel.setFont(FontUtil.getSpotifyFont(Font.BOLD, 14));
+        sourceTypeLabel.setHorizontalAlignment(SwingConstants.LEFT);
+        sourceTypeLabel.setVisible(false);
+
+        sourceTypeLabel.setPreferredSize(new Dimension(150, 20));
+        sourceTypeLabel.setMinimumSize(new Dimension(10, 20));
+        sourceTypeLabel.setMaximumSize(new Dimension(150, 20));
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 0.1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.WEST;
+        upperControlPanel.add(sourceTypeLabel, gbc);
+
+
         controlButtonsPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.CENTER, 15, 0));
         controlButtonsPanel.setVisible(false);
 
@@ -176,6 +199,7 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
         controlButtonsPanel.add(pauseButton);
         controlButtonsPanel.add(nextButton);
 
+
         // Progress bar panel with the time label
         JPanel progressPanel = GuiUtil.createPanel(new BorderLayout(0, 0));
 
@@ -189,7 +213,26 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
 
         progressPanel.add(progressTrackBar, BorderLayout.CENTER);
 
-        centerPanel.add(controlButtonsPanel, BorderLayout.NORTH);
+
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.weightx = 0.8;
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.fill = GridBagConstraints.NONE;
+        upperControlPanel.add(controlButtonsPanel, gbc);
+
+        JPanel rightPlaceholder = GuiUtil.createPanel();
+        rightPlaceholder.setPreferredSize(new Dimension(150, 20));
+        rightPlaceholder.setMinimumSize(new Dimension(10, 20));
+        rightPlaceholder.setMaximumSize(new Dimension(150, 20));
+
+        gbc.gridx = 2;
+        gbc.gridy = 0;
+        gbc.weightx = 0.1;
+        gbc.anchor = GridBagConstraints.EAST;
+        upperControlPanel.add(rightPlaceholder, gbc);
+
+        centerPanel.add(upperControlPanel, BorderLayout.NORTH);
         centerPanel.add(progressPanel, BorderLayout.CENTER);
 
         // Add mouse listeners to progress bar
@@ -293,6 +336,9 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
         spinningDisc.setVisible(true);
         progressTrackBar.setVisible(true);
         controlButtonsPanel.setVisible(true);
+        if (playerFacade.getCurrentPlaylistSourceType() != MusicPlayerFacade.PlaylistSourceType.NONE) {
+            sourceTypeLabel.setVisible(true);
+        }
         startTextScrolling();
         startDiscSpinning();
     }
@@ -301,6 +347,7 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
         spinningDisc.setVisible(false);
         progressTrackBar.setVisible(false);
         controlButtonsPanel.setVisible(false);
+        sourceTypeLabel.setVisible(false);
         stopTextScrolling();
         stopDiscSpinning();
     }
@@ -421,6 +468,13 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
                 }
 
                 case HOME_PAGE_SLIDER_CHANGED -> showPlaybackControls();
+
+                case PLAYLIST_LOADED -> {
+                    PlaylistDTO playlist = (PlaylistDTO) event.data();
+                    if (playlist != null) {
+                        updateSourceTypeLabel(playlist, playerFacade.getCurrentPlaylistSourceType());
+                    }
+                }
             }
         });
     }
@@ -599,6 +653,32 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
             }
 
             g2d.dispose();
+        }
+    }
+
+    public void updateSourceTypeLabel(PlaylistDTO playlist, MusicPlayerFacade.PlaylistSourceType sourceType) {
+        if (sourceType == null) {
+            sourceTypeLabel.setVisible(false);
+            return;
+        }
+
+        String labelText = switch (sourceType) {
+            case USER_PLAYLIST -> "PLAYLIST: " + playlist.getName();
+            case ALBUM -> "ALBUM: " + playlist.getName();
+            case LIKED_SONGS -> "LIKED";
+            case QUEUE -> "QUEUE";
+            case SEARCH_RESULTS -> "SEARCH";
+            case NONE -> "UNKNOWN SOURCE";
+            case POPULAR -> "POPULAR";
+            case LOCAL -> "LOCAL";
+        };
+
+
+        if (!labelText.isEmpty()) {
+            sourceTypeLabel.setText(labelText);
+            sourceTypeLabel.setVisible(true);
+        } else {
+            sourceTypeLabel.setVisible(false);
         }
     }
 }

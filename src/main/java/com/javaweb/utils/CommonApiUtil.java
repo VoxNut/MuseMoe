@@ -109,6 +109,10 @@ public class CommonApiUtil {
         return getSongApiClient().fetchPopularTracksByArtistId(artistId);
     }
 
+    public static List<SongDTO> fetchSongsByArtist(String artistName, int limit) {
+        return getSongApiClient().fetchSongsByArtist(artistName, limit);
+    }
+
     public static SongDTO fetchSongByUrl(String songUrl) {
         return getSongApiClient().findSongByUrl(songUrl);
     }

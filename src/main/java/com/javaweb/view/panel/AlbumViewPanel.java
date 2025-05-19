@@ -2,6 +2,7 @@ package com.javaweb.view.panel;
 
 import com.javaweb.App;
 import com.javaweb.constant.AppConstant;
+import com.javaweb.enums.PlaylistSourceType;
 import com.javaweb.model.dto.AlbumDTO;
 import com.javaweb.model.dto.ArtistDTO;
 import com.javaweb.model.dto.PlaylistDTO;
@@ -22,6 +23,7 @@ import net.miginfocom.swing.MigLayout;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -38,7 +40,7 @@ public class AlbumViewPanel extends JPanel implements ThemeChangeListener, Playe
     private final MusicPlayerFacade playerFacade;
     private AlbumDTO currentAlbum;
     private PlaylistDTO currentPlaylist;
-    private MusicPlayerFacade.PlaylistSourceType sourceType;
+    private PlaylistSourceType sourceType;
     private JPanel headerPanel;
     private JPanel tracksPanel;
     private JPanel footerPanel;
@@ -120,6 +122,15 @@ public class AlbumViewPanel extends JPanel implements ThemeChangeListener, Playe
         JPanel coverPanel = GuiUtil.createPanel(new BorderLayout());
         coverLabel = GuiUtil.createAsyncImageLabel(250, 250, 15);
         coverLabel.startLoading();
+
+        coverLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent event) {
+                if (SwingUtilities.isRightMouseButton(event)) {
+                    GuiUtil.addAlbumContextMenu(coverLabel, currentAlbum);
+                }
+            }
+        });
 
 
         coverPanel.add(coverLabel, BorderLayout.CENTER);
@@ -245,11 +256,11 @@ public class AlbumViewPanel extends JPanel implements ThemeChangeListener, Playe
                     }
                     // Otherwise load & play new song
                     else {
-                        if (sourceType == MusicPlayerFacade.PlaylistSourceType.ALBUM) {
+                        if (sourceType == PlaylistSourceType.ALBUM) {
                             playerFacade.loadSongWithContext(
                                     selectedSong,
                                     playerFacade.convertSongListToPlaylist(tracks, currentAlbum.getTitle()),
-                                    MusicPlayerFacade.PlaylistSourceType.ALBUM
+                                    PlaylistSourceType.ALBUM
                             );
                         } else {
                             playerFacade.loadSongWithContext(
@@ -297,7 +308,7 @@ public class AlbumViewPanel extends JPanel implements ThemeChangeListener, Playe
                             if (playerFacade.isPaused()) playerFacade.playCurrentSong();
                             else playerFacade.pauseSong();
                         } else {
-                            if (sourceType == MusicPlayerFacade.PlaylistSourceType.ALBUM)
+                            if (sourceType == PlaylistSourceType.ALBUM)
                                 playerFacade.loadSongWithContext(s,
                                         playerFacade.convertSongListToPlaylist(tracks, currentAlbum.getTitle()),
                                         sourceType);
@@ -336,17 +347,24 @@ public class AlbumViewPanel extends JPanel implements ThemeChangeListener, Playe
         // Play option
         JMenuItem playItem = GuiUtil.createMenuItem("Play");
         playItem.addActionListener(e -> {
-            if (sourceType == MusicPlayerFacade.PlaylistSourceType.ALBUM) {
+            if (sourceType == PlaylistSourceType.ALBUM) {
                 playerFacade.loadSongWithContext(
                         song,
                         playerFacade.convertSongListToPlaylist(tracks, currentAlbum.getTitle()),
-                        MusicPlayerFacade.PlaylistSourceType.ALBUM
+                        PlaylistSourceType.ALBUM
                 );
             } else {
                 playerFacade.loadSongWithContext(song, currentPlaylist, sourceType);
             }
         });
         contextMenu.add(playItem);
+
+        JMenuItem addToQueueItem = GuiUtil.createMenuItem("Add to Queue");
+        addToQueueItem.addActionListener(e -> {
+            playerFacade.addToQueueNext(song);
+            GuiUtil.showToast(this, "Added to queue");
+        });
+        contextMenu.add(addToQueueItem);
 
         // Add to playlist option
         JMenuItem addToPlaylistItem = GuiUtil.createMenuItem("Add to Playlist");
@@ -418,7 +436,7 @@ public class AlbumViewPanel extends JPanel implements ThemeChangeListener, Playe
 
     public void displayAlbum(AlbumDTO album) {
         this.currentAlbum = album;
-        this.sourceType = MusicPlayerFacade.PlaylistSourceType.ALBUM;
+        this.sourceType = PlaylistSourceType.ALBUM;
         this.currentPlaylist = null;
         this.tracks = album.getSongDTOS();
 
@@ -490,7 +508,7 @@ public class AlbumViewPanel extends JPanel implements ThemeChangeListener, Playe
         }
     }
 
-    public void displayPlaylist(PlaylistDTO playlist, MusicPlayerFacade.PlaylistSourceType sourceType) {
+    public void displayPlaylist(PlaylistDTO playlist, PlaylistSourceType sourceType) {
         this.currentPlaylist = playlist;
         this.sourceType = sourceType;
         this.currentAlbum = null;
@@ -638,7 +656,7 @@ public class AlbumViewPanel extends JPanel implements ThemeChangeListener, Playe
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
 
         // Album cover
-        AsyncImageLabel albumCover = GuiUtil.createAsyncImageLabel(120, 120, 5);
+        AsyncImageLabel albumCover = GuiUtil.createAsyncImageLabel(150, 150, 15);
         albumCover.startLoading();
         albumCover.setAlignmentX(Component.CENTER_ALIGNMENT);
         playerFacade.populateAlbumImage(album, albumCover::setLoadedImage);
@@ -664,11 +682,17 @@ public class AlbumViewPanel extends JPanel implements ThemeChangeListener, Playe
 
         // Add hover effect and click handler
         GuiUtil.addHoverEffect(card);
+
         card.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (SwingUtilities.isLeftMouseButton(e)) {
-                    displayAlbum(album);
+                    HomePage homePage = GuiUtil.findHomePageInstance(AlbumViewPanel.this);
+                    if (homePage != null) {
+                        homePage.navigateToAlbumView(album);
+                    }
+                } else if (SwingUtilities.isRightMouseButton(e)) {
+                    GuiUtil.addAlbumContextMenu(card, album);
                 }
             }
         });
@@ -699,11 +723,11 @@ public class AlbumViewPanel extends JPanel implements ThemeChangeListener, Playe
         }
 
         SongDTO firstSong = tracks.getFirst();
-        if (sourceType == MusicPlayerFacade.PlaylistSourceType.ALBUM && currentAlbum != null) {
+        if (sourceType == PlaylistSourceType.ALBUM && currentAlbum != null) {
             playerFacade.loadSongWithContext(
                     firstSong,
                     playerFacade.convertSongListToPlaylist(tracks, currentAlbum.getTitle()),
-                    MusicPlayerFacade.PlaylistSourceType.ALBUM
+                    PlaylistSourceType.ALBUM
             );
         } else if (currentPlaylist != null) {
             playerFacade.loadSongWithContext(firstSong, currentPlaylist, sourceType);
@@ -720,7 +744,7 @@ public class AlbumViewPanel extends JPanel implements ThemeChangeListener, Playe
 
         SongDTO firstSong = shuffledTracks.getFirst();
 
-        if (sourceType == MusicPlayerFacade.PlaylistSourceType.ALBUM && currentAlbum != null) {
+        if (sourceType == PlaylistSourceType.ALBUM && currentAlbum != null) {
             PlaylistDTO shuffledPlaylist = playerFacade.convertSongListToPlaylist(
                     shuffledTracks,
                     "Shuffled: " + currentAlbum.getTitle()
@@ -929,22 +953,41 @@ public class AlbumViewPanel extends JPanel implements ThemeChangeListener, Playe
 
 
     private void handleMoreOptionsButtonClick() {
-        JPopupMenu popupMenu = GuiUtil.createPopupMenu(backgroundColor, textColor);
+        if (currentAlbum == null) return;
 
-        JMenuItem copyLinkItem = GuiUtil.createMenuItem("Copy link");
+        JPopupMenu contextMenu = GuiUtil.createPopupMenu(backgroundColor, textColor);
+
+        JMenuItem viewDetailsItem = GuiUtil.createMenuItem("View Artist");
+        viewDetailsItem.addActionListener(e -> {
+            ArtistDTO artist = CommonApiUtil.findArtistById(currentAlbum.getArtistId());
+            HomePage homePage = (HomePage) SwingUtilities.getWindowAncestor(AlbumViewPanel.this);
+            if (homePage != null) {
+                homePage.navigateToArtistView(artist);
+            }
+        });
+        contextMenu.add(viewDetailsItem);
+        JMenuItem addToPlaylistItem = GuiUtil.createMenuItem("Add to Playlist");
+        addToPlaylistItem.addActionListener(e -> handleAddToPlaylistButtonClick());
+        contextMenu.add(addToPlaylistItem);
+
+        // Share option
         JMenuItem shareItem = GuiUtil.createMenuItem("Share");
-        JMenuItem reportItem = GuiUtil.createMenuItem("Report content");
+        shareItem.addActionListener(e -> {
+            String shareUrl = "https://musemoe.com/album/" + currentAlbum.getId();
+            StringSelection selection = new StringSelection(shareUrl);
+            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, null);
 
-        popupMenu.add(copyLinkItem);
-        popupMenu.add(shareItem);
-        popupMenu.addSeparator();
-        popupMenu.add(reportItem);
+            GuiUtil.showToast(SwingUtilities.getWindowAncestor(this), "Link copied to clipboard!");
+        });
+        contextMenu.add(shareItem);
 
-        popupMenu.show(moreOptionsButton, 0, moreOptionsButton.getHeight());
+        GuiUtil.registerPopupMenuForThemeUpdates(contextMenu);
+
+        contextMenu.show(moreOptionsButton, 0, moreOptionsButton.getHeight());
     }
 
 
-    private String getPlaylistTypeLabel(MusicPlayerFacade.PlaylistSourceType sourceType) {
+    private String getPlaylistTypeLabel(PlaylistSourceType sourceType) {
         return switch (sourceType) {
             case USER_PLAYLIST -> "PLAYLIST";
             case ALBUM -> "ALBUM";

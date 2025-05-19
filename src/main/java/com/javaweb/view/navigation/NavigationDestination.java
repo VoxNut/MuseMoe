@@ -17,9 +17,10 @@ public class NavigationDestination {
     public static final String SONG_DATA = "SONG_DATA";
 
     public static final String ARTIST_PROFILE = "artistProfile";
-
-
     public static final String ARTIST_DATA = "ARTIST_DATA";
+
+
+    public static final String QUEUE = "queue";
 
     private NavigationDestination() {
     }

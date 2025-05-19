@@ -2,6 +2,7 @@ package com.javaweb.view.panel;
 
 import com.javaweb.App;
 import com.javaweb.constant.AppConstant;
+import com.javaweb.enums.PlaylistSourceType;
 import com.javaweb.model.dto.AlbumDTO;
 import com.javaweb.model.dto.ArtistDTO;
 import com.javaweb.model.dto.PlaylistDTO;
@@ -219,10 +220,10 @@ public class ArtistProfilePanel extends JPanel implements ThemeChangeListener, P
 
         JLabel aboutLabel = GuiUtil.createLabel("About", Font.BOLD, 22);
 
-        bioTextArea = GuiUtil.createTextArea("", FontUtil.getSpotifyFont(Font.PLAIN, 14));
+        bioTextArea = GuiUtil.createTextArea("", FontUtil.getSpotifyFont(Font.PLAIN, 16));
         bioTextArea.setWrapStyleWord(true);
         bioTextArea.setLineWrap(true);
-        bioTextArea.setMargin(new Insets(5, 0, 5, 0));
+        bioTextArea.setMargin(new Insets(0, 0, 5, 0));
 
         panel.add(aboutLabel);
         panel.add(bioTextArea, "grow");
@@ -286,7 +287,15 @@ public class ArtistProfilePanel extends JPanel implements ThemeChangeListener, P
                             playerFacade.pauseSong();
                         }
                     } else {
-                        playerFacade.loadSong(selectedSong);
+                        PlaylistDTO artistPlaylist = playerFacade.convertSongListToPlaylist(
+                                popularTracks,
+                                currentArtist.getStageName() + " - Popular"
+                        );
+                        playerFacade.loadSongWithContext(
+                                selectedSong,
+                                artistPlaylist,
+                                PlaylistSourceType.POPULAR
+                        );
                     }
                 } else if (e.getClickCount() == 1 && SwingUtilities.isRightMouseButton(e) && popularTracks != null && !popularTracks.isEmpty()) {
                     int row = popularTracksTable.rowAtPoint(e.getPoint());
@@ -325,7 +334,15 @@ public class ArtistProfilePanel extends JPanel implements ThemeChangeListener, P
                             if (playerFacade.isPaused()) playerFacade.playCurrentSong();
                             else playerFacade.pauseSong();
                         } else {
-                            playerFacade.loadSong(cur);
+                            PlaylistDTO artistPlaylist = playerFacade.convertSongListToPlaylist(
+                                    popularTracks,
+                                    currentArtist.getStageName() + " - Popular"
+                            );
+                            playerFacade.loadSongWithContext(
+                                    cur,
+                                    artistPlaylist,
+                                    PlaylistSourceType.POPULAR
+                            );
                         }
                     });
                     return b;
@@ -397,8 +414,8 @@ public class ArtistProfilePanel extends JPanel implements ThemeChangeListener, P
         artistNameLabel.setText(artist.getStageName());
 
         // Format listener count with commas
-        NumberFormat formatter = NumberFormat.getNumberInstance(Locale.US);
-        listenerCountLabel.setText(formatter.format(artist.getFollowerCount()) + " listeners");
+        listenerCountLabel.setText(NumberFormatUtil.formatWithCommas(currentArtist.getFollowerCount()) +
+                ((currentArtist.getFollowerCount() > 1) ? " listeners" : " listener"));
 
         // Load artist image
         playerFacade.populateArtistProfile(artist, artistHeaderImage::setLoadedImage);
@@ -528,13 +545,15 @@ public class ArtistProfilePanel extends JPanel implements ThemeChangeListener, P
 
         // Add hover effect and click handler
         GuiUtil.addHoverEffect(card);
-        card.addMouseListener(new MouseAdapter() {
+        albumCover.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (SwingUtilities.isLeftMouseButton(e)) {
                     log.info("Album clicked: {}", album.getTitle());
                     HomePage homePage = (HomePage) SwingUtilities.getWindowAncestor(ArtistProfilePanel.this);
                     homePage.navigateToAlbumView(album);
+                } else if (SwingUtilities.isRightMouseButton(e)) {
+                    GuiUtil.addAlbumContextMenu(albumCover, album);
                 }
             }
         });
@@ -567,10 +586,16 @@ public class ArtistProfilePanel extends JPanel implements ThemeChangeListener, P
             playerFacade.loadSongWithContext(
                     song,
                     artistPlaylist,
-                    MusicPlayerFacade.PlaylistSourceType.POPULAR
+                    PlaylistSourceType.POPULAR
             );
         });
         contextMenu.add(playItem);
+
+        JMenuItem addToQueueItem = GuiUtil.createMenuItem("Add to Queue");
+        addToQueueItem.addActionListener(e -> {
+            playerFacade.addToQueueNext(song);
+            GuiUtil.showToast(this, "Added to queue");
+        });
 
         // Add to playlist option
         JMenuItem addToPlaylistItem = GuiUtil.createMenuItem("Add to Playlist");
@@ -651,7 +676,7 @@ public class ArtistProfilePanel extends JPanel implements ThemeChangeListener, P
         playerFacade.loadSongWithContext(
                 firstSong,
                 artistPlaylist,
-                MusicPlayerFacade.PlaylistSourceType.POPULAR
+                PlaylistSourceType.POPULAR
         );
     }
 
@@ -667,8 +692,8 @@ public class ArtistProfilePanel extends JPanel implements ThemeChangeListener, P
                 updateFollowButtonState();
                 // Update the count display
                 currentArtist.setFollowerCount(currentArtist.getFollowerCount() - 1);
-                NumberFormat formatter = NumberFormat.getNumberInstance(Locale.US);
-                listenerCountLabel.setText(formatter.format(currentArtist.getFollowerCount()) + " listeners");
+                listenerCountLabel.setText(NumberFormatUtil.formatWithCommas(currentArtist.getFollowerCount()) +
+                        ((currentArtist.getFollowerCount() > 1) ? " listeners" : " listener"));
             } else {
                 GuiUtil.showToast(this, "Failed to unfollow artist");
             }
@@ -679,8 +704,8 @@ public class ArtistProfilePanel extends JPanel implements ThemeChangeListener, P
                 updateFollowButtonState();
                 // Update the count display
                 currentArtist.setFollowerCount(currentArtist.getFollowerCount() + 1);
-                NumberFormat formatter = NumberFormat.getNumberInstance(Locale.US);
-                listenerCountLabel.setText(formatter.format(currentArtist.getFollowerCount()) + " listeners");
+                listenerCountLabel.setText(NumberFormatUtil.formatWithCommas(currentArtist.getFollowerCount()) +
+                        ((currentArtist.getFollowerCount() > 1) ? " listeners" : " listener"));
             } else {
                 GuiUtil.showToast(this, "Failed to follow artist");
             }

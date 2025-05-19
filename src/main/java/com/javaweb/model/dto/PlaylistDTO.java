@@ -2,6 +2,7 @@ package com.javaweb.model.dto;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.javaweb.enums.PlaylistSourceType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,6 +25,7 @@ public class PlaylistDTO extends AbstractDTO {
     private String totalDuration;
     private List<SongDTO> songs;
     private List<Long> songIds;
+    private PlaylistSourceType sourceType;
 
 
     public SongDTO getSongAt(Integer position) {
@@ -35,8 +37,8 @@ public class PlaylistDTO extends AbstractDTO {
     }
 
     @JsonIgnore
-    public boolean isEmptyList() {
-        return songs.isEmpty();
+    public boolean isEmptyPlaylist() {
+        return songs != null && songs.isEmpty();
     }
 
     @JsonIgnore

@@ -35,4 +35,6 @@ public interface SongApiClient {
     List<SongDTO> search(String query, int limit);
 
     List<SongDTO> fetchPopularTracksByArtistId(Long artistId);
+
+    List<SongDTO> fetchSongsByArtist(String artistName, int limit);
 }

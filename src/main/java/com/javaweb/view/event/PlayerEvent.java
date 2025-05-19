@@ -9,6 +9,7 @@ public record PlayerEvent(EventType type, Object data) {
         PLAYBACK_STOPPED,
         PLAYBACK_FINISHED,
         PLAYBACK_PROGRESS,
+
         REPEAT_MODE_CHANGED,
         PLAYLIST_LOADED,
         VOLUME_CHANGED,
@@ -19,6 +20,7 @@ public record PlayerEvent(EventType type, Object data) {
         SLIDER_DRAGGING,
         SONG_LIKED_CHANGED,
         TOGGLE_CAVA,
+        QUEUE_UPDATED
     }
 
 }

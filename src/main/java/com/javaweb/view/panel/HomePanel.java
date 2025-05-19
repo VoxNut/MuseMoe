@@ -2,6 +2,7 @@ package com.javaweb.view.panel;
 
 import com.javaweb.App;
 import com.javaweb.constant.AppConstant;
+import com.javaweb.enums.PlaylistSourceType;
 import com.javaweb.model.dto.AlbumDTO;
 import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
@@ -263,19 +264,6 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
         // Add hover effect
         GuiUtil.addHoverEffect(card);
 
-//        card.addMouseListener(new MouseAdapter() {
-//            @Override
-//            public void mouseClicked(MouseEvent e) {
-//                if (SwingUtilities.isLeftMouseButton(e)) {
-//                    log.info("Album clicked: {}", album.getTitle());
-//                    PlaylistDTO playlistDTO = playerFacade.convertSongListToPlaylist(album.getSongDTOS(), album.getTitle());
-//                    if (album.getSongDTOS() != null && !album.getSongDTOS().isEmpty()) {
-//                        playerFacade.loadSongWithContext(album.getSongDTOS().iterator().next(), playlistDTO, MusicPlayerFacade.PlaylistSourceType.ALBUM);
-//                    }
-//                }
-//            }
-//        });
-
         card.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -287,6 +275,8 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
 
                     PlaylistDTO playlistDTO = playerFacade.convertSongListToPlaylist(album.getSongDTOS(), album.getTitle());
                     playerFacade.setCurrentPlaylist(playlistDTO);
+                } else if (SwingUtilities.isRightMouseButton(e)) {
+                    GuiUtil.addAlbumContextMenu(card, album);
                 }
             }
         });
@@ -360,7 +350,12 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
                 if (song.getIsLocalFile()) {
                     playerFacade.loadLocalSong(song);
                 } else {
-                    playerFacade.loadSong(song);
+                    AlbumDTO albumDTO = CommonApiUtil.fetchAlbumContainsThisSong(song.getId());
+                    playerFacade.loadSongWithContext(
+                            song,
+                            playerFacade.convertSongListToPlaylist(albumDTO.getSongDTOS(), albumDTO.getTitle()),
+                            PlaylistSourceType.ALBUM
+                    );
                 }
             }
         });

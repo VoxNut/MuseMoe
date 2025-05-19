@@ -169,5 +169,14 @@ public class SongAPI {
         return ResponseEntity.ok(results);
     }
 
+    @GetMapping("/artist")
+    public ResponseEntity<List<SongDTO>> fetchSongsByArtist(
+            @RequestParam String artistName,
+            @RequestParam(defaultValue = "5") int limit) {
+
+        List<SongDTO> results = songService.fetchSongsByArtist(artistName, limit);
+        return ResponseEntity.ok(results);
+    }
+
 
 }

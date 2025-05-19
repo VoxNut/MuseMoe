@@ -62,5 +62,7 @@ public interface SongRepository extends JpaRepository<SongEntity, Long> {
     @Query(value = "select s.* from song s join song_artist sa on s.id = sa.song_id where sa.artist_id = :artistId order by play_count desc limit :limit ", nativeQuery = true)
     List<SongEntity> fetchPopularTracksByArtistId(Long artistId, int limit);
 
+    @Query("SELECT s FROM SongEntity s JOIN s.artists a WHERE a.stageName LIKE :artistNamePattern order by s.playCount desc limit :limit")
+    List<SongEntity> fetchSongsByArtistName(@Param("artistNamePattern") String artistNamePattern, @Param("limit") int limit);
 }
 

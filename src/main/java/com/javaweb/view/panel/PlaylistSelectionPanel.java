@@ -94,7 +94,7 @@ public class PlaylistSelectionPanel extends JPanel implements ThemeChangeListene
 
 
             JLabel imageLabel;
-            if (!playlist.isEmptyList()) {
+            if (!playlist.isEmptyPlaylist()) {
                 SongDTO firstSong = playlist.getSongs().getFirst();
                 imageLabel = GuiUtil.createRoundedCornerImageLabel(firstSong.getSongImage(), 15, 40, 40);
             } else {

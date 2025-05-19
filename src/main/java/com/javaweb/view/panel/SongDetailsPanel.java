@@ -2,6 +2,7 @@ package com.javaweb.view.panel;
 
 import com.javaweb.App;
 import com.javaweb.constant.AppConstant;
+import com.javaweb.enums.PlaylistSourceType;
 import com.javaweb.model.dto.AlbumDTO;
 import com.javaweb.model.dto.ArtistDTO;
 import com.javaweb.model.dto.PlaylistDTO;
@@ -121,7 +122,7 @@ public class SongDetailsPanel extends JPanel implements ThemeChangeListener, Pla
         JPanel rightSidePanel = GuiUtil.createPanel(new MigLayout(
                 "fillx, wrap 1, insets 0",
                 "[grow]",
-                "[]25[]"  // Two rows: metadata and controls with spacing
+                "[]25[]"
         ));
 
         // Metadata Panel
@@ -153,7 +154,7 @@ public class SongDetailsPanel extends JPanel implements ThemeChangeListener, Pla
         JPanel metadataLine = GuiUtil.createPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
 
         artistLabel = GuiUtil.createLabel("Artist", Font.PLAIN, 18);
-        artistLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
 
         JLabel separator1 = GuiUtil.createLabel("•", Font.PLAIN, 16);
         albumLabel = GuiUtil.createLabel("Album", Font.PLAIN, 16);
@@ -366,11 +367,14 @@ public class SongDetailsPanel extends JPanel implements ThemeChangeListener, Pla
         profileLabel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                log.info("Artist clicked: {}", artist.getStageName());
-                HomePage homePage = (HomePage) SwingUtilities.getWindowAncestor(SongDetailsPanel.this);
-                if (homePage != null) {
-                    homePage.navigateToArtistView(artist);
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    log.info("Artist clicked: {}", artist.getStageName());
+                    HomePage homePage = (HomePage) SwingUtilities.getWindowAncestor(SongDetailsPanel.this);
+                    if (homePage != null) {
+                        homePage.navigateToArtistView(artist);
+                    }
                 }
+
             }
         });
 
@@ -405,7 +409,12 @@ public class SongDetailsPanel extends JPanel implements ThemeChangeListener, Pla
             if (currentSong.getIsLocalFile()) {
                 playerFacade.loadLocalSong(currentSong);
             } else {
-                playerFacade.loadSong(currentSong);
+                AlbumDTO albumDTO = CommonApiUtil.fetchAlbumContainsThisSong(currentSong.getId());
+                playerFacade.loadSongWithContext(
+                        currentSong,
+                        playerFacade.convertSongListToPlaylist(albumDTO.getSongDTOS(), albumDTO.getTitle()),
+                        PlaylistSourceType.ALBUM
+                );
             }
         }
 
@@ -460,6 +469,12 @@ public class SongDetailsPanel extends JPanel implements ThemeChangeListener, Pla
             }
         });
 
+        JMenuItem addToQueueItem = GuiUtil.createMenuItem("Add to Queue");
+        addToQueueItem.addActionListener(e -> {
+            playerFacade.addToQueueNext(currentSong);
+            GuiUtil.showToast(this, "Added to queue");
+        });
+
         JMenuItem shareItem = GuiUtil.createMenuItem("Share");
         shareItem.addActionListener(e -> {
             // Implement sharing functionality
@@ -495,6 +510,7 @@ public class SongDetailsPanel extends JPanel implements ThemeChangeListener, Pla
 
         // Add items to menu
         menu.add(viewAlbumItem);
+        menu.add(addToQueueItem);
         menu.add(shareItem);
         menu.add(likeItem);
 

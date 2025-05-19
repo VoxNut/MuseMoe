@@ -220,5 +220,13 @@ public class SongServiceImpl implements SongService {
         }
 
     }
+
+    @Override
+    public List<SongDTO> fetchSongsByArtist(String artistName, int limit) {
+        return songRepository.fetchSongsByArtistName(artistName, limit)
+                .stream()
+                .map(songConverter::toDTO)
+                .collect(Collectors.toList());
+    }
 }
 

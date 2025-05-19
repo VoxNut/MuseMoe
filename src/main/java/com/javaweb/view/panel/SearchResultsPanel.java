@@ -2,10 +2,12 @@ package com.javaweb.view.panel;
 
 import com.javaweb.App;
 import com.javaweb.constant.AppConstant;
+import com.javaweb.enums.PlaylistSourceType;
 import com.javaweb.model.dto.AlbumDTO;
 import com.javaweb.model.dto.ArtistDTO;
 import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
+import com.javaweb.utils.CommonApiUtil;
 import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
 import com.javaweb.utils.StringUtils;
@@ -272,12 +274,12 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
         JPanel card = GuiUtil.createPanel(new BorderLayout(20, 0));
         card.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        AsyncImageLabel coverLabel = GuiUtil.createAsyncImageLabel(200, 200, 15);
+        AsyncImageLabel coverLabel = new AsyncImageLabel(250, 250, 15);
         coverLabel.startLoading();
         playerFacade.populateSongImage(song, coverLabel::setLoadedImage);
 
         JPanel coverPanel = GuiUtil.createPanel(new BorderLayout());
-        coverPanel.setPreferredSize(new Dimension(200, 200));
+        coverPanel.setPreferredSize(new Dimension(250, 250));
         coverPanel.add(coverLabel, BorderLayout.CENTER);
 
         JPanel infoPanel = GuiUtil.createPanel(new BorderLayout(0, 10));
@@ -285,19 +287,19 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
         JPanel textPanel = GuiUtil.createPanel();
         textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.Y_AXIS));
 
-        Font titleFont = FontUtil.getSpotifyFont(Font.BOLD, 14);
-        Font artistFont = FontUtil.getSpotifyFont(Font.PLAIN, 12);
+        Font titleFont = FontUtil.getSpotifyFont(Font.BOLD, 22);
+        Font artistFont = FontUtil.getSpotifyFont(Font.PLAIN, 18);
 
         JLabel titleLabel = GuiUtil.createLabel(
                 StringUtils.getTruncatedTextByWidth(song.getTitle(), titleFont, 150),
-                Font.BOLD, 14);
+                Font.BOLD, 22);
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel artistLabel = GuiUtil.createLabel(
                 song.getSongArtist() != null ?
                         StringUtils.getTruncatedTextByWidth(song.getSongArtist(), artistFont) :
                         "Unknown Artist",
-                Font.PLAIN, 12);
+                Font.PLAIN, 18);
         artistLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         textPanel.add(titleLabel);
@@ -323,7 +325,8 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
                 if (song.getIsLocalFile()) {
                     playerFacade.loadLocalSong(song);
                 } else {
-                    playerFacade.loadSong(song);
+                    AlbumDTO albumDTO = CommonApiUtil.fetchAlbumContainsThisSong(song.getId());
+                    playerFacade.loadSongWithContext(song, playerFacade.convertSongListToPlaylist(albumDTO.getSongDTOS(), albumDTO.getTitle()), PlaylistSourceType.ALBUM);
                 }
             }
         });
@@ -345,7 +348,7 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
         GuiUtil.addHoverEffect(card);
         GuiUtil.addSongContextMenu(card, song);
 
-        card.addMouseListener(new MouseAdapter() {
+        coverLabel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (SwingUtilities.isLeftMouseButton(e)) {
@@ -356,6 +359,8 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
                         HomePage homePage = (HomePage) SwingUtilities.getWindowAncestor(SearchResultsPanel.this);
                         homePage.navigateToSongDetailsView(song);
                     }
+                } else if (SwingUtilities.isRightMouseButton(e)) {
+                    GuiUtil.addSongContextMenu(coverLabel, song);
                 }
             }
         });
@@ -368,7 +373,7 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
 
         // Create artist profile image
-        AsyncImageLabel profileLabel = GuiUtil.createArtistProfileLabel(150);
+        AsyncImageLabel profileLabel = new AsyncImageLabel(150, 150, 15, true);
         profileLabel.startLoading();
         playerFacade.populateArtistProfile(artist, profileLabel::setLoadedImage);
         profileLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -391,6 +396,22 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
 
         // Add hover effect
         GuiUtil.addHoverEffect(card);
+
+
+        artistLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    Component clickedComponent = SwingUtilities.getDeepestComponentAt(card, e.getX(), e.getY());
+                    // Only navigate if not clicking on play button
+                    if (!(clickedComponent instanceof JButton)) {
+                        log.info("Artist clicked: {}", artist.getStageName());
+                        HomePage homePage = (HomePage) SwingUtilities.getWindowAncestor(SearchResultsPanel.this);
+                        homePage.navigateToArtistView(artist);
+                    }
+                }
+            }
+        });
 
         return card;
     }
@@ -420,7 +441,7 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
         ));
 
         // Create album cover image
-        AsyncImageLabel coverLabel = GuiUtil.createAsyncImageLabel(150, 150, 15);
+        AsyncImageLabel coverLabel = new AsyncImageLabel(150, 150, 15);
         coverLabel.startLoading();
         playerFacade.populateAlbumImage(album, coverLabel::setLoadedImage);
         coverLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -447,6 +468,24 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
         // Add hover effect
         GuiUtil.addHoverEffect(card);
 
+
+        coverLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    Component clickedComponent = SwingUtilities.getDeepestComponentAt(card, e.getX(), e.getY());
+                    // Only navigate if not clicking on play button
+                    if (!(clickedComponent instanceof JButton)) {
+                        log.info("Album clicked: {}", album.getTitle());
+                        HomePage homePage = (HomePage) SwingUtilities.getWindowAncestor(SearchResultsPanel.this);
+                        homePage.navigateToAlbumView(album);
+                    }
+                } else if (SwingUtilities.isRightMouseButton(e)) {
+                    GuiUtil.addAlbumContextMenu(coverLabel, album);
+                }
+            }
+        });
+
         return card;
     }
 
@@ -460,7 +499,7 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
         JPanel songsListPanel = GuiUtil.createPanel(new MigLayout("fillx, wrap", "[grow]", "[]0[]"));
 
         // Show up to 4 songs in ALL tab
-        int limit = Math.min(4, songs.size());
+        int limit = Math.min(6, songs.size());
         for (int i = 0; i < limit; i++) {
             SongDTO song = songs.get(i);
             JPanel songItem = createSongListItem(song, "allTab");
@@ -492,7 +531,8 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
                 if (song.getIsLocalFile()) {
                     playerFacade.loadLocalSong(song);
                 } else {
-                    playerFacade.loadSong(song);
+                    AlbumDTO albumDTO = CommonApiUtil.fetchAlbumContainsThisSong(song.getId());
+                    playerFacade.loadSongWithContext(song, playerFacade.convertSongListToPlaylist(albumDTO.getSongDTOS(), albumDTO.getTitle()), PlaylistSourceType.ALBUM);
                 }
             }
         });
@@ -587,7 +627,7 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
 
         // Create circular artist profile image
-        AsyncImageLabel profileLabel = GuiUtil.createArtistProfileLabel(100);
+        AsyncImageLabel profileLabel = new AsyncImageLabel(150, 150, 15, true);
         profileLabel.startLoading();
         playerFacade.populateArtistProfile(artist, profileLabel::setLoadedImage);
         profileLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -611,10 +651,12 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
         profileLabel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                log.info("Artist clicked: {}", artist.getStageName());
-                HomePage homePage = (HomePage) SwingUtilities.getWindowAncestor(SearchResultsPanel.this);
-                if (homePage != null) {
-                    homePage.navigateToArtistView(artist);
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    log.info("Artist clicked: {}", artist.getStageName());
+                    HomePage homePage = (HomePage) SwingUtilities.getWindowAncestor(SearchResultsPanel.this);
+                    if (homePage != null) {
+                        homePage.navigateToArtistView(artist);
+                    }
                 }
             }
         });
@@ -649,7 +691,7 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
 
         // Create square album cover with rounded corners
-        AsyncImageLabel coverLabel = GuiUtil.createAsyncImageLabel(120, 120, 15);
+        AsyncImageLabel coverLabel = new AsyncImageLabel(150, 150, 15);
         coverLabel.startLoading();
         playerFacade.populateAlbumImage(album, coverLabel::setLoadedImage);
 
@@ -683,6 +725,8 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
                     // Navigate to album view
                     HomePage homePage = (HomePage) SwingUtilities.getWindowAncestor(SearchResultsPanel.this);
                     homePage.navigateToAlbumView(album);
+                } else if (SwingUtilities.isRightMouseButton(e)) {
+                    GuiUtil.addAlbumContextMenu(coverLabel, album);
                 }
             }
         });
@@ -718,7 +762,7 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
         JPanel card = GuiUtil.createPanel();
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
 
-        AsyncImageLabel coverLabel = GuiUtil.createAsyncImageLabel(120, 120, 15);
+        AsyncImageLabel coverLabel = new AsyncImageLabel(150, 150, 15);
         coverLabel.setAlignmentX(Component.CENTER_ALIGNMENT); // Fix alignment
         coverLabel.startLoading();
 
@@ -757,21 +801,11 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
         // Add hover effect with clearer focus
         GuiUtil.addHoverEffect(card);
 
-        // Add click handler
-//        card.addMouseListener(new MouseAdapter() {
-//            @Override
-//            public void mouseClicked(MouseEvent e) {
-//                playerFacade.setCurrentPlaylist(playlist);
-//                if (!playlist.getSongs().isEmpty()) {
-//                    playerFacade.loadSongWithContext(playlist.getSongs().getFirst(), playlist, MusicPlayerFacade.PlaylistSourceType.USER_PLAYLIST);
-//                }
-//            }
-//        });
         card.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 HomePage homePage = (HomePage) SwingUtilities.getWindowAncestor(SearchResultsPanel.this);
-                homePage.navigateToPlaylistView(playlist, MusicPlayerFacade.PlaylistSourceType.USER_PLAYLIST);
+                homePage.navigateToPlaylistView(playlist, PlaylistSourceType.USER_PLAYLIST);
             }
         });
 

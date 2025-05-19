@@ -2,6 +2,7 @@ package com.javaweb.view;
 
 import com.javaweb.App;
 import com.javaweb.constant.AppConstant;
+import com.javaweb.enums.PlaylistSourceType;
 import com.javaweb.model.dto.*;
 import com.javaweb.utils.*;
 import com.javaweb.view.components.AsyncImageLabel;
@@ -63,6 +64,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private boolean visualizerActive = false;
     private boolean commitPanelActive = false;
     private boolean instructionPanelActive = false;
+    private boolean queuePanelActive = false;
 
     private JButton goBackButton;
     private JButton goForwardButton;
@@ -648,7 +650,12 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     }
 
     private void handleRecentSongSelected(SongDTO song) {
-        playerFacade.loadSong(song);
+        AlbumDTO albumDTO = CommonApiUtil.fetchAlbumContainsThisSong(song.getId());
+        playerFacade.loadSongWithContext(
+                song,
+                playerFacade.convertSongListToPlaylist(albumDTO.getSongDTOS(), albumDTO.getTitle()),
+                PlaylistSourceType.ALBUM
+        );
         searchField.setText(song.getTitle() + " - " + (song.getSongArtist() != null ? song.getSongArtist() : "Unknown"));
     }
 
@@ -1164,7 +1171,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             public void mouseClicked(MouseEvent e) {
                 log.info("Liked Songs collection clicked");
                 if (!likedSongsPlaylist.getSongs().isEmpty()) {
-                    playerFacade.loadSongWithContext(likedSongsPlaylist.getSongs().getFirst(), likedSongsPlaylist, MusicPlayerFacade.PlaylistSourceType.LIKED_SONGS);
+                    playerFacade.loadSongWithContext(likedSongsPlaylist.getSongs().getFirst(), likedSongsPlaylist, PlaylistSourceType.LIKED_SONGS);
                 }
 
             }
@@ -1211,7 +1218,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             public void mouseClicked(MouseEvent e) {
                 log.info("Playlist clicked: {}", playlist.getName());
                 if (!playlist.getSongs().isEmpty()) {
-                    playerFacade.loadSongWithContext(playlist.getSongs().getFirst(), playlist, MusicPlayerFacade.PlaylistSourceType.USER_PLAYLIST);
+                    playerFacade.loadSongWithContext(playlist.getSongs().getFirst(), playlist, PlaylistSourceType.USER_PLAYLIST);
                 }
             }
         });
@@ -1221,7 +1228,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             public void mouseClicked(MouseEvent e) {
                 if (SwingUtilities.isLeftMouseButton(e)) {
                     log.info("playlist clicked: {}", playlist.getName());
-                    navigateToPlaylistView(playlist, MusicPlayerFacade.PlaylistSourceType.USER_PLAYLIST);
+                    navigateToPlaylistView(playlist, PlaylistSourceType.USER_PLAYLIST);
                 }
             }
         });
@@ -1316,7 +1323,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                         Component clickedComponent = SwingUtilities.getDeepestComponentAt(songPanel, e.getX(), e.getY());
                         if (clickedComponent != heartButton) {
                             log.info("Song clicked: {}", song.getTitle());
-                            playerFacade.loadSongWithContext(song, likedSongs, MusicPlayerFacade.PlaylistSourceType.LIKED_SONGS);
+                            playerFacade.loadSongWithContext(song, likedSongs, PlaylistSourceType.LIKED_SONGS);
                         }
                     }
                 }
@@ -1473,6 +1480,10 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         artistProfilePanel.setName("artistProfile");
         centerCardPanel.add(artistProfilePanel, "artistProfile");
 
+        JPanel queuePanel = new QueuePanel();
+        queuePanel.setName("queue");
+        centerCardPanel.add(queuePanel, "queue");
+
         keyEventDispatcher = e -> {
             if (e.getID() == KeyEvent.KEY_PRESSED) {
                 if (searchField.hasFocus()) {
@@ -1497,6 +1508,13 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                         toggleHome();
                         return true;
                     }
+
+                    case KeyEvent.VK_B -> {
+                        if (visualizerActive) {
+                            toggleVisualizerBands();
+                            return true;
+                        }
+                    }
                     case KeyEvent.VK_C -> {
                         if (e.isShiftDown()) {
                             toggleCommitPanel();
@@ -1516,6 +1534,10 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                                 searchField.selectAll();
                             }
                         });
+                        return true;
+                    }
+                    case KeyEvent.VK_Q -> {
+                        toggleQueuePanel();
                         return true;
                     }
                 }
@@ -1541,6 +1563,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
             visualizerActive = false;
             instructionPanelActive = false;
+            queuePanelActive = false;
 
             navigationManager.navigateTo(NavigationDestination.COMMITS, null);
 
@@ -1555,6 +1578,41 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         }
     }
 
+    public void toggleQueuePanel() {
+        queuePanelActive = !queuePanelActive;
+
+        if (centerCardPanel == null) {
+            return;
+        }
+
+        CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
+
+        if (queuePanelActive) {
+
+            visualizerActive = false;
+            instructionPanelActive = false;
+            commitPanelActive = false;
+            playerFacade.notifyToggleCava(false);
+
+
+            navigationManager.navigateTo(NavigationDestination.QUEUE, null);
+            QueuePanel queuePanel = GuiUtil.findFirstComponentByType(
+                    centerCardPanel,
+                    QueuePanel.class,
+                    panel -> true
+            );
+            cardLayout.show(centerCardPanel, "queue");
+            queuePanel.updateQueueView();
+
+            log.info("Queue panel activated");
+            GuiUtil.showToast(this, "Queue panel activated");
+        } else {
+            cardLayout.show(centerCardPanel, "home");
+            log.info("Queue panel deactivated");
+            GuiUtil.showToast(this, "Queue panel deactivated");
+        }
+    }
+
     private void toggleInstructionPanel() {
         instructionPanelActive = !instructionPanelActive;
 
@@ -1566,8 +1624,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         if (instructionPanelActive) {
             visualizerActive = false;
-            playerFacade.notifyToggleCava(false);
             commitPanelActive = false;
+            queuePanelActive = false;
+            playerFacade.notifyToggleCava(false);
 
             navigationManager.navigateTo(NavigationDestination.INSTRUCTIONS, null);
 
@@ -1588,6 +1647,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         visualizerActive = false;
         commitPanelActive = false;
         instructionPanelActive = false;
+        queuePanelActive = false;
+
         CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
         cardLayout.show(centerCardPanel, "home");
         GuiUtil.showToast(this, "Home activated");
@@ -1607,6 +1668,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
             commitPanelActive = false;
             instructionPanelActive = false;
+            queuePanelActive = false;
 
             navigationManager.navigateTo(NavigationDestination.VISUALIZER, null);
 
@@ -1868,7 +1930,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         }
     }
 
-    public void navigateToPlaylistView(PlaylistDTO playlist, MusicPlayerFacade.PlaylistSourceType sourceType) {
+    public void navigateToPlaylistView(PlaylistDTO playlist, PlaylistSourceType sourceType) {
         AlbumViewPanel albumViewPanel = GuiUtil.findFirstComponentByType(
                 centerCardPanel,
                 AlbumViewPanel.class,
@@ -1927,12 +1989,14 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 visualizerActive = false;
                 commitPanelActive = false;
                 instructionPanelActive = false;
+                queuePanelActive = false;
             }
             case NavigationDestination.VISUALIZER -> {
                 cardLayout.show(centerCardPanel, "visualizer");
                 visualizerActive = true;
                 commitPanelActive = false;
                 instructionPanelActive = false;
+                queuePanelActive = false;
                 playerFacade.notifyToggleCava(true);
             }
             case NavigationDestination.COMMITS -> {
@@ -1940,12 +2004,14 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 visualizerActive = false;
                 commitPanelActive = true;
                 instructionPanelActive = false;
+                queuePanelActive = false;
             }
             case NavigationDestination.INSTRUCTIONS -> {
                 cardLayout.show(centerCardPanel, "instructions");
                 visualizerActive = false;
                 commitPanelActive = false;
                 instructionPanelActive = true;
+                queuePanelActive = false;
             }
 
             case NavigationDestination.SEARCH_RESULTS -> {
@@ -1953,6 +2019,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 visualizerActive = false;
                 commitPanelActive = false;
                 instructionPanelActive = false;
+                queuePanelActive = false;
             }
 
             case NavigationDestination.SONG_DETAILS -> {
@@ -1960,6 +2027,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 visualizerActive = false;
                 commitPanelActive = false;
                 instructionPanelActive = false;
+                queuePanelActive = false;
             }
 
             case NavigationDestination.ARTIST_PROFILE -> {
@@ -1967,6 +2035,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 visualizerActive = false;
                 commitPanelActive = false;
                 instructionPanelActive = false;
+                queuePanelActive = false;
             }
 
             case NavigationDestination.ALBUM_VIEW -> {
@@ -1985,14 +2054,23 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                         } else if (navigationData.containsKey(NavigationDestination.PLAYLIST_DATA) &&
                                 navigationData.containsKey(NavigationDestination.PLAYLIST_SOURCE_TYPE)) {
                             PlaylistDTO playlist = (PlaylistDTO) navigationData.get(NavigationDestination.PLAYLIST_DATA);
-                            MusicPlayerFacade.PlaylistSourceType sourceType =
-                                    (MusicPlayerFacade.PlaylistSourceType) navigationData.get(NavigationDestination.PLAYLIST_SOURCE_TYPE);
+                            PlaylistSourceType sourceType =
+                                    (PlaylistSourceType) navigationData.get(NavigationDestination.PLAYLIST_SOURCE_TYPE);
                             albumViewPanel.displayPlaylist(playlist, sourceType);
                         }
                     }
                 }
 
                 cardLayout.show(centerCardPanel, "albumView");
+                visualizerActive = false;
+                commitPanelActive = false;
+                instructionPanelActive = false;
+                queuePanelActive = false;
+            }
+
+            case NavigationDestination.QUEUE -> {
+                cardLayout.show(centerCardPanel, "queue");
+                queuePanelActive = true;
                 visualizerActive = false;
                 commitPanelActive = false;
                 instructionPanelActive = false;

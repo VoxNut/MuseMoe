@@ -53,7 +53,7 @@ public class AlbumApiClientImpl implements AlbumApiClient {
     @Override
     public AlbumDTO getAlbumContainsThisSong(Long songId) {
         try {
-            String url = apiConfig.buildAlbumsUrl("/albums?songId=" + songId);
+            String url = apiConfig.buildAlbumsUrl("/album-by-song?songId=" + songId);
             return apiClient.get(url, AlbumDTO.class);
         } catch (Exception e) {
             return null;

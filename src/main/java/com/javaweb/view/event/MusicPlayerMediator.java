@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import javax.swing.*;
+import java.util.List;
 
 // Mediator design pattern
 @Slf4j
@@ -100,6 +101,13 @@ public class MusicPlayerMediator {
     public void notifyToggleCava(boolean isToggling) {
         publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.TOGGLE_CAVA, isToggling));
     }
-    
 
+    public void notifyQueueUpdated(List<SongDTO> queue) {
+        publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.QUEUE_UPDATED, queue));
+    }
+
+
+    public void notifyPlaybackFinished() {
+        publishPlayerEvent(new PlayerEvent(PlayerEvent.EventType.PLAYBACK_FINISHED, null));
+    }
 }

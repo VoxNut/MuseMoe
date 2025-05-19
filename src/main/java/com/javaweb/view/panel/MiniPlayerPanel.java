@@ -2,6 +2,7 @@ package com.javaweb.view.panel;
 
 import com.javaweb.App;
 import com.javaweb.constant.AppConstant;
+import com.javaweb.enums.PlaylistSourceType;
 import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.utils.FontUtil;
@@ -168,7 +169,14 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
         controlButtonsPanel.setVisible(false);
 
         JButton prevButton = GuiUtil.changeButtonIconColor(AppConstant.PREVIOUS_ICON_PATH, 20, 20);
-        prevButton.addActionListener(e -> playerFacade.prevSong());
+        prevButton.addActionListener(e -> {
+            // Once the song in queue is played it cant never go back
+            if (playerFacade.getCurrentPlaylist() != null & playerFacade.getCurrentPlaylist().getSourceType() == PlaylistSourceType.QUEUE) {
+                GuiUtil.showToast(this, "Cannot go back in Queue!");
+                return;
+            }
+            playerFacade.prevSong();
+        });
 
         // Play button
         JButton playButton = GuiUtil.changeButtonIconColor(AppConstant.PLAY_ICON_PATH, 20, 20);
@@ -191,7 +199,13 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
 
         // Next button
         JButton nextButton = GuiUtil.changeButtonIconColor(AppConstant.NEXT_ICON_PATH, 20, 20);
-        nextButton.addActionListener(e -> playerFacade.nextSong());
+        nextButton.addActionListener(e -> {
+            if (playerFacade.getQueueSongs() == null || playerFacade.getQueueSongs().isEmpty()) {
+                GuiUtil.showToast(this, "No more songs in queue!");
+            } else {
+                playerFacade.nextSong();
+            }
+        });
 
         // Add buttons to control panel
         controlButtonsPanel.add(prevButton);
@@ -336,9 +350,7 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
         spinningDisc.setVisible(true);
         progressTrackBar.setVisible(true);
         controlButtonsPanel.setVisible(true);
-        if (playerFacade.getCurrentPlaylistSourceType() != MusicPlayerFacade.PlaylistSourceType.NONE) {
-            sourceTypeLabel.setVisible(true);
-        }
+        sourceTypeLabel.setVisible(true);
         startTextScrolling();
         startDiscSpinning();
     }
@@ -471,9 +483,7 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
 
                 case PLAYLIST_LOADED -> {
                     PlaylistDTO playlist = (PlaylistDTO) event.data();
-                    if (playlist != null) {
-                        updateSourceTypeLabel(playlist, playerFacade.getCurrentPlaylistSourceType());
-                    }
+                    updateSourceTypeLabel(playlist);
                 }
             }
         });
@@ -656,19 +666,20 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
         }
     }
 
-    public void updateSourceTypeLabel(PlaylistDTO playlist, MusicPlayerFacade.PlaylistSourceType sourceType) {
-        if (sourceType == null) {
-            sourceTypeLabel.setVisible(false);
-            return;
+    public void updateSourceTypeLabel(PlaylistDTO playlist) {
+        if (playlist == null) {
+            sourceTypeLabel.setText("Unknown Source");
+            sourceTypeLabel.setVisible(true);
         }
+        PlaylistSourceType sourceType = playlist.getSourceType();
+        sourceTypeLabel.setVisible(false);
 
         String labelText = switch (sourceType) {
             case USER_PLAYLIST -> "PLAYLIST: " + playlist.getName();
             case ALBUM -> "ALBUM: " + playlist.getName();
             case LIKED_SONGS -> "LIKED";
-            case QUEUE -> "QUEUE";
+            case QUEUE -> "QUEUE: " + playlist.getName();
             case SEARCH_RESULTS -> "SEARCH";
-            case NONE -> "UNKNOWN SOURCE";
             case POPULAR -> "POPULAR";
             case LOCAL -> "LOCAL";
         };

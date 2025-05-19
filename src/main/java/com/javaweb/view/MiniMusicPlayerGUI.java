@@ -2,6 +2,7 @@ package com.javaweb.view;
 
 import com.javaweb.App;
 import com.javaweb.constant.AppConstant;
+import com.javaweb.enums.PlaylistSourceType;
 import com.javaweb.enums.RepeatMode;
 import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
@@ -388,7 +389,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
 
                 // Create and display the PlaylistSelectionPanel
                 playlists.forEach(playlist -> {
-                    if (!playlist.isEmptyList()) {
+                    if (!playlist.isEmptyPlaylist()) {
                         playerFacade.populateSongImage(playlist.getSongs().getFirst(), null);
                     }
                 });
@@ -775,7 +776,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
             songPanel.addPropertyChangeListener("songSelected", evt -> {
                 SongDTO selectedSong = (SongDTO) evt.getNewValue();
                 songPlaylistDialog.dispose();
-                playerFacade.loadSongWithContext(selectedSong, playlist, MusicPlayerFacade.PlaylistSourceType.USER_PLAYLIST);
+                playerFacade.loadSongWithContext(selectedSong, playlist, PlaylistSourceType.USER_PLAYLIST);
             });
 
             songPanel.addPropertyChangeListener("cancel", evt -> {

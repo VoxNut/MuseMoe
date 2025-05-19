@@ -2,6 +2,8 @@ package com.javaweb.utils;
 
 import com.javaweb.App;
 import com.javaweb.constant.AppConstant;
+import com.javaweb.enums.PlaylistSourceType;
+import com.javaweb.model.dto.AlbumDTO;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.model.dto.UserDTO;
 import com.javaweb.view.HomePage;
@@ -46,6 +48,7 @@ import javax.swing.plaf.basic.BasicComboBoxUI;
 import javax.swing.table.*;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
@@ -1519,7 +1522,7 @@ public class GuiUtil {
 
     public static JSeparator createSeparator() {
         JSeparator separator = new JSeparator();
-        separator.setPreferredSize(new Dimension(1, 3));
+        separator.setPreferredSize(new Dimension(1, 10));
         separator.setForeground(GuiUtil.darkenColor(ThemeManager.getInstance().getAccentColor(), 0.2f));
         return separator;
     }
@@ -2031,6 +2034,10 @@ public class GuiUtil {
         }
         if (container instanceof JScrollBar) {
             return;
+        }
+
+        if (container instanceof JSeparator separator) {
+            separator.setForeground(GuiUtil.darkenColor(accentColor, 0.2f));
         }
 
         // JTable
@@ -2680,9 +2687,47 @@ public class GuiUtil {
         return result[0];
     }
 
+    public static void addAlbumContextMenu(Component component, AlbumDTO albumDTO) {
+        Color textColor = ThemeManager.getInstance().getTextColor();
+        Color backgroundColor = ThemeManager.getInstance().getBackgroundColor();
+
+        JPopupMenu popupMenu = GuiUtil.createPopupMenu(backgroundColor, textColor);
+
+        JMenuItem copyLinkItem = GuiUtil.createMenuItem("Copy link");
+        JMenuItem shareItem = GuiUtil.createMenuItem("Share");
+        JMenuItem reportItem = GuiUtil.createMenuItem("Report content");
+
+        popupMenu.add(copyLinkItem);
+        popupMenu.add(shareItem);
+        popupMenu.addSeparator();
+        popupMenu.add(reportItem);
+
+        registerPopupMenuForThemeUpdates(popupMenu);
+
+        component.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    showContextMenu(e);
+                }
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    showContextMenu(e);
+                }
+            }
+
+            private void showContextMenu(MouseEvent e) {
+                popupMenu.show(component, e.getX(), e.getY());
+            }
+        });
+    }
+
     public static void addSongContextMenu(Component component, SongDTO song) {
         JPopupMenu contextMenu = createPopupMenu(ThemeManager.getInstance().getBackgroundColor(), ThemeManager.getInstance().getTextColor());
-
+        MusicPlayerFacade playerFacade = App.getBean(MusicPlayerFacade.class);
         JMenuItem viewDetailsItem = createMenuItem("View Details");
         viewDetailsItem.addActionListener(e -> {
             HomePage homePage = findHomePageInstance(component);
@@ -2692,11 +2737,34 @@ public class GuiUtil {
         });
         contextMenu.add(viewDetailsItem);
 
+        JMenuItem viewAlbumItem = GuiUtil.createMenuItem("View Album");
+        viewAlbumItem.addActionListener(e -> {
+            if (song.getAlbumId() != null) {
+                HomePage homePage = (HomePage) SwingUtilities.getWindowAncestor(component);
+                AlbumDTO albumDTO = CommonApiUtil.fetchAlbumById(song.getAlbumId());
+                homePage.navigateToAlbumView(albumDTO);
+            }
+        });
+        contextMenu.add(viewDetailsItem);
+
         JMenuItem playItem = createMenuItem("Play");
         playItem.addActionListener(e -> {
-            App.getBean(MusicPlayerFacade.class).loadSong(song);
+            AlbumDTO albumDTO = CommonApiUtil.fetchAlbumContainsThisSong(song.getId());
+            playerFacade.loadSongWithContext(
+                    song,
+                    playerFacade.convertSongListToPlaylist(albumDTO.getSongDTOS(), albumDTO.getTitle()),
+                    PlaylistSourceType.ALBUM
+            );
         });
         contextMenu.add(playItem);
+
+        JMenuItem addToQueueItem = createMenuItem("Add to Queue");
+        addToQueueItem.addActionListener(e -> {
+            playerFacade.addToQueueNext(song);
+            showToast(component, "Added to queue");
+        });
+        contextMenu.add(addToQueueItem);
+
 
         JMenuItem addToPlaylistItem = createMenuItem("Add to Playlist");
         addToPlaylistItem.addActionListener(e -> {
@@ -2711,14 +2779,14 @@ public class GuiUtil {
         likeItem.addActionListener(e -> {
             if (isLiked) {
                 if (CommonApiUtil.deleteSongLikes(song.getId())) {
-                    App.getBean(MusicPlayerFacade.class).notifySongLiked();
+                    playerFacade.notifySongLiked();
                     showToast(component, "Removed from liked songs");
                 } else {
                     showToast(component, "Failed to unlike song");
                 }
             } else {
                 if (CommonApiUtil.createSongLikes(song.getId())) {
-                    App.getBean(MusicPlayerFacade.class).notifySongLiked();
+                    playerFacade.notifySongLiked();
                     showToast(component, "Added to liked songs");
                 } else {
                     showToast(component, "Failed to like song");
@@ -2726,6 +2794,20 @@ public class GuiUtil {
             }
         });
         contextMenu.add(likeItem);
+
+        JMenuItem shareItem = GuiUtil.createMenuItem("Share");
+        shareItem.addActionListener(e -> {
+            // Implement sharing functionality
+            String shareUrl = "https://musemoe.com/song/" + song.getId();
+            StringSelection selection = new StringSelection(shareUrl);
+            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, null);
+
+            GuiUtil.showToast(
+                    SwingUtilities.getWindowAncestor(component),
+                    "Link copied to clipboard!"
+            );
+        });
+        contextMenu.add(shareItem);
 
         if (SongDownloadUtil.hasDownloadPermission()) {
             JMenuItem downloadItem = createMenuItem("Download");
@@ -2792,7 +2874,6 @@ public class GuiUtil {
     }
 
     public static void showToast(Component parentComponent, String message) {
-        // Delegate to ToastManager with default duration
         ToastManager.getInstance().showToast(parentComponent, message);
     }
 

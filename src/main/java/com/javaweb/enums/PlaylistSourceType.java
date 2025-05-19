@@ -1,4 +1,11 @@
 package com.javaweb.enums;
 
-public class PlaylistSourceType {
+public enum PlaylistSourceType {
+    USER_PLAYLIST,
+    ALBUM,
+    LIKED_SONGS,
+    QUEUE,
+    SEARCH_RESULTS,
+    LOCAL,
+    POPULAR
 }

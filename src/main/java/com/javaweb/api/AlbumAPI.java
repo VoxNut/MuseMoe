@@ -62,8 +62,8 @@ public class AlbumAPI {
         }
     }
 
-    @GetMapping("/albums")
-    public ResponseEntity<AlbumDTO> getRecommendedAlbums(@RequestParam Long songId) {
+    @GetMapping("/album-by-song")
+    public ResponseEntity<AlbumDTO> getAlbumContainsThisSong(@RequestParam Long songId) {
         try {
             AlbumDTO recommendations = albumService.getAlbumContainsThisSong(songId);
             return ResponseEntity.ok(recommendations);

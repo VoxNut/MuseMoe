@@ -34,11 +34,12 @@ public class InstructionPanel extends JPanel implements ThemeChangeListener {
                 {"Shift + V", "Toggle audio visualizer"},
                 {"Shift + C", "Toggle commit history view"},
                 {"B", "Change visualizer bands (when active)"},
-                {"?", "Toggle help panel"},
                 {"H", "Toggle Home"},
                 {"K or Slash(/)", "Toggle search field"},
+                {"Q", "Toggle Queue panel to see what's currently is in queue"},
+                {"?", "Toggle help panel"},
                 {"RMB", "You can right click on a song to see a popup menu with varies options"},
-                {"LMB", "You can left click on an album, playlist to see its details"},
+                {"LMB", "You can left click on an album, playlist, artist to see its details"},
                 {"Right Arrow", "Go forward"},
                 {"Left Arrow", "Go backward"}
         };

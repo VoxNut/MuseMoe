@@ -1,5 +1,6 @@
 package com.javaweb.view;
 
+import com.javaweb.enums.PlaylistSourceType;
 import com.javaweb.enums.RepeatMode;
 import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
@@ -35,7 +36,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -153,24 +153,7 @@ public class MusicPlayer extends PlaybackListener {
     public void loadSong(SongDTO song) {
         if (adManager.shouldShowAd(getCurrentUser()) || song != null) {
             processLoadSong(song);
-            return;
         }
-
-        // Load song in background
-        CompletableFuture.supplyAsync(() -> {
-            try {
-                return CommonApiUtil.fetchSongById(song.getId());
-            } catch (Exception e) {
-                e.printStackTrace();
-                return song;
-            }
-        }).thenAccept(loadedSong -> {
-            // Back on UI thread
-            SwingUtilities.invokeLater(() -> {
-                processLoadSong(loadedSong);
-
-            });
-        });
     }
 
     private void processLoadSong(SongDTO song) {
@@ -205,7 +188,7 @@ public class MusicPlayer extends PlaybackListener {
         // play the current song if not null
         if (currentSong != null) {
             // set the currentPlaylistIndex only if the currentSong is not null.
-            if (currentPlaylist != null) {
+            if (currentPlaylist != null && !currentPlaylist.isEmptyPlaylist()) {
                 currentPlaylistIndex = currentPlaylist.getIndexFromSong(currentSong);
             }
 
@@ -242,15 +225,16 @@ public class MusicPlayer extends PlaybackListener {
             sliderThread = null;
         }
 
-        if (advancedPlayer != null) {
+        final AdvancedPlayer playerToClose = advancedPlayer;
+        advancedPlayer = null;
+
+        if (playerToClose != null) {
             try {
                 if (!songFinished) {
-                    advancedPlayer.stop();
+                    playerToClose.stop();
                 }
             } catch (Exception e) {
                 System.out.println("Error closing player: " + e.getMessage());
-            } finally {
-                advancedPlayer = null;
             }
         } else {
             adManager.getUserPlayCounter().put(getCurrentUser().getId(), 0);
@@ -266,6 +250,7 @@ public class MusicPlayer extends PlaybackListener {
         if (havingAd) return;
         pressedNext = true;
 
+        PlaylistSourceType sourceType = currentPlaylist.getSourceType();
         if (currentPlaylist == null) {
             if (repeatMode == RepeatMode.REPEAT_ONE) {
                 repeatMode = RepeatMode.REPEAT_ALL;
@@ -274,20 +259,23 @@ public class MusicPlayer extends PlaybackListener {
             // If the playing song is the last song in playlist.
             if (currentPlaylistIndex + 1 == currentPlaylist.size()) {
                 if (repeatMode == RepeatMode.NO_REPEAT) {
-                    // Fetch user playlists and play random playlist
-                    List<PlaylistDTO> playlists = CommonApiUtil.fetchPlaylistByUserId()
-                            .stream()
-                            .filter(playlist -> !playlist.isEmptyList())
-                            .collect(Collectors.toList());
-                    // Only check if the user has more than 1 playlist or else play the first song in current playlist.
-                    if (playlists.size() != 1) {
-                        playlists = playlists.stream()
-                                .filter(playlistDTO -> !playlistDTO.equals(currentPlaylist))
-                                .toList();
+                    if (sourceType == PlaylistSourceType.USER_PLAYLIST) {
+                        // Fetch user playlists and play random playlist
+                        List<PlaylistDTO> playlists = CommonApiUtil.fetchPlaylistByUserId()
+                                .stream()
+                                .filter(playlist -> !playlist.isEmptyPlaylist())
+                                .collect(Collectors.toList());
+                        // Only check if the user has more than 1 playlist or else play the first song in current playlist.
+                        if (playlists.size() != 1) {
+                            playlists = playlists.stream()
+                                    .filter(playlistDTO -> !playlistDTO.equals(currentPlaylist))
+                                    .toList();
+                        }
+                        currentPlaylist = playlists.get((int) (Math.random() * playlists.size()));
+                        currentPlaylist.setSourceType(PlaylistSourceType.USER_PLAYLIST);
+                        currentPlaylistIndex = 0;
+                        currentSong = currentPlaylist.getSongAt(currentPlaylistIndex);
                     }
-                    currentPlaylist = playlists.get((int) (Math.random() * playlists.size()));
-                    currentPlaylistIndex = 0;
-                    currentSong = currentPlaylist.getSongAt(currentPlaylistIndex);
                 } else if (repeatMode == RepeatMode.REPEAT_ALL || repeatMode == RepeatMode.REPEAT_ONE) {
                     currentPlaylistIndex = 0;
                     currentSong = currentPlaylist.getSongAt(currentPlaylistIndex);
@@ -537,7 +525,10 @@ public class MusicPlayer extends PlaybackListener {
             // This user is initialized through login. So no need to fetch from db again.
             adManager.resetUserCounter(getCurrentUser().getId());
             currentSong = adManager.getLastSongDTO();
-            loadSong(currentSong);
+
+            SwingUtilities.invokeLater(() -> {
+                loadSong(currentSong);
+            });
         } else {
             if (isPaused) {
                 // If paused, update the current frame for resuming later
@@ -554,20 +545,21 @@ public class MusicPlayer extends PlaybackListener {
             }
 
             long totalFrames = currentSong.getFrame();
-            int threshold = (int) (totalFrames * 0.95);
+            int threshold = (int) (totalFrames * 0.99);
 
             //Naturally end
             if (calculatedFrame >= threshold) {
                 mediator.notifyPlaybackPaused(currentSong);
                 //Update play counter
                 adManager.updateUserPlayCounter(getCurrentUser());
-                if (currentPlaylist == null) {
-                    // Single song mode
-                    handleSingleSongCompletion();
-                } else {
-                    handlePlaylistSongCompletion();
-
-                }
+                SwingUtilities.invokeLater(() -> {
+                    if (currentPlaylist == null) {
+                        handleSingleSongCompletion();
+                    } else {
+                        handlePlaylistSongCompletion();
+                    }
+                    resetPlaybackPosition();
+                });
                 resetPlaybackPosition();
             }
         }
@@ -584,6 +576,12 @@ public class MusicPlayer extends PlaybackListener {
     }
 
     private void handlePlaylistSongCompletion() {
+        if (currentPlaylist.getSourceType() == PlaylistSourceType.QUEUE && !currentPlaylist.isEmptyPlaylist()) {
+            currentPlaylist.getSongs().removeFirst();
+            loadSong(currentPlaylist.getSongs().getFirst());
+            mediator.notifyQueueUpdated(currentPlaylist.getSongs());
+            return;
+        }
         if (currentPlaylistIndex == currentPlaylist.size() - 1) {
             if (repeatMode == RepeatMode.REPEAT_ALL) {
                 currentPlaylistIndex = 0;
@@ -604,7 +602,13 @@ public class MusicPlayer extends PlaybackListener {
                 loadSong(currentSong);
             } else {
                 try {
-                    nextSong();
+                    SwingUtilities.invokeLater(() -> {
+                        try {
+                            nextSong();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    });
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -612,7 +616,7 @@ public class MusicPlayer extends PlaybackListener {
         }
     }
 
-    private void resetPlaybackPosition() {
+    public void resetPlaybackPosition() {
         currentTimeInMilli = 0;
         currentFrame = 0;
     }
@@ -717,10 +721,7 @@ public class MusicPlayer extends PlaybackListener {
         imageMediaUtil.loadAndWaitForImage(currentSong, 700);
         updateThemeFromSong(currentSong);
         mediator.notifySongLoaded(currentSong);
-
-        if (currentPlaylist != null) {
-            mediator.notifyPlaylistLoaded(currentPlaylist);
-        }
+        mediator.notifyPlaylistLoaded(currentPlaylist);
     }
 
     private UserDTO getCurrentUser() {

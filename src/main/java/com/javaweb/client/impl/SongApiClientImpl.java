@@ -163,5 +163,15 @@ class SongApiClientImpl implements SongApiClient {
         return List.of();
     }
 
-
+    @Override
+    public List<SongDTO> fetchSongsByArtist(String artistName, int limit) {
+        try {
+            String url = apiConfig.buildSongUrl("/artist?artistName=" + artistName + "&limit=" + limit);
+            List<SongDTO> songs = apiClient.getList(url, SongDTO.class);
+            return songs;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
 }

@@ -1,19 +1,18 @@
 package com.javaweb.view.event;
 
+import com.javaweb.enums.PlaylistSourceType;
 import com.javaweb.enums.RepeatMode;
 import com.javaweb.model.dto.*;
 import com.javaweb.utils.CommonApiUtil;
 import com.javaweb.utils.ImageMediaUtil;
 import com.javaweb.utils.LocalSongManager;
 import com.javaweb.view.MusicPlayer;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -25,22 +24,8 @@ public class MusicPlayerFacade {
     private final ImageMediaUtil imageMediaUtil;
     private final MusicPlayerMediator mediator;
 
-    public enum PlaylistSourceType {
-        USER_PLAYLIST,
-        ALBUM,
-        LIKED_SONGS,
-        QUEUE,
-        SEARCH_RESULTS,
-        NONE,
-        LOCAL,
-        POPULAR
-    }
-
-    @Getter
-    private PlaylistSourceType currentPlaylistSourceType = PlaylistSourceType.NONE;
 
     private List<SongDTO> songQueue = new ArrayList<>();
-    private int queuePosition = 0;
     private boolean isQueueActive = false;
 
 
@@ -50,79 +35,33 @@ public class MusicPlayerFacade {
         player.loadLocalSong(song);
     }
 
-
-    public void loadSong(SongDTO song) {
-        if (isQueueActive && songQueue.contains(song)) {
-            int index = songQueue.indexOf(song);
-            queuePosition = index;
-            setPlaylistContext(convertSongListToPlaylist(songQueue, "Queue"), PlaylistSourceType.QUEUE);
-            player.loadSong(song);
-            return;
-        }
-
-        // Try to find from different sources
-        PlaylistDTO playlist = null;
-        PlaylistSourceType sourceType = PlaylistSourceType.NONE;
-
-        // Check user playlists first
-        PlaylistDTO foundPlaylist = CommonApiUtil.fetchPlaylistContainsThisSong(song.getId());
-        if (foundPlaylist != null) {
-            playlist = foundPlaylist;
-            sourceType = PlaylistSourceType.USER_PLAYLIST;
-        }
-        // If not found, check if it's in an album
-        else {
-            AlbumDTO foundAlbum = CommonApiUtil.fetchAlbumContainsThisSong(song.getId());
-            if (foundAlbum != null) {
-                PlaylistDTO convertedAlbum = new PlaylistDTO();
-                convertedAlbum.setName(foundAlbum.getTitle());
-                convertedAlbum.setSongs(foundAlbum.getSongDTOS());
-                playlist = convertedAlbum;
-                sourceType = PlaylistSourceType.ALBUM;
-            }
-            // Check if it's a liked song
-            else if (CommonApiUtil.checkSongLiked(song.getId())) {
-                List<SongDTO> likedSongs = CommonApiUtil.findAllSongLikes().stream()
-                        .map(SongLikesDTO::getSongDTO)
-                        .toList();
-
-                PlaylistDTO likedSongsPlaylist = new PlaylistDTO();
-                likedSongsPlaylist.setName("Liked Songs");
-                likedSongsPlaylist.setSongs(likedSongs);
-                playlist = likedSongsPlaylist;
-                sourceType = PlaylistSourceType.LIKED_SONGS;
-            }
-        }
-
-        setPlaylistContext(playlist, sourceType);
-        player.loadSong(song);
-
-    }
-
     public void loadSongWithContext(SongDTO song, PlaylistDTO playlist, PlaylistSourceType sourceType) {
         setPlaylistContext(playlist, sourceType);
+        clearQueue();
         player.loadSong(song);
     }
 
-    public void playQueue(List<SongDTO> songs, int startIndex) {
-        if (songs == null || songs.isEmpty()) return;
-
-        // Set up the queue
-        this.songQueue = new ArrayList<>(songs);
-        this.queuePosition = Math.min(startIndex, songs.size() - 1);
-        this.isQueueActive = true;
-
-        // Create a queue playlist
-        PlaylistDTO queuePlaylist = convertSongListToPlaylist(songs, "Current Queue");
-        setPlaylistContext(queuePlaylist, PlaylistSourceType.QUEUE);
-
-        player.loadSong(songs.get(queuePosition));
-
+    public void playQueueFrom(int position) {
+        if (isQueueActive && position >= 0 && position < songQueue.size()) {
+            for (int i = 0; i < position; i++) {
+                songQueue.removeFirst();
+            }
+            SongDTO song = songQueue.getFirst();
+            player.loadSong(song);
+            mediator.notifyQueueUpdated(songQueue);
+        }
     }
 
-    public void addToQueue(SongDTO song) {
-        addToQueue(Collections.singletonList(song));
+    public void clearQueue() {
+        songQueue.clear();
+        isQueueActive = false;
+        mediator.notifyQueueUpdated(songQueue);
     }
+
+    public List<SongDTO> getSongsByArtist(String artistName, int limit) {
+        return CommonApiUtil.fetchSongsByArtist(artistName, limit);
+    }
+
 
     public PlaylistDTO convertSongListToPlaylist(List<SongDTO> songs, String name) {
         PlaylistDTO playlist = new PlaylistDTO();
@@ -132,29 +71,26 @@ public class MusicPlayerFacade {
     }
 
     private void setPlaylistContext(PlaylistDTO playlist, PlaylistSourceType sourceType) {
-        this.currentPlaylistSourceType = sourceType;
+        if (playlist != null) {
+            playlist.setSourceType(sourceType);
+        }
         player.setCurrentPlaylist(playlist);
     }
 
 
-    public void addToQueue(List<SongDTO> songs) {
-        if (songs == null || songs.isEmpty()) return;
-
-        // Create queue if doesn't exist
+    public void addToQueueNext(SongDTO song) {
         if (!isQueueActive) {
-            songQueue = new ArrayList<>();
-            isQueueActive = true;
+            this.songQueue = new ArrayList<>();
+            songQueue.add(getCurrentSong());
+            this.isQueueActive = true;
         }
 
-        // Add the songs
-        songQueue.addAll(songs);
-
-        // Update the player's playlist if currently in queue mode
-        if (currentPlaylistSourceType == PlaylistSourceType.QUEUE) {
-            PlaylistDTO updatedQueue = convertSongListToPlaylist(songQueue, "Current Queue");
-            player.setCurrentPlaylist(updatedQueue);
-        }
+        songQueue.add(song);
+        PlaylistDTO updatedQueue = convertSongListToPlaylist(songQueue, "Current Queue");
+        updatedQueue.setSourceType(PlaylistSourceType.QUEUE);
+        player.setCurrentPlaylist(updatedQueue);
     }
+
 
     public void pauseSong() {
         try {
@@ -173,16 +109,15 @@ public class MusicPlayerFacade {
 
     public void nextSong() {
         try {
-            if (currentPlaylistSourceType == PlaylistSourceType.QUEUE && isQueueActive) {
-                if (queuePosition < songQueue.size() - 1) {
-                    queuePosition++;
-                    player.loadSong(songQueue.get(queuePosition));
-                    return;
-                } else if (player.getRepeatMode() == RepeatMode.REPEAT_ALL) {
-                    queuePosition = 0;
-                    player.loadSong(songQueue.get(queuePosition));
+            if (isQueueActive) {
+
+                if (songQueue != null && !songQueue.isEmpty()) {
+                    songQueue.removeFirst();
+                    player.loadSong(songQueue.getFirst());
+                    mediator.notifyQueueUpdated(songQueue);
                     return;
                 }
+
             }
 
             player.nextSong();
@@ -191,20 +126,12 @@ public class MusicPlayerFacade {
         }
     }
 
+    public PlaylistDTO getCurrentPlaylist() {
+        return player.getCurrentPlaylist();
+    }
+
     public void prevSong() {
         try {
-            if (currentPlaylistSourceType == PlaylistSourceType.QUEUE && isQueueActive) {
-                if (queuePosition > 0) {
-                    queuePosition--;
-                    player.loadSong(songQueue.get(queuePosition));
-                    return;
-                } else if (player.getRepeatMode() == RepeatMode.REPEAT_ALL) {
-                    queuePosition = songQueue.size() - 1;
-                    player.loadSong(songQueue.get(queuePosition));
-                    return;
-                }
-            }
-
             player.prevSong();
         } catch (IOException ioException) {
             ioException.printStackTrace();
@@ -249,7 +176,7 @@ public class MusicPlayerFacade {
 
     public void setCurrentPlaylist(PlaylistDTO playlist) {
         if (playlist == null) {
-            setPlaylistContext(null, PlaylistSourceType.NONE);
+            setPlaylistContext(null, null);
             isQueueActive = false;
             return;
         }
@@ -269,6 +196,10 @@ public class MusicPlayerFacade {
 
     public SongDTO getCurrentSong() {
         return player.getCurrentSong();
+    }
+
+    public void setCurrentSong(SongDTO song) {
+        player.setCurrentSong(song);
     }
 
 
@@ -333,5 +264,8 @@ public class MusicPlayerFacade {
         imageMediaUtil.populateUserProfile(userDTO, callback);
     }
 
+    public List<SongDTO> getQueueSongs() {
+        return isQueueActive ? new ArrayList<>(songQueue) : new ArrayList<>();
+    }
 
 }

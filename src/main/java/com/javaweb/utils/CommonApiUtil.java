@@ -5,6 +5,7 @@ import com.javaweb.client.client_service.*;
 import com.javaweb.client.impl.ApiServiceFactory;
 import com.javaweb.enums.RoleType;
 import com.javaweb.model.dto.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Set;
@@ -58,6 +59,14 @@ public class CommonApiUtil {
         return getUserApiClient().fetchAllUsersBaseOnRole(role);
     }
 
+    public static boolean upgradeUser(RoleType roleType) {
+        return getUserApiClient().upgradeUser(roleType);
+    }
+
+    public static boolean upgradeUserToArtist(String stageName, String bio, MultipartFile profilePicture) {
+        return getArtistApiClient().createArtist(stageName, bio, profilePicture);
+    }
+
     public static void updateLastLoginTime() {
         getUserApiClient().updateLastLoginTime();
     }
@@ -70,8 +79,8 @@ public class CommonApiUtil {
         return getUserApiClient().updateUserPassword(id, password);
     }
 
-    public static boolean createNewUser(String username, String password, String email) {
-        return getUserApiClient().createNewUser(username, password, email);
+    public static boolean createNewUser(String username, String fullName, String password, String email) {
+        return getUserApiClient().createNewUser(username, fullName, password, email);
     }
 
     public static UserDTO fetchUserById(Long id) {

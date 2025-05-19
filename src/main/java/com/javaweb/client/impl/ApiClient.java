@@ -10,6 +10,7 @@ import org.springframework.http.*;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -143,28 +144,58 @@ public class ApiClient {
     }
 
     public <T> T postMultipart(String url, Map<String, Object> parts, Class<T> responseType) {
-        MultiValueMap<String, Object> multipartData = new LinkedMultiValueMap<>();
-        parts.forEach(multipartData::add);
+        try {
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
 
-        // For multipart requests, we need to use RestTemplate as WebClient has issues with file uploads
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+            if (parts != null) {
+                parts.forEach((key, value) -> {
+                    if (value != null) {
+                        if (value instanceof MultipartFile) {
+                            MultipartFile file = (MultipartFile) value;
+                            try {
+                                HttpHeaders headers = new HttpHeaders();
+                                headers.setContentType(MediaType.parseMediaType(file.getContentType()));
 
-        // Add authentication token
-        String token = UserSessionManager.getInstance().getAuthToken();
-        if (token != null && !token.isEmpty()) {
-            headers.set(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+                                org.springframework.core.io.Resource resource = new org.springframework.core.io.ByteArrayResource(file.getBytes()) {
+                                    @Override
+                                    public String getFilename() {
+                                        return file.getOriginalFilename();
+                                    }
+                                };
+
+                                body.add(key, new HttpEntity<>(resource, headers));
+                            } catch (Exception e) {
+                                throw new RuntimeException("Failed to process file upload", e);
+                            }
+                        } else {
+                            body.add(key, value);
+                        }
+                    }
+                });
+            }
+
+            // Create headers with authentication
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+            String token = UserSessionManager.getInstance().getAuthToken();
+            if (token != null && !token.isEmpty()) {
+                headers.set(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+            }
+
+            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+            ResponseEntity<T> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    requestEntity,
+                    responseType
+            );
+
+            return response.getBody();
+        } catch (Exception e) {
+            throw new RuntimeException("Error in postMultipart request: " + e.getMessage(), e);
         }
-
-        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(multipartData, headers);
-        ResponseEntity<T> response = restTemplate.exchange(
-                url,
-                HttpMethod.POST,
-                requestEntity,
-                responseType
-        );
-
-        return response.getBody();
     }
 
     public SongDTO uploadSong(String url, Map<String, Object> songData, File audioFile, File imageFile) {

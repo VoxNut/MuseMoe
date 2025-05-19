@@ -132,6 +132,16 @@ public class UserAPI {
         userService.delete(ids);
     }
 
+    @PutMapping("/upgrade")
+    public ResponseEntity<Boolean> upgradeUser(@RequestBody UserRequestDTO userRequestDTO) {
+        try {
+            boolean res = userService.upgradeUser(userRequestDTO);
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
 
 }
 

@@ -131,6 +131,15 @@ public class LoginPage extends JFrame {
         JTextField usernameField = GuiUtil.createLineInputField(AppConstant.TEXT_FIELD_SIZE);
         formPanel.add(usernameField, gbc);
 
+        // Full name field
+        gbc.gridx = 0;
+        gbc.gridy++;
+        JLabel fullNameLabel = GuiUtil.createLabel("Full Name:", Font.PLAIN, 20);
+        formPanel.add(fullNameLabel, gbc);
+        gbc.gridx = 1;
+        JTextField fullNameField = GuiUtil.createLineInputField(AppConstant.TEXT_FIELD_SIZE);
+        formPanel.add(fullNameField, gbc);
+
         // Email field
         gbc.gridx = 0;
         gbc.gridy++;
@@ -154,7 +163,7 @@ public class LoginPage extends JFrame {
             @Override
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    handleSignUp(usernameField.getText(), emailField.getText(),
+                    handleSignUp(usernameField.getText(), fullNameLabel.getText(), emailField.getText(),
                             new String(passwordField.getPassword()));
                 }
             }
@@ -166,7 +175,7 @@ public class LoginPage extends JFrame {
         gbc.gridwidth = 2;
         gbc.anchor = GridBagConstraints.CENTER;
         JButton signUpButton = GuiUtil.createPlainButton("Register");
-        signUpButton.addActionListener(e -> handleSignUp(usernameField.getText(), emailField.getText(),
+        signUpButton.addActionListener(e -> handleSignUp(usernameField.getText(), fullNameField.getText(), emailField.getText(),
                 new String(passwordField.getPassword())));
         formPanel.add(signUpButton, gbc);
 
@@ -338,7 +347,7 @@ public class LoginPage extends JFrame {
         return containerPanel;
     }
 
-    private void handleSignUp(String username, String email, String password) {
+    private void handleSignUp(String username, String fullName, String email, String password) {
         if (!validateInputFields(username, email, password)) {
             return;
         }
@@ -352,7 +361,7 @@ public class LoginPage extends JFrame {
         }
 
 
-        if (CommonApiUtil.createNewUser(username, password, email)) {
+        if (CommonApiUtil.createNewUser(username, fullName, password, email)) {
             GuiUtil.showSuccessMessageDialog(this, "Create account successfully. You can log in now! :)");
             cardLayout.show(mainPanel, "login");
         } else {

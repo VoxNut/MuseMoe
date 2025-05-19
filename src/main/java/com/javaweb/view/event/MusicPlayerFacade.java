@@ -10,6 +10,7 @@ import com.javaweb.view.MusicPlayer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import javax.swing.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,7 +33,7 @@ public class MusicPlayerFacade {
     public void loadLocalSong(SongDTO song) {
         PlaylistDTO playlistDTO = convertSongListToPlaylist(LocalSongManager.getDownloadedSongs(), "Local Songs");
         setPlaylistContext(playlistDTO, PlaylistSourceType.LOCAL);
-        player.loadLocalSong(song);
+        SwingUtilities.invokeLater(() -> player.loadLocalSong(song));
     }
 
     public void loadSongWithContext(SongDTO song, PlaylistDTO playlist, PlaylistSourceType sourceType) {
@@ -155,7 +156,7 @@ public class MusicPlayerFacade {
         }
     }
 
-    public void setVolume(float gain) {
+    public void setVolume(int gain) {
         player.setVolume(gain);
         mediator.notifyVolumeChanged(gain);
     }

@@ -385,8 +385,6 @@ public class QueuePanel extends JPanel implements ThemeChangeListener, PlayerEve
         // Update all colors
         GuiUtil.updatePanelColors(this, backgroundColor, textColor, accentColor);
 
-        // Update clear queue button
-        clearQueueButton.setForeground(accentColor);
 
         repaint();
     }

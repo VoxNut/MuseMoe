@@ -1,5 +1,6 @@
 package com.javaweb.model.request;
 
+import com.javaweb.enums.RoleType;
 import com.javaweb.model.dto.AbstractDTO;
 import com.javaweb.model.dto.RoleDTO;
 import lombok.AllArgsConstructor;
@@ -34,6 +35,7 @@ public class UserRequestDTO extends AbstractDTO {
     private Set<String> requestRoles;
     private String googleDriveFileId;
     private MultipartFile userAvatar;
+    private RoleType roleType;
 
 
 }

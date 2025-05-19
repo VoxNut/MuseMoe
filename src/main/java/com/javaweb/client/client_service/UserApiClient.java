@@ -19,11 +19,13 @@ public interface UserApiClient {
 
     Boolean updateUserPassword(Long id, String password);
 
-    Boolean createNewUser(String username, String password, String email);
+    Boolean createNewUser(String username, String fullName, String password, String email);
 
     UserDTO fetchUserByEmail(String email);
 
     void updateLastLoginTime();
 
     UserDTO fetchCurrentUser();
+
+    boolean upgradeUser(RoleType roleType);
 }

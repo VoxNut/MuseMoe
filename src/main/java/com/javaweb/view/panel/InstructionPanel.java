@@ -37,14 +37,15 @@ public class InstructionPanel extends JPanel implements ThemeChangeListener {
                 {"H", "Toggle Home"},
                 {"K or Slash(/)", "Toggle search field"},
                 {"Q", "Toggle Queue panel to see what's currently is in queue"},
+                {"E", "Open Miniplayer"},
                 {"?", "Toggle help panel"},
                 {"RMB", "You can right click on a song to see a popup menu with varies options"},
                 {"LMB", "You can left click on an album, playlist, artist to see its details"},
-                {"Right Arrow", "Go forward"},
-                {"Left Arrow", "Go backward"}
+                {"Right Arrow, F1", "Go forward"},
+                {"Left Arrow, ESC", "Go backward"}
         };
 
-        JPanel shortcutsPanel = GuiUtil.createPanel(new MigLayout("fillx, wrap 2, insets 5", "[][grow]", ""));
+        JPanel shortcutsPanel = GuiUtil.createPanel(new MigLayout("fillx, wrap 2, insets 10", "[][grow]", ""));
 
         for (String[] shortcut : shortcuts) {
             JLabel keyLabel = GuiUtil.createLabel(shortcut[0], Font.BOLD, 16);

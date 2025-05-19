@@ -39,4 +39,6 @@ public interface UserService {
     UserDTO findUserByEmail(String email);
 
     void updateLastLoginTime(LocalDateTime lastLoginTime);
+
+    boolean upgradeUser(UserRequestDTO userRequestDTO);
 }

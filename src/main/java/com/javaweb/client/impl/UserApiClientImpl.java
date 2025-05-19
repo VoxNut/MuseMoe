@@ -4,13 +4,12 @@ import com.javaweb.client.ApiConfig;
 import com.javaweb.client.client_service.UserApiClient;
 import com.javaweb.enums.RoleType;
 import com.javaweb.model.dto.UserDTO;
+import com.javaweb.model.request.UserRequestDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -37,20 +36,36 @@ class UserApiClientImpl implements UserApiClient {
     }
 
     @Override
-    public Boolean createNewUser(String username, String password, String email) {
+    public boolean upgradeUser(RoleType roleType) {
         try {
-
-            String url = apiConfig.buildUserUrl("/register");
-
-            return apiClient.post(url,
-                    UserDTO.builder()
-                            .username(username)
-                            .password(password)
-                            .email(email)
+            String url = apiConfig.buildUserUrl("/upgrade");
+            return apiClient.put(url,
+                    UserRequestDTO.builder()
+                            .roleType(roleType)
                             .build()
                     , Boolean.class);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Upgrade to premium user failed!", e.getMessage(), e);
+            return false;
+        }
+    }
+
+    @Override
+    public Boolean createNewUser(String username, String fullName, String password, String email) {
+        try {
+            String url = apiConfig.buildUserUrl("/register");
+
+            // Create a map of parts for multipart form data
+            Map<String, Object> parts = new HashMap<>();
+            parts.put("username", username);
+            parts.put("password", password);
+            parts.put("email", email);
+            parts.put("fullName", fullName);
+
+            Object result = apiClient.postMultipart(url, parts, Object.class);
+            return result != null;
+        } catch (Exception e) {
+            log.error("Error creating artist: {}", e.getMessage(), e);
             return false;
         }
     }

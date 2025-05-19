@@ -1,8 +1,10 @@
 package com.javaweb.service.impl;
 
 import com.javaweb.converter.UserConverter;
+import com.javaweb.entity.RoleEntity;
 import com.javaweb.entity.UserEntity;
 import com.javaweb.enums.AccountStatus;
+import com.javaweb.enums.RoleType;
 import com.javaweb.exception.EntityNotFoundException;
 import com.javaweb.model.dto.PasswordDTO;
 import com.javaweb.model.dto.UserDTO;
@@ -34,6 +36,23 @@ public class UserServiceImpl implements UserService {
     private final UserConverter userConverter;
     private final GoogleDriveService googleDriveService;
 
+    @Override
+    public boolean upgradeUser(UserRequestDTO userRequestDTO) {
+        try {
+            RoleType roleType = userRequestDTO.getRoleType();
+            RoleEntity roleEntity = roleRepository.findOneByCode(roleType);
+            Long userId = Objects.requireNonNull(SecurityUtils.getPrincipal()).getId();
+            UserEntity user = userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("UserEntity not found!"));
+            if (!user.getRoles().contains(roleEntity)) {
+                user.getRoles().add(roleEntity);
+            }
+            userRepository.save(user);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 
     @Override
     public UserDTO findOneByUsername(String userName) {

@@ -3,6 +3,7 @@ package com.javaweb.view;
 import com.javaweb.App;
 import com.javaweb.constant.AppConstant;
 import com.javaweb.enums.PlaylistSourceType;
+import com.javaweb.enums.RoleType;
 import com.javaweb.model.dto.*;
 import com.javaweb.utils.*;
 import com.javaweb.view.components.AsyncImageLabel;
@@ -19,18 +20,23 @@ import com.javaweb.view.theme.ThemeManager;
 import com.javaweb.view.user.UserSessionManager;
 import lombok.extern.slf4j.Slf4j;
 import net.miginfocom.swing.MigLayout;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
+import java.nio.file.Files;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 
 @Slf4j
 public class HomePage extends JFrame implements PlayerEventListener, ThemeChangeListener, NavigationListener {
@@ -66,6 +72,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private boolean instructionPanelActive = false;
     private boolean queuePanelActive = false;
 
+    private boolean miniplayerActive = false;
+
     private JButton goBackButton;
     private JButton goForwardButton;
     private final NavigationManager navigationManager;
@@ -74,6 +82,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     // Keyboard event dispatch
     private KeyEventDispatcher keyEventDispatcher;
     private AWTEventListener globalClickListener;
+    private JButton upgradeButton;
 
     // Search event
     private Timer searchDelayTimer;
@@ -136,6 +145,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 }
             }
         });
+
 
         setVisible(true);
 
@@ -410,8 +420,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         JPanel headerContent = GuiUtil.createPanel(new MigLayout(
                 "insets 5, fillx",
-                "[left]20[grow, fill]20[right]", // Three columns: left, center (growing), right
-                "[center]" // One row, centered vertically
+                "[left]20[grow, fill]20[right]",
+                "[center]"
         ));
 
         // ---------- LEFT SECTION (Date) ----------
@@ -419,7 +429,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         // Date display
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        JLabel dateLabel = GuiUtil.createLabel(LocalDate.now().format(dateFormatter), Font.PLAIN, 14);
+        JLabel dateLabel = GuiUtil.createLabel(LocalDate.now().format(dateFormatter), Font.PLAIN, 16);
         leftPanel.add(dateLabel, "");
 
         // Navigation buttons
@@ -546,24 +556,40 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         searchBarWrapper.add(searchField, BorderLayout.CENTER);
         centerPanel.add(searchBarWrapper, "growx");
 
+        // ---------- UPGRADE SECTION (New, between Center and Right) ----------
+        JPanel upgradePanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
+
+        // Add upgrade button based on user role
+        String userRole = determineUserRole(getCurrentUser().getRoles());
+        upgradeButton = null;
+
+        if (userRole.equals("Free User")) {
+            upgradeButton = GuiUtil.createButton("Upgrade to Premium");
+            GuiUtil.styleButton(upgradeButton, ThemeManager.getInstance().getAccentColor(), ThemeManager.getInstance().getBackgroundColor(), ThemeManager.getInstance().getTextColor());
+            upgradeButton.addActionListener(e -> handlePremiumUpgrade());
+
+        } else if (userRole.equals("Premium User")) {
+            upgradeButton = GuiUtil.createButton("Become an Artist");
+            GuiUtil.styleButton(upgradeButton, ThemeManager.getInstance().getAccentColor(), ThemeManager.getInstance().getBackgroundColor(), ThemeManager.getInstance().getTextColor());
+            upgradeButton.addActionListener(e -> handleArtistUpgrade());
+        }
+
+        if (upgradeButton != null) {
+            upgradePanel.add(upgradeButton);
+        }
+
         // ---------- RIGHT SECTION (User info) ----------
         JPanel rightPanel = GuiUtil.createPanel(new MigLayout("insets 0", "[]10[]10[]10[]", "[center]"));
 
-        // Miniplayer button
-        JButton miniplayerButton = GuiUtil.changeButtonIconColor(AppConstant.MINIPLAYER_ICON_PATH, 24, 24);
-        miniplayerButton.setToolTipText("Open Music Player");
-        miniplayerButton.addActionListener(e -> openMiniplayer());
-        rightPanel.add(miniplayerButton, "");
-
         // Help panel
-        JPanel helpPanel = GuiUtil.createPanel(new MigLayout("insets 5, wrap", "[center]", "[center]"));
+        JPanel helpPanel = GuiUtil.createPanel(new MigLayout("insets 0, wrap", "[center]", "[center]"));
         helpPanel.setBorder(GuiUtil.createTitledBorder("Help", TitledBorder.CENTER));
         JLabel helpLabel = GuiUtil.createLabel("Type ?", Font.BOLD, 14);
         helpPanel.add(helpLabel, "");
         rightPanel.add(helpPanel, "w 80!");
 
         // User info display
-        String userRole = determineUserRole(getCurrentUser().getRoles());
+
         JLabel fullNameLabel = GuiUtil.createLabel(getCurrentUser().getFullName() != null
                 ? getCurrentUser().getFullName() + " - " + userRole : "??? - " + userRole);
         rightPanel.add(fullNameLabel, "");
@@ -575,6 +601,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         // Add the three main sections to the header content
         headerContent.add(leftPanel, "");
         headerContent.add(centerPanel, "growx");
+        headerContent.add(upgradePanel, "");
         headerContent.add(rightPanel, "");
 
         // Add the content to the header panel
@@ -583,11 +610,140 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         return headerPanel;
     }
 
+    private void handlePremiumUpgrade() {
+        int option = GuiUtil.showConfirmMessageDialog(
+                this,
+                "Upgrade to Premium for $9.99/month?\nEnjoy ad-free music, unlimited downloads, and higher quality audio.",
+                "Upgrade to Premium"
+        );
+
+        if (option == JOptionPane.YES_OPTION) {
+            try {
+                boolean success = CommonApiUtil.upgradeUser(RoleType.PREMIUM);
+                if (success) {
+                    GuiUtil.showSuccessMessageDialog(this, "Congratulations! You are now a Premium user.\nPlease restart the application to apply changes.");
+                    // Reload the UI
+                    SwingUtilities.invokeLater(() -> {
+                        logout();
+                    });
+                } else {
+                    GuiUtil.showErrorMessageDialog(this, "Failed to upgrade your account. Please try again later.");
+                }
+            } catch (Exception ex) {
+                log.error("Error during premium upgrade", ex);
+                GuiUtil.showErrorMessageDialog(this, "An unexpected error occurred. Please try again later.");
+            }
+        }
+    }
+
+    private void handleArtistUpgrade() {
+        int option = GuiUtil.showConfirmMessageDialog(
+                this,
+                "Become an artist and share your music with the world?\nThis will give you access to upload tracks, create albums, and build your fanbase.",
+                "Become an Artist"
+        );
+
+        if (option == JOptionPane.YES_OPTION) {
+            // Create a panel for artist information collection
+            JPanel inputPanel = GuiUtil.createPanel(new MigLayout("wrap 2", "[][grow,fill]", "[][]"));
+
+            // Stage name field
+            JTextField stageNameField = new JTextField(20);
+            inputPanel.add(GuiUtil.createLabel("Stage Name:", Font.BOLD, 14), "");
+            inputPanel.add(stageNameField, "growx");
+
+            // Bio field
+            JTextArea bioArea = new JTextArea(5, 20);
+            bioArea.setLineWrap(true);
+            bioArea.setWrapStyleWord(true);
+            JScrollPane bioScrollPane = new JScrollPane(bioArea);
+            inputPanel.add(GuiUtil.createLabel("Bio:", Font.BOLD, 14), "");
+            inputPanel.add(bioScrollPane, "growx");
+
+            // Profile picture selection (using a button that launches a file chooser)
+            JButton selectImageButton = new JButton("Select Profile Picture");
+            final JLabel imageNameLabel = new JLabel("No image selected");
+            final JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setFileFilter(new FileNameExtensionFilter("Image files", "jpg", "jpeg", "png"));
+            fileChooser.setCurrentDirectory(new File("D:\\MuseMoe resources\\imgs\\artist_profile"));
+            final File[] selectedFile = {null};
+
+            selectImageButton.addActionListener(e -> {
+                int result = fileChooser.showOpenDialog(this);
+                if (result == JFileChooser.APPROVE_OPTION) {
+                    selectedFile[0] = fileChooser.getSelectedFile();
+                    imageNameLabel.setText(selectedFile[0].getName());
+                }
+            });
+
+            inputPanel.add(GuiUtil.createLabel("Profile Picture:", Font.BOLD, 14), "");
+            JPanel imagePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            imagePanel.add(selectImageButton);
+            imagePanel.add(imageNameLabel);
+            inputPanel.add(imagePanel, "growx");
+
+            int result = JOptionPane.showConfirmDialog(
+                    this,
+                    inputPanel,
+                    "Artist Information",
+                    JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.PLAIN_MESSAGE
+            );
+
+            if (result == JOptionPane.OK_OPTION && !stageNameField.getText().trim().isEmpty()) {
+                try {
+                    MultipartFile profilePicture = null;
+
+                    if (selectedFile[0] != null) {
+                        profilePicture = new MockMultipartFile(
+                                selectedFile[0].getName(),
+                                selectedFile[0].getName(),
+                                Files.probeContentType(selectedFile[0].toPath()),
+                                Files.readAllBytes(selectedFile[0].toPath())
+                        ) {
+                        };
+                    }
+                    boolean success = CommonApiUtil.upgradeUserToArtist(
+                            stageNameField.getText().trim(),
+                            bioArea.getText().trim(),
+                            profilePicture
+                    );
+
+                    if (success) {
+                        GuiUtil.showSuccessMessageDialog(this, "Congratulations! You are now an Artist.\nPlease restart the application to apply changes.");
+                        // Reload the UI
+                        SwingUtilities.invokeLater(this::dispose);
+                        SwingUtilities.invokeLater(() -> {
+                            logout();
+                        });
+                    } else {
+                        GuiUtil.showErrorMessageDialog(this, "Failed to upgrade your account. Please try again later.");
+                    }
+                } catch (Exception ex) {
+                    log.error("Error during artist upgrade", ex);
+                    GuiUtil.showErrorMessageDialog(this, "An unexpected error occurred. Please try again later.");
+                }
+            } else if (result == JOptionPane.OK_OPTION) {
+                GuiUtil.showWarningMessageDialog(this, "Stage name is required.");
+                handleArtistUpgrade();
+            }
+        }
+    }
+
     private JPanel createMiniMusicPlayerPanel() {
         return new MiniPlayerPanel();
     }
 
-    private void openMiniplayer() {
+    public void toggleMiniplayer() {
+        if (miniplayerActive && MiniMusicPlayerGUI.getInstance().isVisible()) {
+            MiniMusicPlayerGUI.getInstance().setVisible(false);
+            miniplayerActive = false;
+        } else {
+            openMiniplayer();
+        }
+    }
+
+    public void openMiniplayer() {
         SwingUtilities.invokeLater(
                 () -> {
                     for (WindowListener listener : MiniMusicPlayerGUI.getInstance().getWindowListeners()) {
@@ -598,6 +754,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                         @Override
                         public void windowClosing(WindowEvent e) {
                             MiniMusicPlayerGUI.getInstance().setVisible(false);
+                            miniplayerActive = false;
                         }
                     });
 
@@ -609,6 +766,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                     // Show the player if it's not already visible
                     if (!MiniMusicPlayerGUI.getInstance().isVisible()) {
                         MiniMusicPlayerGUI.getInstance().setVisible(true);
+                        miniplayerActive = true;
                     }
 
                     // Bring to front and give focus
@@ -616,7 +774,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                     MiniMusicPlayerGUI.getInstance().requestFocus();
                 }
         );
-
     }
 
 
@@ -1490,14 +1647,19 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                     return false;
                 }
                 switch (e.getKeyCode()) {
-                    case KeyEvent.VK_LEFT -> {
-                        handleNavigationBack();
+                    case KeyEvent.VK_LEFT, KeyEvent.VK_ESCAPE -> {
+                        if (navigationManager.canGoBack()) {
+                            handleNavigationBack();
+                        }
                         return true;
                     }
-                    case KeyEvent.VK_RIGHT -> {
-                        handleNavigationForward();
+                    case KeyEvent.VK_RIGHT, KeyEvent.VK_F1 -> {
+                        if (navigationManager.canGoForward()) {
+                            handleNavigationForward();
+                        }
                         return true;
                     }
+
                     case KeyEvent.VK_V -> {
                         if (e.isShiftDown()) {
                             toggleVisualizer();
@@ -1508,6 +1670,13 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                         toggleHome();
                         return true;
                     }
+                    case KeyEvent.VK_E -> {
+                        if (!commitPanelActive) {
+                            toggleMiniplayer();
+                        }
+                        return true;
+                    }
+
 
                     case KeyEvent.VK_B -> {
                         if (visualizerActive) {
@@ -1540,6 +1709,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                         toggleQueuePanel();
                         return true;
                     }
+
                 }
             }
             return false;
@@ -1726,6 +1896,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         //Icons
         GuiUtil.changeIconColor(miniMuseMoeIcon, textColor);
         setIconImage(miniMuseMoeIcon.getImage());
+
+        GuiUtil.styleButton(upgradeButton, ThemeManager.getInstance().getAccentColor(), ThemeManager.getInstance().getBackgroundColor(), ThemeManager.getInstance().getTextColor());
+
 
         // Force repaint
         SwingUtilities.invokeLater(this::repaint);

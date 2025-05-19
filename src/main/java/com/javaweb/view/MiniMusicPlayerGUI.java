@@ -21,7 +21,6 @@ import lombok.Setter;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.io.IOException;
 import java.util.List;
 
 public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, ThemeChangeListener {
@@ -471,7 +470,11 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         JButton nextButton = GuiUtil.changeButtonIconColor(AppConstant.NEXT_ICON_PATH, 30, 30);
         nextButton.setBounds(260, 0, 40, 40); // Set position and size
         nextButton.addActionListener(e -> {
-            playerFacade.nextSong();
+            if (playerFacade.getCurrentPlaylist().isEmptyPlaylist() && playerFacade.getCurrentPlaylist().getSourceType() == PlaylistSourceType.QUEUE) {
+                GuiUtil.showToast(this, "No more songs in queue!");
+            } else {
+                playerFacade.nextSong();
+            }
         });
         playbackBtns.add(nextButton);
 
@@ -719,11 +722,10 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
                 volumeTimer.setRepeats(false);
                 volumeTimer.start();
 
-                // Update the UI
-                updateVolumeIcon(value);
             }
         });
     }
+
 
     private void updateVolumeIcon(int value) {
         int percentage = (int) (((double) (value - volumeSlider.getMinimum()) /
@@ -748,7 +750,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         volumeSlider.setValue(value);
     }
 
-    public void updateRepeatButtonIcon(RepeatMode repeatMode) throws IOException {
+    public void updateRepeatButtonIcon(RepeatMode repeatMode) {
         String iconPath = switch (repeatMode) {
             case NO_REPEAT -> AppConstant.REPEAT_ICON_PATH;
             case REPEAT_ALL -> AppConstant.ON_REPEAT_ICON_PATH;
@@ -840,11 +842,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
                 }
 
                 case REPEAT_MODE_CHANGED -> {
-                    try {
-                        updateRepeatButtonIcon((RepeatMode) event.data());
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    updateRepeatButtonIcon((RepeatMode) event.data());
                 }
 
                 case PLAYLIST_LOADED -> {
@@ -891,6 +889,12 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
                     }
                     setPlaybackSliderValue(data[0]);
                     updateSongTimeLabel(data[1]);
+                }
+
+                case VOLUME_CHANGED -> {
+                    float value = (float) event.data();
+                    updateVolumeIcon(Math.round(value));
+                    setVolumeSliderValue(Math.round(value));
                 }
 
             }

@@ -18,6 +18,7 @@ import de.androidpit.colorthief.ColorThief;
 import net.coobird.thumbnailator.Thumbnails;
 import net.coobird.thumbnailator.geometry.Positions;
 import net.coobird.thumbnailator.resizers.configurations.Antialiasing;
+import net.miginfocom.swing.MigLayout;
 import org.jdatepicker.impl.JDatePanelImpl;
 import org.jdatepicker.impl.JDatePickerImpl;
 import org.jdatepicker.impl.SqlDateModel;
@@ -393,6 +394,7 @@ public class GuiUtil {
 
 
     public static JTextField createLineInputField(int columns) {
+
         JTextField textField = new JTextField(columns);
         textField.setForeground(AppConstant.TEXT_COLOR);
         textField.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, AppConstant.TEXT_COLOR));
@@ -535,14 +537,36 @@ public class GuiUtil {
         return comboBox;
     }
 
-    public static JTextArea createTextArea(int rows, int columns) {
-        JTextArea textArea = new JTextArea(rows, columns);
-        textArea.setLineWrap(false);
-        textArea.setWrapStyleWord(false);
+    public static JTextField createTextField(int column) {
+        Color textColor = ThemeManager.getInstance().getTextColor();
+        Color backgroundColor = ThemeManager.getInstance().getBackgroundColor();
+        Color accentColor = ThemeManager.getInstance().getAccentColor();
+        JTextField textField = new JTextField(column);
+        textField.setForeground(textColor);
+        textField.setBackground(darkenColor(backgroundColor, 0.1f));
+        textField.setCaretColor(textColor);
 
-        textArea.setBackground(AppConstant.TEXTFIELD_BACKGROUND_COLOR);
-        textArea.setCaretColor(AppConstant.TEXT_COLOR);
-        textArea.setForeground(AppConstant.TEXT_COLOR);
+        textField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(darkenColor(accentColor, 0.2f), 1),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)));
+        textField.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
+        return textField;
+    }
+
+    public static JTextArea createTextArea(int rows, int columns) {
+        Color textColor = ThemeManager.getInstance().getTextColor();
+
+        Color backgroundColor = ThemeManager.getInstance().getBackgroundColor();
+
+        JTextArea textArea = new JTextArea(rows, columns);
+        textArea.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
+
+        textArea.setLineWrap(true);
+        textArea.setWrapStyleWord(true);
+
+        textArea.setBackground(darkenColor(backgroundColor, 0.1));
+        textArea.setCaretColor(textColor);
+        textArea.setForeground(textColor);
 
 
         return textArea;
@@ -2211,6 +2235,22 @@ public class GuiUtil {
                 textArea.setBackground(backgroundColor);
                 textArea.setCaretColor(textColor);
             }
+            //JTextField
+            else if (component instanceof JTextField textField) {
+                textField.setForeground(textColor);
+                textField.setBackground(darkenColor(backgroundColor, 0.1f));
+                textField.setCaretColor(textColor);
+
+                textField.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(darkenColor(accentColor, 0.2f), 1),
+                        BorderFactory.createEmptyBorder(5, 5, 5, 5)));
+            }
+            //JDialog
+            else if (component instanceof JDialog dialog) {
+                dialog.setBackground(backgroundColor);
+            } else if (component instanceof JOptionPane optionPane) {
+                optionPane.setBackground(backgroundColor);
+            }
 
             // Recursively update child containers
             if (component instanceof Container childContainer) {
@@ -2431,7 +2471,8 @@ public class GuiUtil {
 
         // Style the dialog frame
         styleDialog(dialog, backgroundColor, textColor);
-        styleTitleBar(dialog, backgroundColor, textColor);
+        GuiUtil.styleTitleBar(dialog, GuiUtil.darkenColor(backgroundColor, 0.1), ThemeManager.getInstance().getTextColor());
+
 
         // Create icon for visual indicator
         JLabel iconLabel = new JLabel(createColoredIcon(AppConstant.DOWNLOAD_ICON_PATH, 48, accentColor));
@@ -2697,8 +2738,17 @@ public class GuiUtil {
         JMenuItem shareItem = GuiUtil.createMenuItem("Share");
         JMenuItem reportItem = GuiUtil.createMenuItem("Report content");
 
+        JMenuItem addToQueueItem = createMenuItem("Add to Queue");
+        addToQueueItem.addActionListener(e -> {
+            albumDTO.getSongDTOS().forEach(song -> {
+                App.getBean(MusicPlayerFacade.class).addToQueueNext(song);
+            });
+            showToast(component, "Added album to queue");
+        });
+
         popupMenu.add(copyLinkItem);
         popupMenu.add(shareItem);
+        popupMenu.add(addToQueueItem);
         popupMenu.addSeparator();
         popupMenu.add(reportItem);
 
@@ -3488,6 +3538,153 @@ public class GuiUtil {
         button.setFocusPainted(false);
         button.setOpaque(false);
         return button;
+    }
+
+    public static JOptionPane showArtistUpgradeDialog(Component parentComponent,
+                                                      JTextField stageNameField,
+                                                      JTextArea bioArea,
+                                                      JLabel imageNameLabel,
+                                                      JButton selectImageButton) {
+        Color backgroundColor = ThemeManager.getInstance().getBackgroundColor();
+        Color textColor = ThemeManager.getInstance().getTextColor();
+        Color accentColor = ThemeManager.getInstance().getAccentColor();
+
+        JPanel inputPanel = createPanel(new MigLayout("wrap 2, fillx, insets 15", "[][grow,fill]", "[]15[]15[]"));
+        inputPanel.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
+
+        JLabel titleLabel = createLabel("Artist Information", Font.BOLD, 18);
+        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        inputPanel.add(titleLabel, "span 2, center, gapbottom 15");
+
+
+        JLabel stageNameLabel = createLabel("Stage Name:", Font.BOLD, 14);
+        inputPanel.add(stageNameLabel, "right");
+        inputPanel.add(stageNameField, "growx");
+
+
+        JScrollPane bioScrollPane = createStyledScrollPane(bioArea);
+
+        bioScrollPane.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(darkenColor(accentColor, 0.2f), 1),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)));
+        applyModernScrollBar(bioScrollPane);
+
+        JLabel bioLabel = createLabel("Bio:", Font.BOLD, 14);
+        inputPanel.add(bioLabel, "right");
+        inputPanel.add(bioScrollPane, "growx");
+
+        imageNameLabel.setFont(FontUtil.getSpotifyFont(Font.ITALIC, 12));
+
+        JLabel profilePicLabel = createLabel("Profile Picture:", Font.BOLD, 14);
+        inputPanel.add(profilePicLabel, "right");
+
+        JPanel imagePanel = createPanel(new MigLayout("insets 0", "[]10[]", "[center]"));
+        imagePanel.add(selectImageButton);
+        imagePanel.add(imageNameLabel);
+        inputPanel.add(imagePanel, "growx");
+
+        JOptionPane optionPane = new JOptionPane(
+                inputPanel,
+                JOptionPane.PLAIN_MESSAGE,
+                JOptionPane.OK_CANCEL_OPTION
+        );
+
+
+        JDialog dialog = optionPane.createDialog(parentComponent, "Become an Artist");
+        GuiUtil.styleTitleBar(dialog, backgroundColor, textColor);
+
+        updatePanelColors(dialog.getContentPane(), backgroundColor, textColor, accentColor);
+
+        dialog.setVisible(true);
+
+        return optionPane;
+    }
+
+
+    // ToolTip
+
+    public static void configureGlobalTooltips() {
+        Color backgroundColor = ThemeManager.getInstance().getBackgroundColor();
+        Color textColor = ThemeManager.getInstance().getTextColor();
+        Color borderColor = darkenColor(ThemeManager.getInstance().getAccentColor(), 0.2f);
+
+        // Configure global tooltip appearance
+        UIManager.put("ToolTip.background", backgroundColor);
+        UIManager.put("ToolTip.foreground", textColor);
+        UIManager.put("ToolTip.border", BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(borderColor, 1),
+                BorderFactory.createEmptyBorder(5, 8, 5, 8)));
+        UIManager.put("ToolTip.font", FontUtil.getSpotifyFont(Font.PLAIN, 12));
+
+        // Adjust tooltip display settings
+        ToolTipManager.sharedInstance().setInitialDelay(500);  // Show tooltip after 500ms
+        ToolTipManager.sharedInstance().setDismissDelay(10000); // Show tooltip for 10 seconds
+        ToolTipManager.sharedInstance().setReshowDelay(200);   // Delay before showing next tooltip
+
+        // Register tooltip updater in ThemeManager
+        ThemeManager.getInstance().addThemeChangeListener((bg, text, accent) -> {
+            UIManager.put("ToolTip.background", bg);
+            UIManager.put("ToolTip.foreground", text);
+            UIManager.put("ToolTip.border", BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(darkenColor(accent, 0.2f), 1),
+                    BorderFactory.createEmptyBorder(5, 8, 5, 8)));
+        });
+    }
+
+
+    public static void setSmartTooltip(JComponent component, String text) {
+        // First set the tooltip text
+        component.setToolTipText(text);
+
+        // For labels and buttons, check for text truncation and show tooltip accordingly
+        if (component instanceof JLabel || component instanceof AbstractButton) {
+            component.addComponentListener(new ComponentAdapter() {
+                @Override
+                public void componentResized(ComponentEvent e) {
+                    checkAndSetTooltip(component, text);
+                }
+            });
+
+            // Initial check
+            SwingUtilities.invokeLater(() -> checkAndSetTooltip(component, text));
+        }
+    }
+
+    private static void checkAndSetTooltip(JComponent component, String text) {
+        if (component == null || text == null || text.isEmpty()) return;
+
+        int availableWidth = component.getWidth();
+        FontMetrics fm;
+
+        if (component instanceof JLabel label) {
+            fm = label.getFontMetrics(label.getFont());
+            String labelText = label.getText();
+            if (labelText != null && fm.stringWidth(labelText) > availableWidth - 10) {
+                // Text would be truncated, ensure tooltip is set
+                component.setToolTipText(text);
+            } else if (text.equals(labelText)) {
+                // Text fits and is the same as tooltip, no need for tooltip
+                component.setToolTipText(null);
+            }
+        } else if (component instanceof AbstractButton button) {
+            fm = button.getFontMetrics(button.getFont());
+            String buttonText = button.getText();
+            if (buttonText != null && fm.stringWidth(buttonText) > availableWidth -
+                    (button.getIcon() != null ? button.getIcon().getIconWidth() + button.getIconTextGap() : 0) - 10) {
+                // Text would be truncated, ensure tooltip is set
+                component.setToolTipText(text);
+            } else if (text.equals(buttonText)) {
+                // Text fits and is the same as tooltip, no need for tooltip
+                component.setToolTipText(null);
+            }
+        }
+    }
+
+    public static void setMultilineTooltip(JComponent component, String text) {
+        if (text == null) return;
+
+        String htmlText = "<html>" + text.replace("\n", "<br>") + "</html>";
+        component.setToolTipText(htmlText);
     }
 
 

@@ -54,7 +54,7 @@ public class ArtistProfilePanel extends JPanel implements ThemeChangeListener, P
 
     // Controls
     private JButton playButton;
-    private JButton followButton;
+    private JButton followButton = null;
     private JButton moreOptionsButton;
 
     // Bio
@@ -177,6 +177,7 @@ public class ArtistProfilePanel extends JPanel implements ThemeChangeListener, P
         // Play button
         playButton = GuiUtil.changeButtonIconColor(AppConstant.PLAY_ICON_PATH, 50, 50);
         playButton.addActionListener(this::handlePlayButtonClick);
+        GuiUtil.setSmartTooltip(playButton, "Play");
 
         // Follow button
         followButton = GuiUtil.createButton("Follow");
@@ -186,7 +187,7 @@ public class ArtistProfilePanel extends JPanel implements ThemeChangeListener, P
         // More options button
         moreOptionsButton = GuiUtil.changeButtonIconColor(AppConstant.MORE_ICON_PATH, 36, 36);
         moreOptionsButton.addActionListener(e -> handleMoreOptionsClick());
-
+        GuiUtil.setSmartTooltip(moreOptionsButton, "More options");
         // Add buttons
         buttonsPanel.add(playButton);
         buttonsPanel.add(followButton);
@@ -433,6 +434,12 @@ public class ArtistProfilePanel extends JPanel implements ThemeChangeListener, P
         loadArtistAlbums(artist.getId());
 
         updateHeaderPlayButton();
+
+        if (currentArtist != null && CommonApiUtil.checkUserArtist(currentArtist.getId())) {
+            followButton.setVisible(false);
+        } else {
+            followButton.setVisible(true);
+        }
     }
 
     private void loadPopularTracks(Long artistId) {
@@ -525,9 +532,8 @@ public class ArtistProfilePanel extends JPanel implements ThemeChangeListener, P
         playerFacade.populateAlbumImage(album, albumCover::setLoadedImage);
 
         // Album title
-        Font titleFont = FontUtil.getSpotifyFont(Font.BOLD, 12);
         JLabel titleLabel = GuiUtil.createLabel(
-                StringUtils.getTruncatedTextByWidth(album.getTitle(), titleFont, 150),
+                StringUtils.getTruncatedText(album.getTitle()),
                 Font.BOLD, 12);
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         titleLabel.setToolTipText(album.getTitle());
@@ -765,10 +771,11 @@ public class ArtistProfilePanel extends JPanel implements ThemeChangeListener, P
         String iconPath;
         if (isFromThisArtist && isPlaying) {
             iconPath = AppConstant.PAUSE_ICON_PATH;
+            GuiUtil.setSmartTooltip(playButton, "Pause");
         } else {
             iconPath = AppConstant.PLAY_ICON_PATH;
+            GuiUtil.setSmartTooltip(playButton, "Play");
         }
-
         playButton.setIcon(GuiUtil.createColoredIcon(iconPath, textColor, 50, 50));
         playButton.setRolloverIcon(GuiUtil.createColoredIcon(iconPath, GuiUtil.lightenColor(textColor, 0.3f), 50, 50));
     }

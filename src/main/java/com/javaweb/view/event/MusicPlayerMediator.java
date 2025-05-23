@@ -3,7 +3,6 @@ package com.javaweb.view.event;
 
 import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -16,13 +15,8 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class MusicPlayerMediator {
-    @Getter
+
     private final PlayerEventPublisher eventPublisher;
-
-    private MusicPlayerMediator() {
-        eventPublisher = new PlayerEventPublisher();
-    }
-
 
     public void subscribeToPlayerEvents(PlayerEventListener listener) {
         eventPublisher.addObserver(listener);

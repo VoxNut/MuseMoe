@@ -35,7 +35,7 @@ public class InstructionPanel extends JPanel implements ThemeChangeListener {
                 {"Shift + C", "Toggle commit history view"},
                 {"B", "Change visualizer bands (when active)"},
                 {"H", "Toggle Home"},
-                {"K or Slash(/)", "Toggle search field"},
+                {"K", "Toggle search field"},
                 {"Q", "Toggle Queue panel to see what's currently is in queue"},
                 {"E", "Open Miniplayer"},
                 {"?", "Toggle help panel"},

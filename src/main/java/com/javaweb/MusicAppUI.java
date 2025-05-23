@@ -44,6 +44,7 @@ public class MusicAppUI {
         UIManager.put("Component.focusWidth", 0);
         UIManager.put("Button.shadowWidth", 0);
         GuiUtil.disableJaudiotaggerLogging();
+        GuiUtil.configureGlobalTooltips();
     }
 
     private void openLoginPage() {

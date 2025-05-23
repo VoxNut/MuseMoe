@@ -1,8 +1,11 @@
 package com.javaweb.view.event;
 
+import org.springframework.stereotype.Component;
+
 import java.util.ArrayList;
 import java.util.List;
 
+@Component
 public class PlayerEventPublisher implements PlayerEventSubject {
 
     private final List<PlayerEventListener> listeners = new ArrayList<>();

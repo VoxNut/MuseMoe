@@ -104,9 +104,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDTO findUserByEmail(String email) {
-        return userConverter.toDTO(userRepository.findByEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException("User with email: " + email + " not found!"))
-        );
+        try {
+            return userConverter.toDTO(userRepository.findByEmail(email)
+                    .orElseThrow(() -> new EntityNotFoundException("User with email: " + email + " not found!")));
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @Override
@@ -176,7 +179,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDTO findUserByUsername(String username) {
-        return userConverter.toDTO(userRepository.findOneByUsername(username));
+        try {
+            return userConverter.toDTO(userRepository.findOneByUsername(username));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     @Override
@@ -184,5 +192,18 @@ public class UserServiceImpl implements UserService {
         return null;
     }
 
-
+    @Override
+    public boolean checkUserArtist(Long currentArtistId) {
+        Long userId = SecurityUtils.getPrincipal().getId();
+        try {
+            UserEntity curUser = userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("User with id: " + userId + " not found!"));
+            if (curUser.getArtist() == null) {
+                return false;
+            }
+            return curUser.getArtist().getId().equals(currentArtistId);
+        } catch (Exception e) {
+            log.error("Cannot check user with id: {} artist role", userId);
+            return false;
+        }
+    }
 }

@@ -48,7 +48,8 @@ public class PlaylistSelectionDialog extends JDialog implements ThemeChangeListe
         this.textColor = textColor;
         this.accentColor = accentColor;
 
-        GuiUtil.styleTitleBar(this, backgroundColor, textColor);
+        GuiUtil.styleTitleBar(this, GuiUtil.darkenColor(backgroundColor, 0.1), textColor);
+
 
         GuiUtil.updatePanelColors(getContentPane(), backgroundColor, textColor, accentColor);
 

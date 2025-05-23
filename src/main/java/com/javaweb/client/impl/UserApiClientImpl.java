@@ -81,6 +81,18 @@ class UserApiClientImpl implements UserApiClient {
     }
 
     @Override
+    public UserDTO fetchUserByUsername(String username) {
+        try {
+            String encodedUsername = urlEncoder.encode(username);
+            String url = apiConfig.buildUserUrl("/username/" + encodedUsername + "/user_dto");
+            return apiClient.get(url, UserDTO.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    @Override
     public Set<UserDTO> fetchAllUsersBaseOnRole(RoleType role) {
         try {
             String url = apiConfig.buildUserUrl("?status=1&roles=" + role);
@@ -123,17 +135,6 @@ class UserApiClientImpl implements UserApiClient {
         }
     }
 
-    @Override
-    public UserDTO fetchUserByUsername(String username) {
-        try {
-            String encodedUsername = urlEncoder.encode(username);
-            String url = apiConfig.buildUserUrl("/username/" + encodedUsername + "/user_dto");
-            return apiClient.get(url, UserDTO.class);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
 
     @Override
     public UserDTO fetchUserById(Long id) {
@@ -155,6 +156,18 @@ class UserApiClientImpl implements UserApiClient {
         } catch (Exception e) {
             e.printStackTrace();
             return null;
+        }
+    }
+
+    @Override
+    public boolean checkUserArtist(Long currentArtistId) {
+        try {
+            String url = apiConfig.buildUserUrl("/check_user_artist?currentArtistId=" + currentArtistId);
+            return apiClient.get(url, Boolean.class);
+        } catch (Exception e) {
+            log.error("Cannot check user artist role!", e.getMessage());
+            return false;
+
         }
     }
 }

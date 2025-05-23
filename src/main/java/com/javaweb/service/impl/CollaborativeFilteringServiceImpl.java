@@ -48,7 +48,20 @@ public class CollaborativeFilteringServiceImpl implements RecommendationService 
         return songDTOS;
     }
 
-    @Scheduled(cron = "0 * */4 * * ?")
+    @Scheduled(cron = "0 0 */4 * * ?")
+//
+//    Explanation:
+//0 → At 0 seconds
+//
+//0 → At 0 minutes
+//
+//*/4 → Every 4th hour (i.e., 00:00, 04:00, 08:00, 12:00, 16:00, 20:00)
+//
+//* → Every day of the month
+//
+//* → Every month
+//
+//? → No specific day of the week
 //    @Scheduled(cron = "0 */5 * * * * ")
     @Transactional
     public void updateRecommendations() {

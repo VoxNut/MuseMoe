@@ -11,8 +11,6 @@ import com.javaweb.utils.ImageMediaUtil;
 import com.javaweb.utils.StreamingAudioPlayer;
 import com.javaweb.view.advertisement.AdvertisementManager;
 import com.javaweb.view.event.MusicPlayerMediator;
-import com.javaweb.view.state.PlayerState;
-import com.javaweb.view.state.StoppedState;
 import com.javaweb.view.theme.ThemeManager;
 import com.javaweb.view.user.UserSessionManager;
 import javazoom.jl.player.AudioDevice;
@@ -35,7 +33,6 @@ import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -48,12 +45,10 @@ public class MusicPlayer extends PlaybackListener {
     private final ImageMediaUtil imageMediaUtil;
     private final MusicPlayerMediator mediator;
     private final AdvertisementManager adManager;
+
+
     private static final Object playSignal = new Object();
 
-
-    @Getter
-    @Setter
-    private PlayerState currentState = new StoppedState(this);
 
     @Getter
     @Setter
@@ -150,13 +145,12 @@ public class MusicPlayer extends PlaybackListener {
         playCurrentSong();
     }
 
-    public void loadSong(SongDTO song) {
-        if (adManager.shouldShowAd(getCurrentUser()) || song != null) {
-            processLoadSong(song);
-        }
-    }
 
-    private void processLoadSong(SongDTO song) {
+    public void loadSong(SongDTO song) {
+        if (song == null) {
+            log.error("Attempted to load null song!");
+            return;
+        }
         resetPlaybackPosition();
         stopSong();
 
@@ -167,14 +161,19 @@ public class MusicPlayer extends PlaybackListener {
         }
 
         if (adManager.shouldShowAd(getCurrentUser())) {
-            if (song != null) {
-                adManager.storeLastSong(song);
-            }
+            adManager.storeLastSong(song);
             havingAd = true;
-            //get random ad url
-            String driveId = adManager.getAdvertisements()[(int) (Math.random() * adManager.getAdvertisements().length)];
-            currentSong = CommonApiUtil.fetchSongByGoogleDriveId(driveId);
-            mediator.notifyAdOn();
+            // Get random ad URL
+            SwingUtilities.invokeLater(() -> {
+                String driveId = adManager.getAdvertisements()[(int) (Math.random() * adManager.getAdvertisements().length)];
+                currentSong = CommonApiUtil.fetchSongByGoogleDriveId(driveId);
+
+                imageMediaUtil.populateSongImage(currentSong, image -> {
+                    updateGUI();
+                    mediator.notifyAdOn();
+                    playCurrentSong();
+                });
+            });
         } else {
             havingAd = false;
             currentSong = song;
@@ -183,28 +182,26 @@ public class MusicPlayer extends PlaybackListener {
             if (currentSong != null && !havingAd && !currentSong.getIsLocalFile()) {
                 CommonApiUtil.logPlayHistory(currentSong.getId());
             }
-        }
 
-        // play the current song if not null
-        if (currentSong != null) {
-            // set the currentPlaylistIndex only if the currentSong is not null.
-            if (currentPlaylist != null && !currentPlaylist.isEmptyPlaylist()) {
-                currentPlaylistIndex = currentPlaylist.getIndexFromSong(currentSong);
-            }
+            // play the current song if not null
+            if (currentSong != null) {
+                // set the currentPlaylistIndex only if the currentSong is not null.
+                if (currentPlaylist != null && !currentPlaylist.isEmptyPlaylist()) {
+                    currentPlaylistIndex = currentPlaylist.getIndexFromSong(currentSong);
+                }
 
-            if (repeatMode == RepeatMode.REPEAT_ONE) {
-                repeatMode = RepeatMode.REPEAT_ALL;
+                if (repeatMode == RepeatMode.REPEAT_ONE) {
+                    repeatMode = RepeatMode.REPEAT_ALL;
+                }
+                mediator.notifyRepeatModeChanged(repeatMode);
+                mediator.notifyHomePagePlaybackSlider();
+                updateGUI();
+                playCurrentSong();
             }
-            mediator.notifyRepeatModeChanged(repeatMode);
-            mediator.notifyHomePagePlaybackSlider();
-            updateGUI();
-            playCurrentSong();
         }
     }
 
-
     public void pauseSong() throws IOException {
-        if (havingAd) return;
         if (advancedPlayer != null) {
             isPaused = true;
             stopSong();
@@ -248,20 +245,22 @@ public class MusicPlayer extends PlaybackListener {
     public void nextSong() throws IOException {
         //Stop any further features when having an ad.
         if (havingAd) return;
+
         pressedNext = true;
 
-        PlaylistSourceType sourceType = currentPlaylist.getSourceType();
         if (currentPlaylist == null) {
             if (repeatMode == RepeatMode.REPEAT_ONE) {
                 repeatMode = RepeatMode.REPEAT_ALL;
             }
+            return;
         } else {
             // If the playing song is the last song in playlist.
+            PlaylistSourceType sourceType = currentPlaylist.getSourceType();
             if (currentPlaylistIndex + 1 == currentPlaylist.size()) {
-                if (repeatMode == RepeatMode.NO_REPEAT) {
-                    if (sourceType == PlaylistSourceType.USER_PLAYLIST) {
+                if (sourceType != PlaylistSourceType.QUEUE) {
+                    if (repeatMode == RepeatMode.NO_REPEAT && sourceType == PlaylistSourceType.USER_PLAYLIST) {
                         // Fetch user playlists and play random playlist
-                        List<PlaylistDTO> playlists = CommonApiUtil.fetchPlaylistByUserId()
+                        java.util.List<PlaylistDTO> playlists = CommonApiUtil.fetchPlaylistByUserId()
                                 .stream()
                                 .filter(playlist -> !playlist.isEmptyPlaylist())
                                 .collect(Collectors.toList());
@@ -275,12 +274,12 @@ public class MusicPlayer extends PlaybackListener {
                         currentPlaylist.setSourceType(PlaylistSourceType.USER_PLAYLIST);
                         currentPlaylistIndex = 0;
                         currentSong = currentPlaylist.getSongAt(currentPlaylistIndex);
-                    }
-                } else if (repeatMode == RepeatMode.REPEAT_ALL || repeatMode == RepeatMode.REPEAT_ONE) {
-                    currentPlaylistIndex = 0;
-                    currentSong = currentPlaylist.getSongAt(currentPlaylistIndex);
-                    if (repeatMode == RepeatMode.REPEAT_ONE) {
-                        repeatMode = RepeatMode.REPEAT_ALL;
+                    } else if (repeatMode == RepeatMode.REPEAT_ALL || repeatMode == RepeatMode.REPEAT_ONE) {
+                        currentPlaylistIndex = 0;
+                        currentSong = currentPlaylist.getSongAt(currentPlaylistIndex);
+                        if (repeatMode == RepeatMode.REPEAT_ONE) {
+                            repeatMode = RepeatMode.REPEAT_ALL;
+                        }
                     }
                 }
             } else {
@@ -291,7 +290,11 @@ public class MusicPlayer extends PlaybackListener {
                 }
             }
         }
-        loadSong(currentSong);
+        if (currentPlaylist.getSourceType() == PlaylistSourceType.LOCAL) {
+            loadLocalSong(currentSong);
+        } else {
+            loadSong(currentSong);
+        }
     }
 
     public void prevSong() throws IOException {
@@ -304,6 +307,7 @@ public class MusicPlayer extends PlaybackListener {
             if (repeatMode == RepeatMode.REPEAT_ONE) {
                 repeatMode = RepeatMode.REPEAT_ALL;
             }
+            return;
         } else {
             // Have a playlist
             // check to see if we have reached the head of the playlist
@@ -325,7 +329,11 @@ public class MusicPlayer extends PlaybackListener {
                 }
             }
         }
-        loadSong(currentSong);
+        if (currentPlaylist.getSourceType() == PlaylistSourceType.LOCAL) {
+            loadLocalSong(currentSong);
+        } else {
+            loadSong(currentSong);
+        }
     }
 
     public void playCurrentSong() {
@@ -374,11 +382,9 @@ public class MusicPlayer extends PlaybackListener {
 
             setVolume(currentVolumeGain);
 
-            SwingUtilities.invokeLater(() -> {
-                mediator.notifyToggleCava(true);
-                startMusicThread();
-                startPlaybackSliderThread();
-            });
+            mediator.notifyToggleCava(true);
+            startMusicThread();
+            startPlaybackSliderThread();
         } catch (Exception e) {
             log.error("Error playing streaming song: {}", e.getMessage(), e);
         }
@@ -411,14 +417,14 @@ public class MusicPlayer extends PlaybackListener {
 
     // create a thread that will handle updating the slider
     private void startPlaybackSliderThread() {
-        if (sliderThread != null && sliderThread.isAlive()) {
-            sliderThread.interrupt();
-            try {
-                sliderThread.join(200);
-            } catch (InterruptedException ignored) {
-                Thread.currentThread().interrupt();
-            }
-        }
+//        if (sliderThread != null && sliderThread.isAlive()) {
+//            sliderThread.interrupt();
+//            try {
+//                sliderThread.join(200);
+//            } catch (InterruptedException ignored) {
+//                Thread.currentThread().interrupt();
+//            }
+//        }
 
         sliderThread = new Thread(() -> {
             try {
@@ -465,7 +471,9 @@ public class MusicPlayer extends PlaybackListener {
 
                     if (!Thread.currentThread().isInterrupted() && !isPaused &&
                             !songFinished && advancedPlayer != null) {
-                        mediator.notifyPlaybackProgress((int) calculatedFrame, currentTimeInMilli);
+                        SwingUtilities.invokeLater(
+                                () -> mediator.notifyPlaybackProgress((int) calculatedFrame, currentTimeInMilli)
+                        );
                     }
 
                     // Exit if we've reached the end
@@ -540,7 +548,9 @@ public class MusicPlayer extends PlaybackListener {
 
 
             if (pressedNext || pressedPrev || pressedShuffle) {
-                adManager.updateUserPlayCounter(getCurrentUser());
+                if (currentPlaylist.getSourceType() != PlaylistSourceType.LOCAL) {
+                    adManager.updateUserPlayCounter(getCurrentUser());
+                }
                 return;
             }
 
@@ -551,7 +561,9 @@ public class MusicPlayer extends PlaybackListener {
             if (calculatedFrame >= threshold) {
                 mediator.notifyPlaybackPaused(currentSong);
                 //Update play counter
-                adManager.updateUserPlayCounter(getCurrentUser());
+                if (currentPlaylist.getSourceType() != PlaylistSourceType.LOCAL) {
+                    adManager.updateUserPlayCounter(getCurrentUser());
+                }
                 SwingUtilities.invokeLater(() -> {
                     if (currentPlaylist == null) {
                         handleSingleSongCompletion();
@@ -718,7 +730,7 @@ public class MusicPlayer extends PlaybackListener {
     }
 
     private void updateGUI() {
-        imageMediaUtil.loadAndWaitForImage(currentSong, 700);
+        imageMediaUtil.populateSongImage(currentSong);
         updateThemeFromSong(currentSong);
         mediator.notifySongLoaded(currentSong);
         mediator.notifyPlaylistLoaded(currentPlaylist);

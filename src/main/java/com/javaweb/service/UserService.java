@@ -41,4 +41,6 @@ public interface UserService {
     void updateLastLoginTime(LocalDateTime lastLoginTime);
 
     boolean upgradeUser(UserRequestDTO userRequestDTO);
+
+    boolean checkUserArtist(Long currentArtistId);
 }

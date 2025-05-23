@@ -182,7 +182,7 @@ public class ImageMediaUtil {
     /**
      * Core method for loading images asynchronously with consistent behavior
      */
-    private void loadImageAsync(String imageId, Consumer<BufferedImage> callback) {
+    public void loadImageAsync(String imageId, Consumer<BufferedImage> callback) {
         if (imageId == null) {
             return;
         }

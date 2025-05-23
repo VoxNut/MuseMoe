@@ -2,7 +2,6 @@ package com.javaweb.view.panel;
 
 import com.javaweb.App;
 import com.javaweb.model.dto.SongDTO;
-import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
 import com.javaweb.utils.StringUtils;
 import com.javaweb.view.components.AsyncImageLabel;
@@ -223,14 +222,14 @@ public class QueuePanel extends JPanel implements ThemeChangeListener, PlayerEve
                 "[]5[]"
         ));
 
-        Font titleFont = FontUtil.getSpotifyFont(Font.BOLD, 22);
         JLabel titleLabel = GuiUtil.createLabel(
-                StringUtils.getTruncatedTextByWidth(song.getTitle(), titleFont, 200),
+                StringUtils.getTruncatedText(song.getTitle(), 30),
                 Font.BOLD, 22);
-        titleLabel.setToolTipText(song.getTitle());
+        GuiUtil.setSmartTooltip(titleLabel, song.getTitle());
 
         String artistName = song.getSongArtist() != null ? song.getSongArtist() : "Unknown Artist";
         JLabel artistLabel = GuiUtil.createLabel(artistName, Font.PLAIN, 18);
+        GuiUtil.setSmartTooltip(artistLabel, artistName);
 
         songInfoPanel.add(titleLabel);
         songInfoPanel.add(artistLabel);
@@ -243,6 +242,8 @@ public class QueuePanel extends JPanel implements ThemeChangeListener, PlayerEve
             positionPanel.add(positionLabel, BorderLayout.EAST);
 
             songInfoPanel.add(positionPanel, "east");
+        } else {
+            GuiUtil.setSmartTooltip(panel, "Add to queue");
         }
 
         panel.add(songImage);
@@ -392,7 +393,7 @@ public class QueuePanel extends JPanel implements ThemeChangeListener, PlayerEve
     @Override
     public void onPlayerEvent(PlayerEvent event) {
         switch (event.type()) {
-            case QUEUE_UPDATED -> {
+            case QUEUE_UPDATED, SONG_LOADED -> {
                 updateQueueView();
             }
         }

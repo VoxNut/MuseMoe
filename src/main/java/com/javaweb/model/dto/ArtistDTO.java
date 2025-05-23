@@ -27,4 +27,5 @@ public class ArtistDTO extends AbstractDTO {
     private BufferedImage profileImage;
     private Integer followerCount = 0;
 
+
 }

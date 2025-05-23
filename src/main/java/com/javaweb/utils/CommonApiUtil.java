@@ -59,6 +59,10 @@ public class CommonApiUtil {
         return getUserApiClient().fetchAllUsersBaseOnRole(role);
     }
 
+    public static boolean checkUserArtist(Long currentArtistId) {
+        return getUserApiClient().checkUserArtist(currentArtistId);
+    }
+
     public static boolean upgradeUser(RoleType roleType) {
         return getUserApiClient().upgradeUser(roleType);
     }
@@ -239,6 +243,7 @@ public class CommonApiUtil {
     public static List<ArtistDTO> searchArtists(String query) {
         return getArtistApiClient().searchArtists(query, 20);
     }
+
 
     public static List<ArtistDTO> findArtistsBySongId(Long songId) {
         return getArtistApiClient().findArtistsBySongId(songId);

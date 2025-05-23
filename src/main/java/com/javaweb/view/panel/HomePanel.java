@@ -4,9 +4,11 @@ import com.javaweb.App;
 import com.javaweb.constant.AppConstant;
 import com.javaweb.enums.PlaylistSourceType;
 import com.javaweb.model.dto.AlbumDTO;
-import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
-import com.javaweb.utils.*;
+import com.javaweb.utils.CommonApiUtil;
+import com.javaweb.utils.GuiUtil;
+import com.javaweb.utils.NetworkChecker;
+import com.javaweb.utils.StringUtils;
 import com.javaweb.view.HomePage;
 import com.javaweb.view.components.AsyncImageLabel;
 import com.javaweb.view.event.MusicPlayerFacade;
@@ -239,19 +241,16 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
         infoPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         infoPanel.setOpaque(false);
 
-        Font titleFont = FontUtil.getSpotifyFont(Font.BOLD, 12);
 
         // Album title with truncation and tooltip
-        JLabel titleLabel = GuiUtil.createLabel(
-                StringUtils.getTruncatedTextByWidth(album.getTitle(), titleFont, 140),
-                Font.BOLD, 12);
+        JLabel titleLabel = GuiUtil.createLabel(StringUtils.getTruncatedText(album.getTitle()), Font.BOLD, 12);
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        titleLabel.setToolTipText(album.getTitle());
+        GuiUtil.setSmartTooltip(titleLabel, album.getTitle());
 
         // Artist name with tooltip
-        JLabel artistLabel = GuiUtil.createLabel(album.getArtistName(), Font.PLAIN, 11);
+        JLabel artistLabel = GuiUtil.createLabel(StringUtils.getTruncatedText(album.getArtistName()), Font.PLAIN, 11);
         artistLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        artistLabel.setToolTipText(album.getArtistName());
+        GuiUtil.setSmartTooltip(artistLabel, album.getArtistName());
 
         // Add components
         card.add(coverLabel);
@@ -273,8 +272,8 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
                     HomePage homePage = (HomePage) SwingUtilities.getWindowAncestor(HomePanel.this);
                     homePage.navigateToAlbumView(album);
 
-                    PlaylistDTO playlistDTO = playerFacade.convertSongListToPlaylist(album.getSongDTOS(), album.getTitle());
-                    playerFacade.setCurrentPlaylist(playlistDTO);
+//                    PlaylistDTO playlistDTO = playerFacade.convertSongListToPlaylist(album.getSongDTOS(), album.getTitle());
+//                    playerFacade.setCurrentPlaylist(playlistDTO);
                 } else if (SwingUtilities.isRightMouseButton(e)) {
                     GuiUtil.addAlbumContextMenu(card, album);
                 }
@@ -310,21 +309,20 @@ public class HomePanel extends JPanel implements ThemeChangeListener, PlayerEven
 
         // Title with limited width
         JLabel titleLabel = GuiUtil.createLabel(
-                StringUtils.getTruncatedTextByWidth(song.getTitle(), FontUtil.getSpotifyFont(Font.BOLD, 12), 100),
+                StringUtils.getTruncatedText(song.getTitle()),
                 Font.BOLD, 12
         );
+        GuiUtil.setSmartTooltip(titleLabel, song.getTitle());
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         // Artist name with limited width
         String artistName = song.getSongArtist() != null ?
-                StringUtils.getTruncatedTextByWidth(song.getSongArtist(), FontUtil.getSpotifyFont(Font.PLAIN, 10), 100) :
+                StringUtils.getTruncatedText(song.getSongArtist()) :
                 "Unknown Artist";
         JLabel artistLabel = GuiUtil.createLabel(artistName, Font.PLAIN, 10);
+        GuiUtil.setSmartTooltip(artistLabel, song.getSongArtist());
         artistLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // Add tooltips for full text
-        titleLabel.setToolTipText(song.getTitle());
-        artistLabel.setToolTipText(song.getSongArtist());
 
         textInfoPanel.add(titleLabel);
         textInfoPanel.add(artistLabel);

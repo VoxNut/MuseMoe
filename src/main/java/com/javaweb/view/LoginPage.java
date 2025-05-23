@@ -158,13 +158,23 @@ public class LoginPage extends JFrame {
         JPasswordField passwordField = GuiUtil.createLineInputPasswordField(AppConstant.TEXT_FIELD_SIZE);
         formPanel.add(passwordField, gbc);
 
+
+        gbc.gridx = 0;
+        gbc.gridy++;
+        JLabel confirmPasswordLabel = GuiUtil.createLabel("Confirm Password:", Font.PLAIN, 20);
+        formPanel.add(confirmPasswordLabel, gbc);
+        gbc.gridx = 1;
+        JPasswordField confirmPasswordField = GuiUtil.createLineInputPasswordField(AppConstant.TEXT_FIELD_SIZE);
+        formPanel.add(confirmPasswordField, gbc);
+
+
         // Add KeyListener to trigger sign-up on Enter key press
-        passwordField.addKeyListener(new KeyAdapter() {
+        confirmPasswordField.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    handleSignUp(usernameField.getText(), fullNameLabel.getText(), emailField.getText(),
-                            new String(passwordField.getPassword()));
+                    handleSignUp(usernameField.getText(), fullNameField.getText(), emailField.getText(),
+                            new String(passwordField.getPassword()), new String(confirmPasswordField.getPassword()));
                 }
             }
         });
@@ -176,7 +186,7 @@ public class LoginPage extends JFrame {
         gbc.anchor = GridBagConstraints.CENTER;
         JButton signUpButton = GuiUtil.createPlainButton("Register");
         signUpButton.addActionListener(e -> handleSignUp(usernameField.getText(), fullNameField.getText(), emailField.getText(),
-                new String(passwordField.getPassword())));
+                new String(passwordField.getPassword()), new String(confirmPasswordField.getPassword())));
         formPanel.add(signUpButton, gbc);
 
         return formPanel;
@@ -347,8 +357,8 @@ public class LoginPage extends JFrame {
         return containerPanel;
     }
 
-    private void handleSignUp(String username, String fullName, String email, String password) {
-        if (!validateInputFields(username, email, password)) {
+    private void handleSignUp(String username, String fullName, String email, String password, String confirmPassword) {
+        if (!validateInputFields(username, email, password, confirmPassword)) {
             return;
         }
         if (CommonApiUtil.fetchUserByUsername(username) != null) {
@@ -538,7 +548,7 @@ public class LoginPage extends JFrame {
         return CommonApiUtil.updateUserPassword(userId, tempPassword);
     }
 
-    private boolean validateInputFields(String username, String email, String password) {
+    private boolean validateInputFields(String username, String email, String password, String confirmPassword) {
         if (!ValidateUtil.isValidUsername(username)) {
             GuiUtil.showWarningMessageDialog(this, "Username not valid.");
             return false;
@@ -549,16 +559,25 @@ public class LoginPage extends JFrame {
                 return false;
             }
         }
+        if (confirmPassword != null) {
+            if (!password.equals(confirmPassword)) {
+                GuiUtil.showWarningMessageDialog(this, "Confirm password doesn't match with password.");
+                return false;
+            }
+        }
+
+
         if (!ValidateUtil.isValidPassword(password)) {
             GuiUtil.showWarningMessageDialog(this, "Password not valid.");
             return false;
         }
+
         return true;
     }
 
 
     private void authenticateUser(String username, String password) {
-        if (!validateInputFields(username, null, password)) {
+        if (!validateInputFields(username, null, password, null)) {
             return;
         }
 

@@ -5,6 +5,7 @@ import org.jdatepicker.impl.JDatePickerImpl;
 import javax.swing.*;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -16,6 +17,10 @@ public class DateUtil {
     public static String formatDate(Date date) {
         SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss dd-MM-yyyy");
         return formatter.format(date);
+    }
+
+    public static Date toDate(LocalDateTime localDateTime) {
+        return Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant());
     }
 
     public static LocalDate convertToLocalDate(JDatePickerImpl datePicker) {

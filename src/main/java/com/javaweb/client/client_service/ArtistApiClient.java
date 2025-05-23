@@ -15,4 +15,6 @@ public interface ArtistApiClient {
     ArtistDTO findArtistById(Long artistId);
 
     boolean createArtist(String stageName, String bio, MultipartFile artistProfilePicture);
+
+
 }

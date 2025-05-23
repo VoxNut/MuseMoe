@@ -22,10 +22,12 @@ public class PlaylistDTO extends AbstractDTO {
     private String name;
     private String description;
     private String coverImage;
-    private String totalDuration;
+    private Integer totalDuration;
     private List<SongDTO> songs;
     private List<Long> songIds;
     private PlaylistSourceType sourceType;
+    private String createdAt;
+    private String updatedAt;
 
 
     public SongDTO getSongAt(Integer position) {

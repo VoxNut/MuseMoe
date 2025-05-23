@@ -29,5 +29,6 @@ public class AlbumDTO extends AbstractDTO {
     private String artistName;
     private Long artistId;
     private String albumLength;
+    private Integer totalDuration;
 
 }

@@ -32,6 +32,9 @@ public class UserConverter implements EntityConverter<UserEntity, UserRequestDTO
     private final StreamingMediaService streamingMediaService;
 
     public UserDTO toDTO(UserEntity entity) {
+        if (entity == null) {
+            return null;
+        }
         UserDTO result = modelMapper.map(entity, UserDTO.class);
         Set<String> roleDTOS = entity.getRoles() != null ? entity.getRoles().stream()
                 .map(role -> "ROLE_" + role.getCode())

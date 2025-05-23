@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 @Component
 @Getter
 public class ApiConfig {
+
     @Value("${api.base.url:http://localhost:8081}")
     private String baseUrl;
 

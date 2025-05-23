@@ -24,6 +24,7 @@ public class MusicPlayerFacade {
     private final MusicPlayer player;
     private final ImageMediaUtil imageMediaUtil;
     private final MusicPlayerMediator mediator;
+    private final MusicPlayer musicPlayer;
 
 
     private List<SongDTO> songQueue = new ArrayList<>();
@@ -31,14 +32,15 @@ public class MusicPlayerFacade {
 
 
     public void loadLocalSong(SongDTO song) {
+        if (isHavingAd()) return;
         PlaylistDTO playlistDTO = convertSongListToPlaylist(LocalSongManager.getDownloadedSongs(), "Local Songs");
         setPlaylistContext(playlistDTO, PlaylistSourceType.LOCAL);
         SwingUtilities.invokeLater(() -> player.loadLocalSong(song));
     }
 
     public void loadSongWithContext(SongDTO song, PlaylistDTO playlist, PlaylistSourceType sourceType) {
-        setPlaylistContext(playlist, sourceType);
         clearQueue();
+        setPlaylistContext(playlist, sourceType);
         player.loadSong(song);
     }
 
@@ -56,6 +58,7 @@ public class MusicPlayerFacade {
     public void clearQueue() {
         songQueue.clear();
         isQueueActive = false;
+        musicPlayer.setCurrentPlaylist(null);
         mediator.notifyQueueUpdated(songQueue);
     }
 
@@ -95,6 +98,7 @@ public class MusicPlayerFacade {
 
     public void pauseSong() {
         try {
+            if (isHavingAd()) return;
             player.pauseSong();
             mediator.notifyPlaybackPaused(getCurrentSong());
         } catch (IOException iOE) {
@@ -104,14 +108,15 @@ public class MusicPlayerFacade {
 
 
     public void playCurrentSong() {
+        if (isHavingAd()) return;
         player.playCurrentSong();
         mediator.notifyPlaybackStarted(getCurrentSong());
     }
 
     public void nextSong() {
+        if (isHavingAd()) return;
         try {
             if (isQueueActive) {
-
                 if (songQueue != null && !songQueue.isEmpty()) {
                     songQueue.removeFirst();
                     player.loadSong(songQueue.getFirst());
@@ -133,6 +138,9 @@ public class MusicPlayerFacade {
 
     public void prevSong() {
         try {
+            if (isHavingAd()) {
+                return;
+            }
             player.prevSong();
         } catch (IOException ioException) {
             ioException.printStackTrace();
@@ -150,6 +158,7 @@ public class MusicPlayerFacade {
 
     public void shufflePlaylist() {
         try {
+            if (isHavingAd()) return;
             player.shufflePlaylist();
         } catch (IOException ioException) {
             ioException.printStackTrace();
@@ -163,6 +172,7 @@ public class MusicPlayerFacade {
 
     public void cycleRepeatMode() {
         try {
+            if (isHavingAd()) return;
             player.cycleRepeatMode();
             mediator.notifyRepeatModeChanged(getRepeatMode());
         } catch (IOException ioException) {
@@ -175,24 +185,24 @@ public class MusicPlayerFacade {
         return player.isPaused();
     }
 
-    public void setCurrentPlaylist(PlaylistDTO playlist) {
-        if (playlist == null) {
-            setPlaylistContext(null, null);
-            isQueueActive = false;
-            return;
-        }
-        PlaylistSourceType sourceType;
-
-        if ("Liked Songs".equals(playlist.getName())) {
-            sourceType = PlaylistSourceType.LIKED_SONGS;
-        } else if ("Current Queue".equals(playlist.getName()) || isQueueActive) {
-            sourceType = PlaylistSourceType.QUEUE;
-        } else {
-            sourceType = PlaylistSourceType.USER_PLAYLIST;
-        }
-
-        setPlaylistContext(playlist, sourceType);
-    }
+//    public void setCurrentPlaylist(PlaylistDTO playlist) {
+//        if (playlist == null) {
+//            setPlaylistContext(null, null);
+//            isQueueActive = false;
+//            return;
+//        }
+//        PlaylistSourceType sourceType;
+//
+//        if ("Liked Songs".equals(playlist.getName())) {
+//            sourceType = PlaylistSourceType.LIKED_SONGS;
+//        } else if ("Current Queue".equals(playlist.getName()) || isQueueActive) {
+//            sourceType = PlaylistSourceType.QUEUE;
+//        } else {
+//            sourceType = PlaylistSourceType.USER_PLAYLIST;
+//        }
+//
+//        setPlaylistContext(playlist, sourceType);
+//    }
 
 
     public SongDTO getCurrentSong() {

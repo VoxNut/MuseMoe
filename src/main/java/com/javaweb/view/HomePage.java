@@ -356,7 +356,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                             mouseEvent.getY()
                     );
 
-                    if (searchField.hasFocus() &&
+                    if (searchField != null &&
+                            searchField.hasFocus() &&
                             !(clickedComponent instanceof JTextField) &&
                             !(clickedComponent instanceof JTextArea) &&
                             !(clickedComponent instanceof JEditorPane)) {
@@ -436,10 +437,13 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         goBackButton = GuiUtil.changeButtonIconColor(AppConstant.GO_BACK_ICON_PATH, 20, 20);
         goBackButton.setEnabled(navigationManager.canGoBack());
         goBackButton.addActionListener(e -> handleNavigationBack());
+        GuiUtil.setSmartTooltip(goBackButton, "Go back");
+
 
         goForwardButton = GuiUtil.changeButtonIconColor(AppConstant.GO_FORWARD_ICON_PATH, 20, 20);
         goForwardButton.setEnabled(navigationManager.canGoForward());
         goForwardButton.addActionListener(e -> handleNavigationForward());
+        GuiUtil.setSmartTooltip(goForwardButton, "Go forward");
 
         leftPanel.add(goBackButton, "");
         leftPanel.add(goForwardButton, "");
@@ -451,6 +455,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         JButton homeIcon = GuiUtil.changeButtonIconColor(AppConstant.HOME_ICON_PATH, 20, 20);
         homeIcon.addActionListener(e -> toggleHome());
         homeIcon.setToolTipText("Home");
+        GuiUtil.setSmartTooltip(homeIcon, "Go to Home");
+
         centerPanel.add(homeIcon, "");
 
         // Search bar with wrapper for styling
@@ -467,6 +473,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 performSearch(searchField.getText());
             }
         });
+        GuiUtil.setSmartTooltip(lookupIcon, "Look up songs, artists, albums and more!");
+
         searchBarWrapper.add(lookupIcon, BorderLayout.WEST);
 
         // Search field
@@ -565,16 +573,19 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         if (userRole.equals("Free User")) {
             upgradeButton = GuiUtil.createButton("Upgrade to Premium");
-            GuiUtil.styleButton(upgradeButton, ThemeManager.getInstance().getAccentColor(), ThemeManager.getInstance().getBackgroundColor(), ThemeManager.getInstance().getTextColor());
             upgradeButton.addActionListener(e -> handlePremiumUpgrade());
+            GuiUtil.setSmartTooltip(upgradeButton, "Upgrade to Premium user");
+
 
         } else if (userRole.equals("Premium User")) {
             upgradeButton = GuiUtil.createButton("Become an Artist");
-            GuiUtil.styleButton(upgradeButton, ThemeManager.getInstance().getAccentColor(), ThemeManager.getInstance().getBackgroundColor(), ThemeManager.getInstance().getTextColor());
             upgradeButton.addActionListener(e -> handleArtistUpgrade());
+            GuiUtil.setSmartTooltip(upgradeButton, "Upgrade to Artist user");
+
         }
 
         if (upgradeButton != null) {
+            GuiUtil.styleButton(upgradeButton, ThemeManager.getInstance().getTextColor(), GuiUtil.lightenColor(ThemeManager.getInstance().getBackgroundColor(), 0.2), ThemeManager.getInstance().getAccentColor());
             upgradePanel.add(upgradeButton);
         }
 
@@ -586,16 +597,23 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         helpPanel.setBorder(GuiUtil.createTitledBorder("Help", TitledBorder.CENTER));
         JLabel helpLabel = GuiUtil.createLabel("Type ?", Font.BOLD, 14);
         helpPanel.add(helpLabel, "");
+        GuiUtil.setSmartTooltip(helpPanel, "Find it hard to use MuseMoe? Type \"?\" for more information");
+
         rightPanel.add(helpPanel, "w 80!");
 
         // User info display
 
         JLabel fullNameLabel = GuiUtil.createLabel(getCurrentUser().getFullName() != null
                 ? getCurrentUser().getFullName() + " - " + userRole : "??? - " + userRole);
+
+        GuiUtil.setSmartTooltip(fullNameLabel, "Your full name and role");
+
         rightPanel.add(fullNameLabel, "");
 
         // User avatar with menu
         JLabel avatarLabel = createUserProfileAvatar();
+        GuiUtil.setSmartTooltip(avatarLabel, "User avatar");
+
         rightPanel.add(avatarLabel, "");
 
         // Add the three main sections to the header content
@@ -644,23 +662,13 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         );
 
         if (option == JOptionPane.YES_OPTION) {
-            // Create a panel for artist information collection
-            JPanel inputPanel = GuiUtil.createPanel(new MigLayout("wrap 2", "[][grow,fill]", "[][]"));
 
             // Stage name field
-            JTextField stageNameField = new JTextField(20);
-            inputPanel.add(GuiUtil.createLabel("Stage Name:", Font.BOLD, 14), "");
-            inputPanel.add(stageNameField, "growx");
+            JTextField stageNameField = GuiUtil.createTextField(20);
 
             // Bio field
-            JTextArea bioArea = new JTextArea(5, 20);
-            bioArea.setLineWrap(true);
-            bioArea.setWrapStyleWord(true);
-            JScrollPane bioScrollPane = new JScrollPane(bioArea);
-            inputPanel.add(GuiUtil.createLabel("Bio:", Font.BOLD, 14), "");
-            inputPanel.add(bioScrollPane, "growx");
+            JTextArea bioArea = GuiUtil.createTextArea(5, 20);
 
-            // Profile picture selection (using a button that launches a file chooser)
             JButton selectImageButton = new JButton("Select Profile Picture");
             final JLabel imageNameLabel = new JLabel("No image selected");
             final JFileChooser fileChooser = new JFileChooser();
@@ -676,21 +684,21 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 }
             });
 
-            inputPanel.add(GuiUtil.createLabel("Profile Picture:", Font.BOLD, 14), "");
             JPanel imagePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
             imagePanel.add(selectImageButton);
             imagePanel.add(imageNameLabel);
-            inputPanel.add(imagePanel, "growx");
 
-            int result = JOptionPane.showConfirmDialog(
+            JOptionPane optionPane = GuiUtil.showArtistUpgradeDialog(
                     this,
-                    inputPanel,
-                    "Artist Information",
-                    JOptionPane.OK_CANCEL_OPTION,
-                    JOptionPane.PLAIN_MESSAGE
+                    stageNameField,
+                    bioArea,
+                    imageNameLabel,
+                    selectImageButton
             );
+            Object result = optionPane.getValue();
 
-            if (result == JOptionPane.OK_OPTION && !stageNameField.getText().trim().isEmpty()) {
+            if (result != null && result instanceof Integer && (Integer) result == JOptionPane.OK_OPTION
+                    && !stageNameField.getText().trim().isEmpty()) {
                 try {
                     MultipartFile profilePicture = null;
 
@@ -723,7 +731,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                     log.error("Error during artist upgrade", ex);
                     GuiUtil.showErrorMessageDialog(this, "An unexpected error occurred. Please try again later.");
                 }
-            } else if (result == JOptionPane.OK_OPTION) {
+            } else if (result != null && result instanceof Integer && (Integer) result == JOptionPane.OK_OPTION) {
                 GuiUtil.showWarningMessageDialog(this, "Stage name is required.");
                 handleArtistUpgrade();
             }
@@ -738,8 +746,10 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         if (miniplayerActive && MiniMusicPlayerGUI.getInstance().isVisible()) {
             MiniMusicPlayerGUI.getInstance().setVisible(false);
             miniplayerActive = false;
+            GuiUtil.showToast(this, "Miniplayer deactivated");
         } else {
             openMiniplayer();
+            GuiUtil.showToast(this, "Miniplayer activated");
         }
     }
 
@@ -1144,16 +1154,18 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         JPanel infoPanel = GuiUtil.createPanel();
         infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
 
-        Font titleFont = FontUtil.getSpotifyFont(Font.BOLD, 12);
-        Font artistFont = FontUtil.getSpotifyFont(Font.PLAIN, 10);
 
-        JLabel titleLabel = GuiUtil.createLabel(StringUtils.getTruncatedTextByWidth(song.getTitle(), titleFont), Font.BOLD, 12);
+        JLabel titleLabel = GuiUtil.createLabel(StringUtils.getTruncatedText(song.getTitle()), Font.BOLD, 12);
+        GuiUtil.setSmartTooltip(titleLabel, song.getTitle());
+
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel artistLabel = GuiUtil.createLabel(
-                song.getSongArtist() != null ? StringUtils.getTruncatedTextByWidth(song.getSongArtist(), artistFont) : "Unknown Artist",
+                song.getSongArtist() != null ? StringUtils.getTruncatedText(song.getSongArtist()) : "Unknown Artist",
                 Font.PLAIN, 10
         );
+        GuiUtil.setSmartTooltip(artistLabel, song.getSongArtist());
+
 
         artistLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
@@ -1353,7 +1365,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         JPanel infoPanel = GuiUtil.createPanel();
         infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
 
-        JLabel nameLabel = GuiUtil.createLabel(playlist.getName(), Font.BOLD, 12);
+        JLabel nameLabel = GuiUtil.createLabel(StringUtils.getTruncatedText(playlist.getName()), Font.BOLD, 12);
+        GuiUtil.setSmartTooltip(nameLabel, playlist.getName());
         nameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel countLabel = GuiUtil.createLabel(
@@ -1407,16 +1420,18 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         JPanel infoPanel = GuiUtil.createPanel();
         infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
 
-        Font titleFont = FontUtil.getSpotifyFont(Font.BOLD, 12);
-        Font artistFont = FontUtil.getSpotifyFont(Font.PLAIN, 10);
 
-        JLabel titleLabel = GuiUtil.createLabel(StringUtils.getTruncatedTextByWidth(song.getTitle(), titleFont), Font.BOLD, 12);
+        JLabel titleLabel = GuiUtil.createLabel(StringUtils.getTruncatedText(song.getTitle()), Font.BOLD, 12);
+        GuiUtil.setSmartTooltip(titleLabel, song.getTitle());
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel artistLabel = GuiUtil.createLabel(
-                song.getSongArtist() != null ? StringUtils.getTruncatedTextByWidth(song.getSongArtist(), artistFont) : "Unknown Artist",
+                song.getSongArtist() != null ? StringUtils.getTruncatedText(song.getSongArtist()) : "Unknown Artist",
                 Font.PLAIN, 10
         );
+
+        GuiUtil.setSmartTooltip(artistLabel, song.getSongArtist());
+
         artistLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         infoPanel.add(titleLabel);
@@ -1519,7 +1534,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         artistPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
 
         // Create artist profile
-        AsyncImageLabel artistProfile = GuiUtil.createArtistProfileLabel(40);
+        AsyncImageLabel artistProfile = new AsyncImageLabel(40, 40, 15, true);
         artistProfile.startLoading();
         playerFacade.populateArtistProfile(artist, artistProfile::setLoadedImage);
 
@@ -1529,7 +1544,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         infoPanel.add(Box.createVerticalGlue());
 
-        JLabel stageNameLabel = GuiUtil.createLabel(artist.getStageName(), Font.BOLD, 12);
+        JLabel stageNameLabel = GuiUtil.createLabel(StringUtils.getTruncatedText(artist.getStageName()), Font.BOLD, 12);
+        GuiUtil.setSmartTooltip(stageNameLabel, artist.getStageName());
         stageNameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         infoPanel.add(stageNameLabel);
@@ -1690,6 +1706,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                             return true;
                         }
                     }
+
                     case KeyEvent.VK_SLASH -> {
                         if (e.isShiftDown()) {
                             toggleInstructionPanel();
@@ -1897,7 +1914,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         GuiUtil.changeIconColor(miniMuseMoeIcon, textColor);
         setIconImage(miniMuseMoeIcon.getImage());
 
-        GuiUtil.styleButton(upgradeButton, ThemeManager.getInstance().getAccentColor(), ThemeManager.getInstance().getBackgroundColor(), ThemeManager.getInstance().getTextColor());
+        if (upgradeButton != null) {
+            GuiUtil.styleButton(upgradeButton, ThemeManager.getInstance().getTextColor(), GuiUtil.lightenColor(ThemeManager.getInstance().getBackgroundColor(), 0.2), ThemeManager.getInstance().getAccentColor());
+        }
 
 
         // Force repaint

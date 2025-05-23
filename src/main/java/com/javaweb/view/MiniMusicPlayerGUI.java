@@ -328,8 +328,6 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
                     GuiUtil.showInfoMessageDialog(this, "Please patience finishing ads. That helps us a lot :)");
                     return;
                 }
-                playerFacade.setCurrentPlaylist(null);
-
 
                 // Fetch all downloaded songs;
                 List<SongDTO> songs = LocalSongManager.getDownloadedSongs();
@@ -400,7 +398,6 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
                 // Add listeners for playlist selection and cancellation
                 playlistPanel.addPropertyChangeListener("playlistSelected", evt -> {
                     PlaylistDTO selectedPlaylist = (PlaylistDTO) evt.getNewValue();
-                    playerFacade.setCurrentPlaylist(selectedPlaylist);
                     playlistDialog.dispose();
                     // Show the songs in the selected playlist
                     showSongSelectionDialog(selectedPlaylist);
@@ -441,16 +438,21 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         JButton prevButton = GuiUtil.changeButtonIconColor(AppConstant.PREVIOUS_ICON_PATH, 30,
                 30);
         prevButton.setBounds(120, 0, 40, 40); // Set position and size
-        prevButton.addActionListener(e ->
-                //Prev song
-                playerFacade.prevSong());
+        prevButton.addActionListener(e -> {
+            if (playerFacade.getCurrentPlaylist() != null & playerFacade.getCurrentPlaylist().getSourceType() == PlaylistSourceType.QUEUE) {
+                GuiUtil.showToast(this, "Cannot go back in Queue!");
+                return;
+            }
+            playerFacade.prevSong();
+        });
+
+
         playbackBtns.add(prevButton);
 
         // Play button
         playButton = GuiUtil.changeButtonIconColor(AppConstant.PLAY_ICON_PATH, 30, 30);
         playButton.setBounds(190, 0, 40, 40);
         playButton.addActionListener(e -> {
-            if (playerFacade.isHavingAd()) return;
             playerFacade.playCurrentSong();
         });
         playbackBtns.add(playButton);
@@ -460,7 +462,6 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         pauseButton.setVisible(false);
         pauseButton.setBounds(190, 0, 40, 40); // Set position and size
         pauseButton.addActionListener(e -> {
-            if (playerFacade.isHavingAd()) return;
             //Pause Song
             playerFacade.pauseSong();
         });
@@ -848,10 +849,9 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
                 case PLAYLIST_LOADED -> {
                     PlaylistDTO playlist = (PlaylistDTO) event.data();
 
-                    Font font = FontUtil.getSpotifyFont(Font.BOLD, 15);
                     if (playlist != null) {
 
-                        playlistNameLabel.setText(StringUtils.getTruncatedTextByWidth(playlist.getName(), font, 200));
+                        playlistNameLabel.setText(StringUtils.getTruncatedText(playlist.getName()));
 
                         hidePlaylistNameLabel(false);
                         toggleShuffleButton(true);

@@ -7,12 +7,15 @@ import com.javaweb.converter.SongConverter;
 import com.javaweb.entity.AlbumEntity;
 import com.javaweb.entity.ArtistEntity;
 import com.javaweb.entity.SongEntity;
+import com.javaweb.entity.UserEntity;
 import com.javaweb.model.dto.AlbumDTO;
 import com.javaweb.model.dto.ArtistDTO;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.repository.AlbumRepository;
 import com.javaweb.repository.ArtistRepository;
 import com.javaweb.repository.SongRepository;
+import com.javaweb.repository.UserRepository;
+import com.javaweb.utils.SecurityUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
@@ -33,6 +36,7 @@ public class SharedSearchService {
     private final SongRepository songRepository;
     private final AlbumRepository albumRepository;
     private final ArtistRepository artistRepository;
+    private final UserRepository userRepository;
 
     private final SongConverter songConverter;
     private final AlbumConverter albumConverter;
@@ -179,7 +183,10 @@ public class SharedSearchService {
         }
 
         // Convert to DTOs and apply limit
+        Long userId = SecurityUtils.getPrincipal().getId();
+        UserEntity userEntity = userRepository.findById(userId).orElse(null);
         return results.stream()
+                .filter(artist -> !artist.getUser().equals(userEntity))
                 .limit(limit)
                 .map(artistConverter::toDTO)
                 .collect(Collectors.toList());

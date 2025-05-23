@@ -1,11 +1,14 @@
 package com.javaweb.converter;
 
 import com.javaweb.entity.PlaylistEntity;
+import com.javaweb.entity.PlaylistSongEntity;
+import com.javaweb.entity.SongEntity;
 import com.javaweb.entity.UserEntity;
 import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.model.request.PlaylistRequestDTO;
 import com.javaweb.repository.UserRepository;
+import com.javaweb.utils.DateUtil;
 import com.javaweb.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -55,7 +58,20 @@ public class PlaylistConverter implements EntityConverter<PlaylistEntity, Playli
                             .map(playlistSongEntity -> playlistSongEntity.getSong().getId())
                             .collect(Collectors.toList())
             );
+
+
+            res.setTotalDuration(
+                    entity
+                            .getPlaylistSongEntities()
+                            .stream()
+                            .map(PlaylistSongEntity::getSong)
+                            .mapToInt(SongEntity::getDuration)
+                            .sum()
+            );
         }
+
+        res.setCreatedAt(DateUtil.formatDate(DateUtil.toDate(entity.getCreated_at())));
+        res.setUpdatedAt(DateUtil.formatDate(DateUtil.toDate(entity.getUpdated_at())));
 
 
         return res;

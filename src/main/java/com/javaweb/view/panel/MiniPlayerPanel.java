@@ -54,6 +54,8 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
     private JSlider volumeSlider;
     private JLabel volumeIconLabel;
     private JButton repeatButton;
+    private JButton shuffleButton;
+    private JPanel volumePanel;
 
     public MiniPlayerPanel() {
         this.playerFacade = App.getBean(MusicPlayerFacade.class);
@@ -136,6 +138,18 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
         spinningDisc.setMinimumSize(new Dimension(60, 60));
         spinningDisc.setMaximumSize(new Dimension(60, 60));
         spinningDisc.setVisible(false);
+        spinningDisc.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        spinningDisc.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    SongDTO song = playerFacade.getCurrentSong();
+                    HomePage homePage = GuiUtil.findHomePageInstance(MiniPlayerPanel.this);
+                    homePage.navigateToSongDetailsView(song);
+                }
+            }
+        });
 
 
         scrollingLabel = new ScrollingLabel();
@@ -143,6 +157,7 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
         scrollingLabel.setFont(FontUtil.getSpotifyFont(Font.BOLD, 14));
         scrollingLabel.setForeground(textColor);
         scrollingLabel.setVisible(false);
+
 
         leftPanel.add(spinningDisc);
         leftPanel.add(scrollingLabel);
@@ -158,9 +173,10 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
         sourceTypeLabel.setHorizontalAlignment(SwingConstants.LEFT);
         sourceTypeLabel.setVisible(false);
 
-        sourceTypeLabel.setPreferredSize(new Dimension(150, 20));
+        sourceTypeLabel.setPreferredSize(new Dimension(200, 20));
         sourceTypeLabel.setMinimumSize(new Dimension(10, 20));
-        sourceTypeLabel.setMaximumSize(new Dimension(150, 20));
+        sourceTypeLabel.setMaximumSize(new Dimension(200, 20));
+
 
         gbc.gridx = 0;
         gbc.gridy = 0;
@@ -173,13 +189,11 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
         controlButtonsPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.CENTER, 15, 0));
         controlButtonsPanel.setVisible(false);
 
-        JButton shuffleButton = GuiUtil.changeButtonIconColor(AppConstant.SHUFFLE_ICON_PATH, 20, 20);
+        shuffleButton = GuiUtil.changeButtonIconColor(AppConstant.SHUFFLE_ICON_PATH, 20, 20);
         shuffleButton.addActionListener(e -> {
-            if (playerFacade.isHavingAd()) {
-                return;
-            }
             playerFacade.shufflePlaylist();
         });
+        GuiUtil.setSmartTooltip(shuffleButton, "Shuffle tracks");
 
         JButton prevButton = GuiUtil.changeButtonIconColor(AppConstant.PREVIOUS_ICON_PATH, 20, 20);
         prevButton.addActionListener(e -> {
@@ -190,41 +204,39 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
             }
             playerFacade.prevSong();
         });
+        GuiUtil.setSmartTooltip(prevButton, "Play previous song");
 
         // Play button
         JButton playButton = GuiUtil.changeButtonIconColor(AppConstant.PLAY_ICON_PATH, 20, 20);
         playButton.addActionListener(e -> {
-            if (playerFacade.isHavingAd()) {
-                return;
-            }
             playerFacade.playCurrentSong();
         });
+
+        GuiUtil.setSmartTooltip(playButton, "Play song");
 
         // Pause button
         JButton pauseButton = GuiUtil.changeButtonIconColor(AppConstant.PAUSE_ICON_PATH, 20, 20);
         pauseButton.setVisible(false);
         pauseButton.addActionListener(e -> {
-            if (playerFacade.isHavingAd()) {
-                return;
-            }
             playerFacade.pauseSong();
         });
+        GuiUtil.setSmartTooltip(pauseButton, "Pause song");
+
 
         // Next button
         JButton nextButton = GuiUtil.changeButtonIconColor(AppConstant.NEXT_ICON_PATH, 20, 20);
         nextButton.addActionListener(e -> {
-            if (playerFacade.getCurrentPlaylist().isEmptyPlaylist() && playerFacade.getCurrentPlaylist().getSourceType() == PlaylistSourceType.QUEUE) {
+            if (playerFacade.getCurrentPlaylist() == null || (playerFacade.getCurrentPlaylist().size() == 1 && playerFacade.getCurrentPlaylist().getSourceType() == PlaylistSourceType.QUEUE)) {
                 GuiUtil.showToast(this, "No more songs in queue!");
             } else {
                 playerFacade.nextSong();
             }
         });
+        GuiUtil.setSmartTooltip(nextButton, "Play next song");
+
 
         repeatButton = GuiUtil.changeButtonIconColor(AppConstant.REPEAT_ICON_PATH, 20, 20);
         repeatButton.addActionListener(e -> {
-            if (playerFacade.isHavingAd()) {
-                return;
-            }
             playerFacade.cycleRepeatMode();
         });
 
@@ -246,6 +258,7 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
         progressTrackBar.setBackground(GuiUtil.darkenColor(backgroundColor, 0.2f));
         progressTrackBar.setForeground(accentColor);
         progressTrackBar.setVisible(false);
+        progressTrackBar.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
 
         progressPanel.add(progressTrackBar, BorderLayout.CENTER);
@@ -259,24 +272,26 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
         upperControlPanel.add(controlButtonsPanel, gbc);
 
         JPanel rightControlPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.RIGHT));
-        rightControlPanel.setPreferredSize(new Dimension(150, 30));
+        rightControlPanel.setPreferredSize(new Dimension(200, 30));
         rightControlPanel.setMinimumSize(new Dimension(10, 30));
-        rightControlPanel.setMaximumSize(new Dimension(150, 30));
+        rightControlPanel.setMaximumSize(new Dimension(200, 30));
 
+        volumePanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.CENTER));
+        volumePanel.setVisible(false);
+        GuiUtil.setSmartTooltip(volumePanel, "Volume: " + 50 + "%");
 
         // Create volume slider
         volumeSlider = new JSlider(JSlider.HORIZONTAL, -40, 40, 0);
         volumeSlider.setBackground(GuiUtil.lightenColor(backgroundColor, 0.1f));
         volumeSlider.setForeground(accentColor);
         volumeSlider.setPreferredSize(new Dimension(100, 20));
-        volumeSlider.setVisible(false);
         volumeSlider.setFocusable(false);
-        volumeSlider.setToolTipText("Volume");
 
         // Optimize slider performance
         volumeSlider.setPaintTicks(false);
         volumeSlider.setPaintLabels(false);
         volumeSlider.setSnapToTicks(false);
+        volumeSlider.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         // Add change listener for volume control
         volumeSlider.addChangeListener(e -> {
@@ -291,14 +306,16 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
         // Add volume icon
         volumeIconLabel = new JLabel();
         volumeIconLabel.setIcon(GuiUtil.createColoredIcon(AppConstant.SPEAKER_75_ICON, textColor, 20, 20));
-        volumeIconLabel.setVisible(false);
+
+        volumePanel.add(volumeIconLabel);
+        volumePanel.add(volumeSlider);
+
         // Create miniplayer button
         JButton miniplayerButton = GuiUtil.changeButtonIconColor(AppConstant.MINIPLAYER_ICON_PATH, 20, 20);
-        miniplayerButton.setToolTipText("Open Music Player");
+        GuiUtil.setSmartTooltip(miniplayerButton, "Open Miniplayer");
         miniplayerButton.addActionListener(e -> openMiniplayer());
 
-        rightControlPanel.add(volumeIconLabel, "");
-        rightControlPanel.add(volumeSlider, "");
+        rightControlPanel.add(volumePanel, "");
         rightControlPanel.add(miniplayerButton, "");
 
 
@@ -397,6 +414,7 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
         } else {
             iconPath = AppConstant.SPEAKER_ICON;
         }
+        GuiUtil.setSmartTooltip(volumePanel, "Volume: " + percentage + "%");
 
         volumeIconLabel.setIcon(GuiUtil.createColoredIcon(iconPath, textColor, 20, 20));
     }
@@ -432,8 +450,7 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
         progressTrackBar.setVisible(true);
         controlButtonsPanel.setVisible(true);
         sourceTypeLabel.setVisible(true);
-        volumeSlider.setVisible(true);
-        volumeIconLabel.setVisible(true);
+        volumePanel.setVisible(true);
         startTextScrolling();
         startDiscSpinning();
     }
@@ -443,6 +460,7 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
         progressTrackBar.setVisible(false);
         controlButtonsPanel.setVisible(false);
         sourceTypeLabel.setVisible(false);
+        volumePanel.setVisible(true);
         stopTextScrolling();
         stopDiscSpinning();
     }
@@ -452,6 +470,8 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
             String text = song.getTitle() + " - " + song.getSongArtist();
             scrollingLabel.setText(text);
             scrollingLabel.setVisible(true);
+            GuiUtil.setSmartTooltip(scrollingLabel, text);
+
 
             if (spinTimer.isRunning()) {
                 stopTextScrolling();
@@ -586,6 +606,15 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
                 }
 
                 case REPEAT_MODE_CHANGED -> updateRepeatButtonIcon((RepeatMode) event.data());
+
+                case AD_ON -> {
+                    shuffleButton.setVisible(false);
+                    repeatButton.setVisible(false);
+                }
+                case AD_OFF -> {
+                    shuffleButton.setVisible(true);
+                    repeatButton.setVisible(true);
+                }
             }
         });
     }
@@ -792,6 +821,8 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
         } else {
             sourceTypeLabel.setVisible(false);
         }
+
+        GuiUtil.setSmartTooltip(sourceTypeLabel, labelText);
     }
 
     private void openMiniplayer() {
@@ -819,6 +850,8 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
         // Update both icons on the existing button
         repeatButton.setIcon(normalIcon);
         repeatButton.setRolloverIcon(hoverIcon);
+        GuiUtil.setSmartTooltip(repeatButton, "Current mode: " + repeatMode);
+
 
         // Force a repaint to show the new icon
         repeatButton.repaint();

@@ -28,4 +28,6 @@ public interface UserApiClient {
     UserDTO fetchCurrentUser();
 
     boolean upgradeUser(RoleType roleType);
+
+    boolean checkUserArtist(Long currentArtistId);
 }

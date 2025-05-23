@@ -176,12 +176,17 @@ public class AlbumViewPanel extends JPanel implements ThemeChangeListener, Playe
         // Play button (larger than others)
         playButton = GuiUtil.changeButtonIconColor(AppConstant.PLAY_ICON_PATH, 50, 50);
         playButton.addActionListener(this::handlePlayButtonClick);
+        GuiUtil.setSmartTooltip(playButton, "Play first song in album");
 
         // Other control buttons
         shuffleButton = GuiUtil.changeButtonIconColor(AppConstant.SHUFFLE_ICON_PATH, 36, 36);
+        GuiUtil.setSmartTooltip(shuffleButton, "Shuffle");
         addToPlaylistButton = GuiUtil.changeButtonIconColor(AppConstant.ADD_TO_PLAYLIST_ICON_PATH, 36, 36);
+        GuiUtil.setSmartTooltip(addToPlaylistButton, "Add album to Playlist");
         downloadButton = GuiUtil.changeButtonIconColor(AppConstant.DOWNLOAD_ICON_PATH, 36, 36);
+        GuiUtil.setSmartTooltip(downloadButton, "Download");
         moreOptionsButton = GuiUtil.changeButtonIconColor(AppConstant.MORE_ICON_PATH, 36, 36);
+        GuiUtil.setSmartTooltip(moreOptionsButton, "More Options");
 
         shuffleButton.addActionListener(e -> handleShuffleButtonClick());
         addToPlaylistButton.addActionListener(e -> handleAddToPlaylistButtonClick());
@@ -445,22 +450,9 @@ public class AlbumViewPanel extends JPanel implements ThemeChangeListener, Playe
         subtitleLabel.setText(album.getArtistName());
 
         // Calculate total duration
-        int totalSeconds = tracks.stream()
-                .mapToInt(song -> {
-                    String duration = song.getSongLength();
-                    if (duration == null) return 0;
-                    String[] parts = duration.split(":");
-                    if (parts.length == 2) {
-                        return Integer.parseInt(parts[0]) * 60 + Integer.parseInt(parts[1]);
-                    }
-                    return 0;
-                })
-                .sum();
+        int totalSeconds = album.getTotalDuration();
 
-        int totalMinutes = totalSeconds / 60;
-        int remainingSeconds = totalSeconds % 60;
-
-        String durationText = String.format("%d min %d sec", totalMinutes, remainingSeconds);
+        String durationText = StringUtils.formatMinSecDuration(totalSeconds);
         detailsLabel.setText(String.format("%d • %d songs • %s",
                 album.getReleaseYear(),
                 tracks.size(),
@@ -497,6 +489,7 @@ public class AlbumViewPanel extends JPanel implements ThemeChangeListener, Playe
             playButton.setRolloverIcon(GuiUtil.createColoredIcon(
                     AppConstant.PAUSE_ICON_PATH, GuiUtil.lightenColor(textColor, 0.3f), 50, 50
             ));
+            GuiUtil.setSmartTooltip(playButton, "Pause");
         } else {
             // For all other cases - show play button
             playButton.setIcon(GuiUtil.createColoredIcon(
@@ -505,6 +498,8 @@ public class AlbumViewPanel extends JPanel implements ThemeChangeListener, Playe
             playButton.setRolloverIcon(GuiUtil.createColoredIcon(
                     AppConstant.PLAY_ICON_PATH, GuiUtil.lightenColor(textColor, 0.3f), 50, 50
             ));
+            GuiUtil.setSmartTooltip(playButton, "Play");
+
         }
     }
 
@@ -523,22 +518,10 @@ public class AlbumViewPanel extends JPanel implements ThemeChangeListener, Playe
                 "MuseMoe Playlist");
 
         // Calculate total duration
-        int totalSeconds = tracks.stream()
-                .mapToInt(song -> {
-                    String duration = song.getSongLength();
-                    if (duration == null) return 0;
-                    String[] parts = duration.split(":");
-                    if (parts.length == 2) {
-                        return Integer.parseInt(parts[0]) * 60 + Integer.parseInt(parts[1]);
-                    }
-                    return 0;
-                })
-                .sum();
+        int totalSeconds = playlist.getTotalDuration();
 
-        int totalMinutes = totalSeconds / 60;
-        int remainingSeconds = totalSeconds % 60;
 
-        String durationText = String.format("%d min %d sec", totalMinutes, remainingSeconds);
+        String durationText = StringUtils.formatMinSecDuration(totalSeconds);
         detailsLabel.setText(String.format("%d songs • %s", tracks.size(), durationText));
 
         // Set default playlist cover if exists, otherwise use first song's cover
@@ -550,6 +533,16 @@ public class AlbumViewPanel extends JPanel implements ThemeChangeListener, Playe
 
         // Hide more by artist section for playlists
         moreByArtistPanel.setVisible(false);
+
+        releaseInfoLabel.setText(String.format(
+                """
+                        <html> 
+                            <b> Created at: </b> %s
+                            <br>
+                            <b> Updated at: </b> %s
+                        </html>
+                        """
+                , playlist.getCreatedAt(), playlist.getUpdatedAt()));
 
         // Update tracks table
         updateTracklistTable();
@@ -663,7 +656,7 @@ public class AlbumViewPanel extends JPanel implements ThemeChangeListener, Playe
 
         // Album title
         JLabel titleLabel = GuiUtil.createLabel(
-                StringUtils.getTruncatedTextByWidth(album.getTitle(), FontUtil.getSpotifyFont(Font.BOLD, 12), 120),
+                StringUtils.getTruncatedText(album.getTitle()),
                 Font.BOLD, 12);
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         titleLabel.setToolTipText(album.getTitle());

@@ -56,8 +56,6 @@ public class SongEntity extends BaseEntity {
     @JoinColumn(name = "lyrics_id")
     private LyricsEntity lyrics;
 
-    @OneToMany(mappedBy = "song")
-    private Set<QueueEntity> queues = new HashSet<>();
 
     @Column(name = "explicit_content")
     private Integer explicitContent;

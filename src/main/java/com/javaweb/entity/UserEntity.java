@@ -56,9 +56,6 @@ public class UserEntity extends BaseEntity {
     private ArtistEntity artist;
 
 
-    @OneToMany(mappedBy = "user")
-    private Set<QueueEntity> queues = new HashSet<>();
-
     @OneToMany(mappedBy = "follower")
     private Set<UserArtistFollowEntity> artists;
 

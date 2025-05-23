@@ -63,6 +63,16 @@ public class UserAPI {
         return userService.findUserByUsername(username);
     }
 
+    @GetMapping("/check_user_artist")
+    public ResponseEntity<Boolean> checkUserArtist(@RequestParam Long currentArtistId) {
+        try {
+            boolean res = userService.checkUserArtist(currentArtistId);
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @GetMapping("/email")
     public ResponseEntity<UserDTO> findUserByEmail(@RequestParam String email) {
         try {

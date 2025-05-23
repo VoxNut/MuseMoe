@@ -204,19 +204,20 @@ public class SongDetailsPanel extends JPanel implements ThemeChangeListener, Pla
         // Play button
         playPauseButton = GuiUtil.changeButtonIconColor(AppConstant.PLAY_ICON_PATH, 50, 50);
         playPauseButton.addActionListener(e -> handlePlayButtonClick());
+        GuiUtil.setSmartTooltip(playPauseButton, "Play");
 
         // Add to playlist button
         addToPlaylistButton = GuiUtil.changeButtonIconColor(AppConstant.ADD_TO_PLAYLIST_ICON_PATH, 36, 36);
         addToPlaylistButton.addActionListener(e -> handleAddToPlaylistClick());
-
+        GuiUtil.setSmartTooltip(addToPlaylistButton, "Add song to playlist");
         // Download button
         downloadButton = GuiUtil.changeButtonIconColor(AppConstant.DOWNLOAD_ICON_PATH, 36, 36);
         downloadButton.addActionListener(e -> handleDownloadClick());
-
+        GuiUtil.setSmartTooltip(downloadButton, "Download song");
         // More options button
         moreOptionsButton = GuiUtil.changeButtonIconColor(AppConstant.MORE_ICON_PATH, 36, 36);
         moreOptionsButton.addActionListener(e -> handleMoreOptionsClick());
-
+        GuiUtil.setSmartTooltip(moreOptionsButton, "More options");
         // Add buttons
         panel.add(playPauseButton);
         panel.add(addToPlaylistButton);
@@ -392,6 +393,8 @@ public class SongDetailsPanel extends JPanel implements ThemeChangeListener, Pla
         playPauseButton.setRolloverIcon(GuiUtil.createColoredIcon(
                 iconPath, GuiUtil.lightenColor(textColor, 0.3f), 50, 50
         ));
+
+        GuiUtil.setSmartTooltip(playPauseButton, isPlaying ? "Pause" : "Play");
     }
 
     private void handlePlayButtonClick() {

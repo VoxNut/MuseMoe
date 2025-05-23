@@ -43,7 +43,6 @@ public class StringUtils {
 
         FontMetrics metrics = new JLabel().getFontMetrics(font);
         String ellipsis = "…";
-        int ellipsisWidth = metrics.stringWidth(ellipsis);
 
         if (metrics.stringWidth(text) <= maxWidth) {
             return text;
@@ -69,7 +68,15 @@ public class StringUtils {
         }
 
         return text.substring(0, high) + ellipsis;
+
+    }
+
+    public static String formatMinSecDuration(Integer totalSeconds) {
+        int min = totalSeconds / 60;
+        int sec = totalSeconds % 60;
+        return String.format("%d min %d sec", min, sec);
     }
 
 
 }
+

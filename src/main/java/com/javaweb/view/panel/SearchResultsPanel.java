@@ -8,7 +8,6 @@ import com.javaweb.model.dto.ArtistDTO;
 import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.utils.CommonApiUtil;
-import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
 import com.javaweb.utils.StringUtils;
 import com.javaweb.view.HomePage;
@@ -287,19 +286,20 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
         JPanel textPanel = GuiUtil.createPanel();
         textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.Y_AXIS));
 
-        Font titleFont = FontUtil.getSpotifyFont(Font.BOLD, 22);
-        Font artistFont = FontUtil.getSpotifyFont(Font.PLAIN, 18);
-
         JLabel titleLabel = GuiUtil.createLabel(
-                StringUtils.getTruncatedTextByWidth(song.getTitle(), titleFont, 150),
+                StringUtils.getTruncatedText(song.getTitle()),
                 Font.BOLD, 22);
+        GuiUtil.setSmartTooltip(titleLabel, song.getTitle());
+
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel artistLabel = GuiUtil.createLabel(
                 song.getSongArtist() != null ?
-                        StringUtils.getTruncatedTextByWidth(song.getSongArtist(), artistFont) :
+                        StringUtils.getTruncatedText(song.getSongArtist()) :
                         "Unknown Artist",
                 Font.PLAIN, 18);
+
+        GuiUtil.setSmartTooltip(artistLabel, song.getSongArtist());
         artistLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         textPanel.add(titleLabel);
@@ -446,15 +446,16 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
         playerFacade.populateAlbumImage(album, coverLabel::setLoadedImage);
         coverLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        Font titleFont = FontUtil.getSpotifyFont(Font.BOLD, 14);
-
 
         // Create album details
-        JLabel titleLabel = GuiUtil.createLabel(StringUtils.getTruncatedTextByWidth(album.getTitle(), titleFont), Font.BOLD, 14);
+        JLabel titleLabel = GuiUtil.createLabel(StringUtils.getTruncatedText(album.getTitle()), Font.BOLD, 14);
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        GuiUtil.setSmartTooltip(titleLabel, album.getTitle());
+
 
         JLabel artistLabel = GuiUtil.createLabel(album.getArtistName(), Font.PLAIN, 12);
         artistLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        GuiUtil.setSmartTooltip(artistLabel, album.getArtistName());
 
         // Add components to card
         card.add(Box.createVerticalStrut(10));
@@ -544,6 +545,7 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
         controlButtonsPanel.add(playPauseButton);
 
         JPanel infoPanel = GuiUtil.createPanel(new BorderLayout());
+
         String title = song.getTitle();
         String artist = song.getSongArtist() != null ? song.getSongArtist() : "Unknown Artist";
 
@@ -551,7 +553,9 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
         labelPanel.setLayout(new BoxLayout(labelPanel, BoxLayout.Y_AXIS));
 
         JLabel songLabel = GuiUtil.createLabel(title, Font.BOLD, 14);
+        GuiUtil.setSmartTooltip(songLabel, title);
         JLabel artistLabel = GuiUtil.createLabel(artist, Font.PLAIN, 12);
+        GuiUtil.setSmartTooltip(artistLabel, artist);
 
         labelPanel.add(songLabel);
         labelPanel.add(artistLabel);
@@ -561,7 +565,7 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
         durationPanel.setPreferredSize(new Dimension(50, 30));
 
         JLabel durationLabel = GuiUtil.createLabel(song.getSongLength(), Font.BOLD, 14,
-                ThemeManager.getInstance().getAccentColor());
+                ThemeManager.getInstance().getTextColor());
         durationLabel.setHorizontalAlignment(SwingConstants.RIGHT);
         durationPanel.add(durationLabel, BorderLayout.CENTER);
 
@@ -635,6 +639,7 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
         // Artist name and type label
         JLabel nameLabel = GuiUtil.createLabel(artist.getStageName(), Font.BOLD, 12);
         nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        GuiUtil.setSmartTooltip(nameLabel, artist.getStageName());
 
         JLabel typeLabel = GuiUtil.createLabel("Artist", Font.PLAIN, 11);
         typeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -697,15 +702,15 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
 
         coverLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        Font titleFont = FontUtil.getSpotifyFont(Font.BOLD, 12);
-
 
         // Album title and artist
-        JLabel titleLabel = GuiUtil.createLabel(StringUtils.getTruncatedTextByWidth(album.getTitle(), titleFont), Font.BOLD, 12);
+        JLabel titleLabel = GuiUtil.createLabel(StringUtils.getTruncatedText(album.getTitle()), Font.BOLD, 12);
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        GuiUtil.setSmartTooltip(titleLabel, album.getTitle());
 
         JLabel artistLabel = GuiUtil.createLabel(album.getArtistName(), Font.PLAIN, 11);
         artistLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        GuiUtil.setSmartTooltip(artistLabel, album.getArtistName());
 
         // Add components
         card.add(coverLabel);
@@ -778,23 +783,23 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
         textPanel.setOpaque(false);
 
         // Playlist name with truncation
-        Font nameFont = FontUtil.getSpotifyFont(Font.BOLD, 12);
         JLabel nameLabel = GuiUtil.createLabel(
-                StringUtils.getTruncatedTextByWidth(playlist.getName(), nameFont),
+                StringUtils.getTruncatedText(playlist.getName()),
                 Font.BOLD, 12);
         nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        GuiUtil.setSmartTooltip(nameLabel, playlist.getName());
 
         // Song count with consistent styling
         String countText = playlist.getSongs().size() + " song" + (playlist.getSongs().size() != 1 ? "s" : "");
         JLabel countLabel = GuiUtil.createLabel(countText, Font.PLAIN, 11);
         countLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Add components with consistent spacing
+
         card.add(coverLabel);
-        card.add(Box.createVerticalStrut(8)); // Consistent spacing
+        card.add(Box.createVerticalStrut(8));
 
         textPanel.add(nameLabel);
-        textPanel.add(Box.createVerticalStrut(2)); // Small space between name and count
+        textPanel.add(Box.createVerticalStrut(2));
         textPanel.add(countLabel);
         card.add(textPanel);
 

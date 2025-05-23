@@ -3,6 +3,7 @@ package com.javaweb.converter;
 import com.google.api.services.drive.model.File;
 import com.javaweb.entity.AlbumEntity;
 import com.javaweb.entity.ArtistEntity;
+import com.javaweb.entity.SongEntity;
 import com.javaweb.entity.StreamingMediaEntity;
 import com.javaweb.model.dto.AlbumDTO;
 import com.javaweb.model.dto.SongDTO;
@@ -45,6 +46,11 @@ public class AlbumConverter implements EntityConverter<AlbumEntity, AlbumRequest
             dto.setAlbumLength(formatDuration(songDTOS.stream()
                     .mapToInt(SongDTO::getDuration)
                     .sum()));
+
+            dto.setTotalDuration(entity.getSongs().stream()
+                    .mapToInt(SongEntity::getDuration)
+                    .sum()
+            );
         }
 
 

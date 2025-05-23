@@ -102,33 +102,19 @@ public class SongAPI {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<?> createSong(@ModelAttribute SongRequestDTO songRequestDTO) {
+    public ResponseEntity<Boolean> createSong(@ModelAttribute SongRequestDTO songRequestDTO) {
         try {
             boolean result = songService.createSong(songRequestDTO);
-            if (result) {
-                return ResponseEntity.ok().body(Map.of(
-
-                        "success", true,
-                        "message", "Song uploaded successfully"
-                ));
-            } else {
-                return ResponseEntity.badRequest().body(Map.of(
-                        "success", false,
-                        "message", "Failed to create song entry"
-                ));
-            }
+            return ResponseEntity.ok(result);
 
         } catch (Exception e) {
             log.error("Error uploading song: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                    "success", false,
-                    "message", "Error uploading song: " + e.getMessage()
-            ));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(false);
         }
     }
 
     @PostMapping("/create-multiple")
-    public ResponseEntity<?> createMultipleSongs(@ModelAttribute SongRequestDTO songRequestDTO) {
+    public ResponseEntity<Boolean> createMultipleSongs(@ModelAttribute SongRequestDTO songRequestDTO) {
         try {
             log.info("Received request to upload {} song files to album ID: {}",
                     songRequestDTO.getMp3Files() != null ? songRequestDTO.getMp3Files().size() : 0,
@@ -137,17 +123,14 @@ public class SongAPI {
             Map<String, Object> result = songService.createMultipleSongs(songRequestDTO);
 
             if ((Boolean) result.get("success")) {
-                return ResponseEntity.ok(result);
+                return ResponseEntity.ok(true);
             } else {
-                return ResponseEntity.badRequest().body(result);
+                return ResponseEntity.badRequest().body(false);
             }
 
         } catch (Exception e) {
             log.error("Error processing batch song upload: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                    "success", false,
-                    "message", "Error uploading songs: " + e.getMessage()
-            ));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(false);
         }
     }
 

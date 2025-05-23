@@ -34,6 +34,7 @@ public class UserDTO extends AbstractDTO implements Comparable<UserDTO> {
     private Date tokenExpiration;
     @JsonIgnore
     private BufferedImage avatarImage;
+    private Long artistId;
 
 
     @Override

@@ -10,7 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/albums")
@@ -21,19 +20,12 @@ public class AlbumAPI {
     private final AlbumService albumService;
 
     @PostMapping("/create")
-    public ResponseEntity<?> createAlbum(@ModelAttribute AlbumRequestDTO albumRequestDTO) {
+    public ResponseEntity<AlbumDTO> createAlbum(@ModelAttribute AlbumRequestDTO albumRequestDTO) {
         try {
             AlbumDTO res = albumService.createAlbum(albumRequestDTO);
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", "Album created successfully",
-                    "artist", res
-            ));
+            return ResponseEntity.ok(res);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                    "failed", false,
-                    "message", "Failed to create album: " + e.getMessage()
-            ));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 

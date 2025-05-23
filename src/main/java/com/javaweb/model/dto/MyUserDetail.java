@@ -16,6 +16,7 @@ public class MyUserDetail extends User {
     private String email;
     private AccountStatus accountStatus;
     private String avatarId;
+    private Long artistId;
 
     public MyUserDetail(String username, String password, boolean enabled,
                         boolean accountNonExpired, boolean credentialsNonExpired,

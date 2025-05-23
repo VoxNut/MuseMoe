@@ -9,7 +9,6 @@ import lombok.experimental.SuperBuilder;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.Set;
 
 
 @Getter
@@ -22,7 +21,7 @@ public class SongRequestDTO extends AbstractDTO {
     private String googleDriveFileId;
 
     private Long albumId;
-    private Set<Long> artistIds;
+    private List<Long> artistIds;
     private List<MultipartFile> mp3Files;
 
 

@@ -33,6 +33,7 @@ public class InstructionPanel extends JPanel implements ThemeChangeListener {
         String[][] shortcuts = {
                 {"Shift + V", "Toggle audio visualizer"},
                 {"Shift + C", "Toggle commit history view"},
+                {"Shift + A", "Open Artist Studio (require artist role)"},
                 {"B", "Change visualizer bands (when active)"},
                 {"H", "Toggle Home"},
                 {"K", "Toggle search field"},

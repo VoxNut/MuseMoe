@@ -22,6 +22,8 @@ public class NavigationDestination {
 
     public static final String QUEUE = "queue";
 
+    public static final String ARTIST_UPLOAD = "artistUpload";
+
     private NavigationDestination() {
     }
 }

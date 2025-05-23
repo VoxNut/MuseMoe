@@ -3,11 +3,14 @@ package com.javaweb.client.impl;
 import com.javaweb.client.ApiConfig;
 import com.javaweb.client.client_service.AlbumApiClient;
 import com.javaweb.model.dto.AlbumDTO;
+import com.javaweb.model.request.AlbumRequestDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -67,6 +70,33 @@ public class AlbumApiClientImpl implements AlbumApiClient {
             return apiClient.getList(url, AlbumDTO.class);
         } catch (Exception e) {
             return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public String getAlbumCoverId(Long albumId) {
+        return "";
+    }
+
+    @Override
+    public AlbumDTO createAlbum(AlbumRequestDTO albumRequestDTO) {
+        try {
+            String url = apiConfig.buildAlbumsUrl("/create");
+
+            Map<String, Object> parts = new HashMap<>();
+            parts.put("title", albumRequestDTO.getTitle());
+            parts.put("artistId", albumRequestDTO.getArtistId());
+            parts.put("releaseYear", albumRequestDTO.getReleaseYear());
+
+            if (albumRequestDTO.getAlbumCover() != null) {
+                parts.put("albumCover", albumRequestDTO.getAlbumCover());
+            }
+
+            AlbumDTO result = apiClient.postMultipart(url, parts, AlbumDTO.class);
+            return result;
+        } catch (Exception e) {
+            log.error("Error creating song", e);
+            return null;
         }
     }
 }

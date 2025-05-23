@@ -72,6 +72,10 @@ public class JwtTokenUtil {
                 user.setAvatarId(claims.get("avatarId").asText());
             }
 
+            if (claims.has("artistId")) {
+                user.setArtistId(claims.get("artistId").asLong());
+            }
+
             // Parse account status
             if (claims.has("accountStatus")) {
                 try {

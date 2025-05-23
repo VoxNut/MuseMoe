@@ -150,7 +150,33 @@ public class ApiClient {
             if (parts != null) {
                 parts.forEach((key, value) -> {
                     if (value != null) {
-                        if (value instanceof MultipartFile) {
+                        if (value instanceof List<?> && !((List<?>) value).isEmpty() && ((List<?>) value).get(0) instanceof MultipartFile) {
+                            // Handle list of MultipartFiles
+                            @SuppressWarnings("unchecked")
+                            List<MultipartFile> files = (List<MultipartFile>) value;
+
+                            for (int i = 0; i < files.size(); i++) {
+                                MultipartFile file = files.get(i);
+                                try {
+                                    HttpHeaders headers = new HttpHeaders();
+                                    headers.setContentType(MediaType.parseMediaType(file.getContentType()));
+
+                                    // Create a resource from the file bytes - NOT from the input stream
+                                    org.springframework.core.io.Resource resource = new org.springframework.core.io.ByteArrayResource(file.getBytes()) {
+                                        @Override
+                                        public String getFilename() {
+                                            return file.getOriginalFilename();
+                                        }
+                                    };
+
+                                    // Use array-style parameter names for lists (mp3Files[0], mp3Files[1], etc.)
+                                    body.add(key + "[" + i + "]", new HttpEntity<>(resource, headers));
+                                } catch (Exception e) {
+                                    throw new RuntimeException("Failed to process file upload", e);
+                                }
+                            }
+                        } else if (value instanceof MultipartFile) {
+                            // Handle single MultipartFile
                             MultipartFile file = (MultipartFile) value;
                             try {
                                 HttpHeaders headers = new HttpHeaders();

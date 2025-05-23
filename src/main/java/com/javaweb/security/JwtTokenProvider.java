@@ -52,6 +52,9 @@ public class JwtTokenProvider {
             if (myUserDetail.getAvatarId() != null) {
                 claims.put("avatarId", myUserDetail.getAvatarId());
             }
+            if (myUserDetail.getArtistId() != null) {
+                claims.put("artistId", myUserDetail.getArtistId());
+            }
         }
 
         return createToken(claims, userDetails.getUsername());

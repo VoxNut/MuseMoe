@@ -26,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
@@ -71,6 +72,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private boolean commitPanelActive = false;
     private boolean instructionPanelActive = false;
     private boolean queuePanelActive = false;
+    private boolean artistUploadPanelActive = false;
 
     private boolean miniplayerActive = false;
 
@@ -87,6 +89,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     // Search event
     private Timer searchDelayTimer;
     private final int SEARCH_DELAY = 500; // milliseconds delay after typing
+
+    private String userRole;
 
     public HomePage() {
 
@@ -568,7 +572,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         JPanel upgradePanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
 
         // Add upgrade button based on user role
-        String userRole = determineUserRole(getCurrentUser().getRoles());
+        userRole = determineUserRole(getCurrentUser().getRoles());
         upgradeButton = null;
 
         if (userRole.equals("Free User")) {
@@ -897,10 +901,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
             cardLayout.show(centerCardPanel, "searchResults");
 
-            // Set navigation state
-            visualizerActive = false;
-            commitPanelActive = false;
-            instructionPanelActive = false;
             navigationManager.navigateTo(NavigationDestination.SEARCH_RESULTS, query);
 
             // Log
@@ -1657,11 +1657,23 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         queuePanel.setName("queue");
         centerCardPanel.add(queuePanel, "queue");
 
+        JPanel artistUploadPanel = new ArtistUploadPanel();
+        artistUploadPanel.setName("artistUpload");
+        centerCardPanel.add(artistUploadPanel, "artistUpload");
+
         keyEventDispatcher = e -> {
             if (e.getID() == KeyEvent.KEY_PRESSED) {
-                if (searchField.hasFocus()) {
+                Component focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
+                if (focusOwner instanceof JTextField ||
+                        focusOwner instanceof JTextArea ||
+                        focusOwner instanceof JTextComponent) {
+                    if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+                        focusOwner.transferFocus();
+                        return true;
+                    }
                     return false;
                 }
+
                 switch (e.getKeyCode()) {
                     case KeyEvent.VK_LEFT, KeyEvent.VK_ESCAPE -> {
                         if (navigationManager.canGoBack()) {
@@ -1727,6 +1739,16 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                         return true;
                     }
 
+                    case KeyEvent.VK_A -> {
+                        if (e.isShiftDown()) {
+                            if (userRole.equals("Artist")) {
+                                showArtistUploadPanel();
+                            } else {
+                                GuiUtil.showToast(this, "You are not an artist, you can't upload songs!");
+                            }
+                        }
+                    }
+
                 }
             }
             return false;
@@ -1751,6 +1773,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             visualizerActive = false;
             instructionPanelActive = false;
             queuePanelActive = false;
+            artistUploadPanelActive = false;
 
             navigationManager.navigateTo(NavigationDestination.COMMITS, null);
 
@@ -1779,6 +1802,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             visualizerActive = false;
             instructionPanelActive = false;
             commitPanelActive = false;
+            artistUploadPanelActive = false;
+
             playerFacade.notifyToggleCava(false);
 
 
@@ -1813,6 +1838,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             visualizerActive = false;
             commitPanelActive = false;
             queuePanelActive = false;
+            artistUploadPanelActive = false;
+
             playerFacade.notifyToggleCava(false);
 
             navigationManager.navigateTo(NavigationDestination.INSTRUCTIONS, null);
@@ -1835,6 +1862,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         commitPanelActive = false;
         instructionPanelActive = false;
         queuePanelActive = false;
+        artistUploadPanelActive = false;
 
         CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
         cardLayout.show(centerCardPanel, "home");
@@ -1856,6 +1884,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             commitPanelActive = false;
             instructionPanelActive = false;
             queuePanelActive = false;
+            artistUploadPanelActive = false;
 
             navigationManager.navigateTo(NavigationDestination.VISUALIZER, null);
 
@@ -2073,6 +2102,36 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         worker.execute();
     }
 
+    private void showArtistUploadPanel() {
+        artistUploadPanelActive = !artistUploadPanelActive;
+
+        if (centerCardPanel == null) {
+            return;
+        }
+
+        CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
+
+        if (artistUploadPanelActive) {
+            visualizerActive = false;
+            commitPanelActive = false;
+            queuePanelActive = false;
+            instructionPanelActive = false;
+
+            playerFacade.notifyToggleCava(false);
+
+            navigationManager.navigateTo(NavigationDestination.ARTIST_UPLOAD, null);
+
+
+            cardLayout.show(centerCardPanel, "artistUpload");
+            log.info("Artist upload panel activated");
+            GuiUtil.showToast(this, "Artist upload panel activated");
+        } else {
+            cardLayout.show(centerCardPanel, "home");
+            log.info("Artist upload panel deactivated");
+            GuiUtil.showToast(this, "Artist upload deactivated");
+        }
+    }
+
 
     public void navigateToAlbumView(AlbumDTO album) {
         AlbumViewPanel albumViewPanel = GuiUtil.findFirstComponentByType(
@@ -2182,6 +2241,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 commitPanelActive = false;
                 instructionPanelActive = false;
                 queuePanelActive = false;
+                artistUploadPanelActive = false;
             }
             case NavigationDestination.VISUALIZER -> {
                 cardLayout.show(centerCardPanel, "visualizer");
@@ -2189,6 +2249,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 commitPanelActive = false;
                 instructionPanelActive = false;
                 queuePanelActive = false;
+                artistUploadPanelActive = false;
                 playerFacade.notifyToggleCava(true);
             }
             case NavigationDestination.COMMITS -> {
@@ -2197,6 +2258,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 commitPanelActive = true;
                 instructionPanelActive = false;
                 queuePanelActive = false;
+                artistUploadPanelActive = false;
             }
             case NavigationDestination.INSTRUCTIONS -> {
                 cardLayout.show(centerCardPanel, "instructions");
@@ -2204,6 +2266,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 commitPanelActive = false;
                 instructionPanelActive = true;
                 queuePanelActive = false;
+                artistUploadPanelActive = false;
             }
 
             case NavigationDestination.SEARCH_RESULTS -> {
@@ -2212,6 +2275,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 commitPanelActive = false;
                 instructionPanelActive = false;
                 queuePanelActive = false;
+                artistUploadPanelActive = false;
             }
 
             case NavigationDestination.SONG_DETAILS -> {
@@ -2220,6 +2284,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 commitPanelActive = false;
                 instructionPanelActive = false;
                 queuePanelActive = false;
+                artistUploadPanelActive = false;
             }
 
             case NavigationDestination.ARTIST_PROFILE -> {
@@ -2228,6 +2293,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 commitPanelActive = false;
                 instructionPanelActive = false;
                 queuePanelActive = false;
+                artistUploadPanelActive = false;
             }
 
             case NavigationDestination.ALBUM_VIEW -> {
@@ -2258,6 +2324,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 commitPanelActive = false;
                 instructionPanelActive = false;
                 queuePanelActive = false;
+                artistUploadPanelActive = false;
             }
 
             case NavigationDestination.QUEUE -> {
@@ -2266,6 +2333,16 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 visualizerActive = false;
                 commitPanelActive = false;
                 instructionPanelActive = false;
+                artistUploadPanelActive = false;
+            }
+
+            case NavigationDestination.ARTIST_UPLOAD -> {
+                cardLayout.show(centerCardPanel, "artistUpload");
+                queuePanelActive = false;
+                visualizerActive = false;
+                commitPanelActive = false;
+                instructionPanelActive = false;
+                artistUploadPanelActive = true;
             }
 
         }

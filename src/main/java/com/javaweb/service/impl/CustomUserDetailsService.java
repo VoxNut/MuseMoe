@@ -47,6 +47,9 @@ public class CustomUserDetailsService implements UserDetailsService {
         userDetails.setFullName(user.getFullName());
         userDetails.setEmail(user.getEmail());
         userDetails.setAccountStatus(user.getAccountStatus());
+        if (user.getArtist() != null) {
+            userDetails.setArtistId(user.getArtist().getId());
+        }
 
         // Set avatar ID if available
         if (user.getAvatar() != null) {

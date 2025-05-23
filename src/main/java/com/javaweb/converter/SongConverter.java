@@ -145,7 +145,7 @@ public class SongConverter implements EntityConverter<SongEntity, SongRequestDTO
             AlbumEntity album = albumRepository.findById(request.getAlbumId())
                     .orElseGet(
                             () -> AlbumEntity.builder()
-                                    .title(entity.getTitle())
+                                    .title(entity.getTitle() + " - Single")
                                     .artist(artistRepository
                                             .findByUserId(Objects.requireNonNull(SecurityUtils.getPrincipal().getId()))
                                             .orElseGet(null))

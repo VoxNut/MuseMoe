@@ -452,23 +452,22 @@ public class GuiUtil {
     }
 
 
-    public static JComboBox<String> createComboBox(String[] contents) {
-        JComboBox<String> comboBox = createComboBox();
+    public static <T> JComboBox<T> createComboBox(T[] contents) {
+        JComboBox<T> comboBox = createComboBox();
         Arrays.stream(contents).forEach(comboBox::addItem);
         return comboBox;
     }
 
-    public static JComboBox<String> createComboBox() {
+
+    public static <T> JComboBox<T> createComboBox() {
         Color backgroundColor = ThemeManager.getInstance().getBackgroundColor();
         Color textColor = ThemeManager.getInstance().getTextColor();
         Color accentColor = ThemeManager.getInstance().getAccentColor();
 
-        JComboBox<String> comboBox = new JComboBox<>();
+        JComboBox<T> comboBox = new JComboBox<>();
         comboBox.setBackground(darkenColor(backgroundColor, 0.1f));
         comboBox.setForeground(textColor);
         comboBox.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
-
-        // Focus customization
         comboBox.setFocusable(false);
 
         comboBox.setUI(new BasicComboBoxUI() {
@@ -486,7 +485,6 @@ public class GuiUtil {
                 g2d.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
                 g2d.dispose();
             }
-
         });
 
         comboBox.setBorder(BorderFactory.createCompoundBorder(
@@ -494,14 +492,12 @@ public class GuiUtil {
                 BorderFactory.createEmptyBorder(3, 5, 3, 5)
         ));
 
-        // Style the dropdown
         comboBox.addPopupMenuListener(new PopupMenuListener() {
             @Override
             public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
                 JComboBox<?> box = (JComboBox<?>) e.getSource();
                 Object comp = box.getUI().getAccessibleChild(box, 0);
-                if (comp instanceof JPopupMenu) {
-                    JPopupMenu popup = (JPopupMenu) comp;
+                if (comp instanceof JPopupMenu popup) {
                     popup.setBorder(BorderFactory.createLineBorder(accentColor, 1));
                     popup.setBackground(backgroundColor);
                     popup.setForeground(textColor);
@@ -517,7 +513,6 @@ public class GuiUtil {
             }
         });
 
-        // Add renderer to style individual items
         comboBox.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -550,6 +545,12 @@ public class GuiUtil {
                 BorderFactory.createLineBorder(darkenColor(accentColor, 0.2f), 1),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)));
         textField.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
+        return textField;
+    }
+
+    public static JTextField createTextField(String text, int column) {
+        JTextField textField = createTextField(column);
+        textField.setText(text);
         return textField;
     }
 
@@ -2143,8 +2144,7 @@ public class GuiUtil {
                 list.setBackground(backgroundColor);
                 list.setForeground(textColor);
                 list.setSelectionBackground(accentColor);
-                list.setSelectionForeground(
-                        calculateContrast(accentColor, textColor) > 4.5 ? textColor : backgroundColor);
+                list.setSelectionForeground(calculateContrast(accentColor, textColor) > 4.5 ? textColor : backgroundColor);
                 //Combobox
             } else if (component instanceof JComboBox<?> comboBox) {
                 comboBox.setBackground(darkenColor(backgroundColor, 0.1f));
@@ -3685,6 +3685,33 @@ public class GuiUtil {
 
         String htmlText = "<html>" + text.replace("\n", "<br>") + "</html>";
         component.setToolTipText(htmlText);
+    }
+
+
+    public static <T> JList<T> createStyledList(ListModel<T> model) {
+        Color backgroundColor = ThemeManager.getInstance().getBackgroundColor();
+        Color textColor = ThemeManager.getInstance().getTextColor();
+        Color accentColor = ThemeManager.getInstance().getAccentColor();
+
+        JList<T> list = new JList<>(model);
+
+        // Set basic properties
+        list.setBackground(backgroundColor);
+        list.setForeground(textColor);
+        list.setSelectionBackground(accentColor);
+        list.setSelectionForeground(backgroundColor);
+        list.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
+
+        // Set cell height similar to tables
+        list.setFixedCellHeight(40);
+
+        // Remove border
+        list.setBorder(null);
+
+        // Set focus styling
+        list.setFocusable(false);
+
+        return list;
     }
 
 

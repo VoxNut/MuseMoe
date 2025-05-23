@@ -75,6 +75,7 @@ public class ArtistProfilePanel extends JPanel implements ThemeChangeListener, P
         playerFacade = App.getBean(MusicPlayerFacade.class);
         playerFacade.subscribeToPlayerEvents(this);
 
+
         initializeComponents();
 
         ThemeManager.getInstance().addThemeChangeListener(this);

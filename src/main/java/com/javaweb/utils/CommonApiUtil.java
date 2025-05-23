@@ -5,6 +5,8 @@ import com.javaweb.client.client_service.*;
 import com.javaweb.client.impl.ApiServiceFactory;
 import com.javaweb.enums.RoleType;
 import com.javaweb.model.dto.*;
+import com.javaweb.model.request.AlbumRequestDTO;
+import com.javaweb.model.request.SongRequestDTO;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -120,6 +122,14 @@ public class CommonApiUtil {
 
     public static List<SongDTO> fetchPopularTracksByArtistId(Long artistId) {
         return getSongApiClient().fetchPopularTracksByArtistId(artistId);
+    }
+
+    public static boolean createSongsForAlbum(SongRequestDTO songRequestDTO) {
+        return getSongApiClient().createSongs(songRequestDTO);
+    }
+
+    public static boolean createSong(SongRequestDTO songRequestDTO) {
+        return getSongApiClient().createSong(songRequestDTO);
     }
 
     public static List<SongDTO> fetchSongsByArtist(String artistName, int limit) {
@@ -239,6 +249,10 @@ public class CommonApiUtil {
         return getAlbumApiClient().getAlbumsByArtistId(artistId);
     }
 
+    public static AlbumDTO createAlbum(AlbumRequestDTO albumRequestDTO) {
+        return getAlbumApiClient().createAlbum(albumRequestDTO);
+    }
+
     // Artist
     public static List<ArtistDTO> searchArtists(String query) {
         return getArtistApiClient().searchArtists(query, 20);
@@ -256,6 +270,7 @@ public class CommonApiUtil {
     public static ArtistDTO findArtistById(Long artistId) {
         return getArtistApiClient().findArtistById(artistId);
     }
+
 
     // Play_History
 

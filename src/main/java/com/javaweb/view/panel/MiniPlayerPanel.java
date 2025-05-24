@@ -484,10 +484,10 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
         if (song != null) {
             int discSize = 60;
             if (song.getSongImage() != null) {
-                spinningDisc.setIcon(GuiUtil.createDiscImageIcon(song.getSongImage(), discSize, discSize, 7));
+                spinningDisc.setIcon(GuiUtil.createDiscImageIcon(song.getSongImage(), discSize, discSize, 10));
             } else {
                 spinningDisc.setIcon(GuiUtil.createDiscImageIcon(
-                        GuiUtil.createBufferImage(AppConstant.DEFAULT_COVER_PATH), discSize, discSize, 7
+                        GuiUtil.createBufferImage(AppConstant.DEFAULT_COVER_PATH), discSize, discSize, 10
                 ));
             }
         }

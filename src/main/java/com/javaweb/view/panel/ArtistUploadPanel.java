@@ -10,7 +10,6 @@ import com.javaweb.model.request.SongRequestDTO;
 import com.javaweb.utils.CommonApiUtil;
 import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
-import com.javaweb.utils.StringUtils;
 import com.javaweb.view.components.AsyncImageLabel;
 import com.javaweb.view.event.MusicPlayerFacade;
 import com.javaweb.view.theme.ThemeChangeListener;
@@ -66,8 +65,7 @@ public class ArtistUploadPanel extends JPanel implements ThemeChangeListener {
     private JList<File> songFilesList;
     private DefaultListModel<File> songsListModel;
     private HashMap<File, SongDTO> songMetadataMap;
-    private JTextField songTitleField;
-    private JTextArea songLyricsArea;
+
 
     // Search components
     private JTextField searchField;
@@ -677,14 +675,9 @@ public class ArtistUploadPanel extends JPanel implements ThemeChangeListener {
         songFilesList.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(e)) {
-                    File selectedFile = songFilesList.getSelectedValue();
-                    if (selectedFile != null) {
-                        showSongDetailsDialog(selectedFile);
-                    }
-                } else if (SwingUtilities.isRightMouseButton(e)) {
+                if (SwingUtilities.isRightMouseButton(e)) {
                     JPopupMenu popupMenu = showSongContextMenu(e);
-                    popupMenu.show(songFilesList, e.getX(), e.getY());
+                    popupMenu.show(e.getComponent(), e.getX(), e.getY());
                 }
             }
         });
@@ -826,71 +819,6 @@ public class ArtistUploadPanel extends JPanel implements ThemeChangeListener {
         return false;
     }
 
-    private void showSongDetailsDialog(File songFile) {
-        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Song Details", true);
-        GuiUtil.styleTitleBar(dialog, backgroundColor, textColor);
-        dialog.setSize(400, 300);
-        dialog.setLocationRelativeTo(this);
-
-        JPanel contentPanel = GuiUtil.createPanel(new MigLayout(
-                "fillx, wrap 2, insets 15",
-                "[][grow, fill]",
-                "[]10[]10[]"));
-        contentPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-
-        JLabel titleLabel = GuiUtil.createLabel("Song Title:", Font.BOLD, 14);
-        JTextField titleField = GuiUtil.createTextField(StringUtils.getTruncatedText(
-                songFile.getName().replaceFirst("[.][^.]+$", ""), 50), 50);
-
-        JLabel trackLabel = GuiUtil.createLabel("Track Number:", Font.BOLD, 14);
-        JSpinner trackSpinner = new JSpinner(new SpinnerNumberModel(songsListModel.indexOf(songFile) + 1, 1, 100, 1));
-        trackSpinner.setEditor(new JSpinner.NumberEditor(trackSpinner, "#"));
-
-        JLabel lyricsLabel = GuiUtil.createLabel("Lyrics:", Font.BOLD, 14);
-        JTextArea lyricsArea = GuiUtil.createTextArea("", FontUtil.getSpotifyFont(Font.PLAIN, 14));
-        lyricsArea.setRows(5);
-        lyricsArea.setLineWrap(true);
-        lyricsArea.setWrapStyleWord(true);
-
-        SongDTO metadata = songMetadataMap.get(songFile);
-        if (metadata != null) {
-            titleField.setText(metadata.getTitle());
-            lyricsArea.setText(metadata.getSongLyrics());
-        }
-
-        JScrollPane scrollPane = GuiUtil.createStyledScrollPane(lyricsArea);
-
-        contentPanel.add(titleLabel, "right");
-        contentPanel.add(titleField);
-        contentPanel.add(trackLabel, "right");
-        contentPanel.add(trackSpinner);
-        contentPanel.add(lyricsLabel, "right, top");
-        contentPanel.add(scrollPane, "grow");
-
-        JPanel buttonPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton saveButton = GuiUtil.createButton("Save");
-        GuiUtil.styleButton(saveButton, backgroundColor, textColor, accentColor);
-        saveButton.addActionListener(e -> {
-            // Save metadata
-            SongDTO songMetadata = new SongDTO();
-            songMetadata.setTitle(titleField.getText());
-            songMetadata.setSongLyrics(lyricsArea.getText());
-            songMetadataMap.put(songFile, songMetadata);
-            dialog.dispose();
-            songFilesList.repaint();  // Refresh list to show updated metadata
-        });
-
-        JButton cancelButton = GuiUtil.createButton("Cancel");
-        cancelButton.addActionListener(e -> dialog.dispose());
-
-        buttonPanel.add(saveButton);
-        buttonPanel.add(cancelButton);
-
-        contentPanel.add(buttonPanel, "span 2, right");
-
-        dialog.add(contentPanel);
-        dialog.setVisible(true);
-    }
 
     private JPopupMenu showSongContextMenu(MouseEvent e) {
         int index = songFilesList.locationToIndex(e.getPoint());
@@ -899,8 +827,6 @@ public class ArtistUploadPanel extends JPanel implements ThemeChangeListener {
 
         JPopupMenu contextMenu = GuiUtil.createPopupMenu(backgroundColor, textColor);
 
-        JMenuItem editItem = GuiUtil.createMenuItem("Edit Song Details");
-        editItem.addActionListener(event -> showSongDetailsDialog(selectedFile));
 
         JMenuItem removeItem = GuiUtil.createMenuItem("Remove Song");
         removeItem.addActionListener(event -> {
@@ -908,7 +834,6 @@ public class ArtistUploadPanel extends JPanel implements ThemeChangeListener {
             songMetadataMap.remove(selectedFile);
         });
 
-        contextMenu.add(editItem);
         contextMenu.add(removeItem);
 
         GuiUtil.registerPopupMenuForThemeUpdates(contextMenu);
@@ -928,10 +853,6 @@ public class ArtistUploadPanel extends JPanel implements ThemeChangeListener {
             return;
         }
 
-//        if (selectedAlbum == null) {
-//            GuiUtil.showWarningMessageDialog(this, "Please select an album cover.");
-//            return;
-//        }
 
         // Validate artists
         if (selectedArtistsModel.size() == 0) {
@@ -1183,53 +1104,25 @@ public class ArtistUploadPanel extends JPanel implements ThemeChangeListener {
         this.textColor = textColor;
         this.accentColor = accentColor;
 
-        // Update component colors
-        setBackground(backgroundColor);
-
-        // Update search bar styling
-        if (searchBarWrapper != null) {
-            searchBarWrapper.setBorder(GuiUtil.createCompoundBorder(2));
-        }
-
-        // Update panels
-        SwingUtilities.updateComponentTreeUI(this);
+        GuiUtil.updatePanelColors(this, backgroundColor, textColor, accentColor);
     }
 
-    // Custom cell renderer for song files
     private class SongFileCellRenderer extends JPanel implements ListCellRenderer<File> {
         private final JLabel fileNameLabel;
-        private final JLabel metadataLabel;
 
         public SongFileCellRenderer() {
             setLayout(new BorderLayout());
             setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
-            JPanel textPanel = GuiUtil.createPanel(new MigLayout("insets 0, gap 0", "[]", "[]0[]"));
-
             fileNameLabel = GuiUtil.createLabel("", Font.BOLD, 14);
-            metadataLabel = GuiUtil.createLabel("", Font.PLAIN, 12);
-            metadataLabel.setForeground(GuiUtil.darkenColor(textColor, 0.3f));
 
-            textPanel.add(fileNameLabel, "wrap");
-            textPanel.add(metadataLabel);
-
-            add(textPanel, BorderLayout.CENTER);
+            add(fileNameLabel, BorderLayout.CENTER);
         }
 
         @Override
         public Component getListCellRendererComponent(JList<? extends File> list, File file,
                                                       int index, boolean isSelected, boolean cellHasFocus) {
-            // Set file name
             fileNameLabel.setText(file.getName());
-
-            // Set metadata if available
-            SongDTO metadata = songMetadataMap.get(file);
-            if (metadata != null && metadata.getTitle() != null) {
-                String metaText = metadata.getTitle();
-                metadataLabel.setText(metaText);
-            } else {
-                metadataLabel.setText("No metadata");
-            }
 
             // Handle selection
             if (isSelected) {
@@ -1242,5 +1135,6 @@ public class ArtistUploadPanel extends JPanel implements ThemeChangeListener {
 
             return this;
         }
+
     }
 }

@@ -99,4 +99,15 @@ public class AlbumApiClientImpl implements AlbumApiClient {
             return null;
         }
     }
+
+    @Override
+    public List<AlbumDTO> findAllAlbums() {
+        try {
+            String url = apiConfig.buildAlbumsUrl("/all");
+            return apiClient.getList(url, AlbumDTO.class);
+        } catch (Exception e) {
+            log.error("Error fetching all albums: {}", e.getMessage(), e);
+            return Collections.emptyList();
+        }
+    }
 }

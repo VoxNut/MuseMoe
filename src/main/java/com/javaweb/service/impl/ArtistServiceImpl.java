@@ -195,4 +195,17 @@ public class ArtistServiceImpl implements ArtistService {
             return false;
         }
     }
+
+    @Override
+    public List<ArtistDTO> findAllArtists() {
+        try {
+            return artistRepository.findAll()
+                    .stream()
+                    .map(artistConverter::toDTO)
+                    .toList();
+        } catch (Exception e) {
+            log.error("Error finding all artists: {}", e.getMessage(), e);
+            return Collections.emptyList();
+        }
+    }
 }

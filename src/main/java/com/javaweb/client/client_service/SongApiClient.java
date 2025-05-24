@@ -41,4 +41,6 @@ public interface SongApiClient {
 
     Boolean createSongs(SongRequestDTO songRequestDTO);
 
+    List<SongDTO> findTopByPlayCount(Integer limit);
+
 }

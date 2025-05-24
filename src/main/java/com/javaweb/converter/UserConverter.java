@@ -12,6 +12,7 @@ import com.javaweb.repository.RoleRepository;
 import com.javaweb.repository.StreamingMediaRepository;
 import com.javaweb.service.StreamingMediaService;
 import com.javaweb.service.impl.GoogleDriveService;
+import com.javaweb.utils.DateUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -40,6 +41,13 @@ public class UserConverter implements EntityConverter<UserEntity, UserRequestDTO
                 .map(role -> "ROLE_" + role.getCode())
                 .collect(Collectors.toCollection(LinkedHashSet::new)) : null;
         result.setRoles(roleDTOS);
+        if (entity.getCreated_at() != null) {
+            result.setCreatedDate(DateUtil.toDate(entity.getCreated_at()));
+
+        }
+        if (entity.getLastLogin() != null) {
+            result.setLastLoginAt(DateUtil.toDate(entity.getLastLogin()));
+        }
         return result;
     }
 

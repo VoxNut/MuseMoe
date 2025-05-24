@@ -16,4 +16,12 @@ public interface TagRepository extends JpaRepository<TagEntity, Long> {
 
     @Query("SELECT t FROM TagEntity t JOIN t.songs s WHERE s.id = :songId")
     List<TagEntity> findTagEntitiesBySongId(@Param("songId") Long songId);
+
+    @Query(value = "SELECT t.name, COUNT(st.song_id) as song_count " +
+            "FROM tag t " +
+            "JOIN song_tags st ON t.id = st.tag_id " +
+            "GROUP BY t.id, t.name " +
+            "ORDER BY song_count DESC " +
+            "LIMIT :limit", nativeQuery = true)
+    List<Object[]> fetchTopTags(@Param("limit") int limit);
 }

@@ -125,31 +125,66 @@ public class GuiUtil {
         header.setFont(FontUtil.getSpotifyFont(Font.BOLD, 12));
         header.setReorderingAllowed(false);
 
-
-        // Set column widths with proportional values
+        // Set column widths
         TableColumnModel columnModel = table.getColumnModel();
         int totalWidth = table.getPreferredSize().width;
+        int columnCount = columnModel.getColumnCount();
 
-        int[] columnWeights = {5, 45, 25, 10, 15};
+        // Calculate weights dynamically if column width array is provided
+        // but has wrong length or contains only zeros
+        boolean useDefaultWeights = columnWidths.length != columnCount ||
+                Arrays.stream(columnWidths).allMatch(w -> w == 0);
 
+        // Default behavior: distribute weights based on column count
+        int[] actualColumnWidths;
+        if (useDefaultWeights) {
+            // ID column gets 5% width, first data column gets 30%, rest distributed evenly
+            actualColumnWidths = new int[columnCount];
+            if (columnCount == 1) {
+                actualColumnWidths[0] = 100; // 100% for a single column
+            } else if (columnCount == 2) {
+                actualColumnWidths[0] = 20;  // 20% for first column (often ID)
+                actualColumnWidths[1] = 80;  // 80% for second column
+            } else {
+                actualColumnWidths[0] = 5;   // 5% for ID column
+                actualColumnWidths[1] = 30;  // 30% for primary name/title column
+
+                // Distribute remaining 65% evenly among other columns
+                int remainingColumns = columnCount - 2;
+                int remainingWeight = 65;
+                int weightPerColumn = remainingWeight / remainingColumns;
+
+                for (int i = 2; i < columnCount; i++) {
+                    actualColumnWidths[i] = weightPerColumn;
+                }
+            }
+        } else {
+            actualColumnWidths = columnWidths;
+        }
+
+        // Apply column widths
         for (int i = 0; i < columnModel.getColumnCount(); i++) {
             TableColumn column = columnModel.getColumn(i);
-            if (columnWidths[i] > 0) {
-                column.setMaxWidth(columnWidths[i]);
-                column.setMinWidth(columnWidths[i]);
-                column.setPreferredWidth(columnWidths[i]);
-            } else {
-                // Proportional width based on weights
-                int preferredWidth = (totalWidth * columnWeights[i]) / 100;
-                column.setPreferredWidth(preferredWidth);
+            if (i < actualColumnWidths.length && actualColumnWidths[i] > 0) {
+                if (actualColumnWidths[i] <= 100) {
+                    // Treat as percentage weight
+                    int preferredWidth = (totalWidth * actualColumnWidths[i]) / 100;
+                    column.setPreferredWidth(preferredWidth);
+                } else {
+                    // Treat as fixed width in pixels
+                    column.setMinWidth(actualColumnWidths[i]);
+                    column.setMaxWidth(actualColumnWidths[i]);
+                    column.setPreferredWidth(actualColumnWidths[i]);
+                }
             }
         }
 
-        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
-        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
-        table.getColumnModel().getColumn(0).setCellRenderer(centerRenderer); // # column
-        table.getColumnModel().getColumn(3).setCellRenderer(centerRenderer); // Plays column
-        table.getColumnModel().getColumn(4).setCellRenderer(centerRenderer); // Duration column
+        // Center-align the first column (usually ID) if it exists
+        if (columnCount > 0) {
+            DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+            centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+            table.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
+        }
 
         return table;
     }

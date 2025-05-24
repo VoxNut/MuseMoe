@@ -161,5 +161,16 @@ public class SongAPI {
         return ResponseEntity.ok(results);
     }
 
+    @GetMapping("/top_by_play_count")
+    public ResponseEntity<List<SongDTO>> fetchTopSongsByPlayCount(
+            @RequestParam(defaultValue = "5") int limit) {
+        try {
+            List<SongDTO> results = songService.findTopByPlayCount(limit);
+            return ResponseEntity.ok(results);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
 
 }

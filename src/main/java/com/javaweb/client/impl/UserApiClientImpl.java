@@ -170,4 +170,16 @@ class UserApiClientImpl implements UserApiClient {
 
         }
     }
+
+    @Override
+    public List<UserDTO> fetchAllUsers() {
+        try {
+            String url = apiConfig.buildUserUrl("/all?accountStatus=ACTIVE");
+            List<UserDTO> users = apiClient.getList(url, UserDTO.class);
+            return users;
+        } catch (Exception e) {
+            log.error("Error fetching all users!", e.getMessage());
+            return Collections.emptyList();
+        }
+    }
 }

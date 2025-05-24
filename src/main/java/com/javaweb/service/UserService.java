@@ -1,11 +1,13 @@
 package com.javaweb.service;
 
+import com.javaweb.enums.AccountStatus;
 import com.javaweb.model.dto.PasswordDTO;
 import com.javaweb.model.dto.UserDTO;
 import com.javaweb.model.request.UserRequestDTO;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -43,4 +45,6 @@ public interface UserService {
     boolean upgradeUser(UserRequestDTO userRequestDTO);
 
     boolean checkUserArtist(Long currentArtistId);
+
+    List<UserDTO> findAll(AccountStatus accountStatus);
 }

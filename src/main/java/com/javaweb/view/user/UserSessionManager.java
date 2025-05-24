@@ -51,4 +51,6 @@ public class UserSessionManager {
     public interface UserAttributeGetter<T> {
         T get(UserDTO user);
     }
+
+
 }

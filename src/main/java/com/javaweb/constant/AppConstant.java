@@ -52,8 +52,9 @@ public class AppConstant {
     public static final String LOOKUP_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/lookup-icon.png";
     public static final String DISCOUNT_PATH = "src/main/java/com/javaweb/view/imgs/icon/discount-img.png";
     public static final String CALENDAR_PATH = "src/main/java/com/javeaweb/view/imgs/icon/calendar-icon.png";
-
-
+    public static final String ALBUM_COVER_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/album-cover-icon.png";
+    public static final String USER_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/user-icon.png";
+    public static final String TAG_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/tag-icon.jpg";
     public static final String PLAY_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/play-icon.png";
     public static final String PAUSE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/pause-icon.png";
 
@@ -77,6 +78,8 @@ public class AppConstant {
     public static final String ADD_TO_PLAYLIST_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/Plus-circle-08.png";
     public static final String MORE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/more-icon.png";
     public static final String VERIFIED_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/verified-icon.png";
+
+
     //LOGO
     public static final String MUSE_MOE_LOGO_PATH = "src/main/java/com/javaweb/view/imgs/logo/muse_moe_no_bg.png";
 

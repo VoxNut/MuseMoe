@@ -91,6 +91,14 @@ public class ApiServiceFactory {
         );
     }
 
+    public TagApiClient createTagApiClient() {
+        return new TagApiClientImpl(
+                createApiClient(),
+                createUrlEncoder(),
+                apiConfig
+        );
+    }
+
     private ApiClient createApiClient() {
         return new ApiClient(webClient);
     }

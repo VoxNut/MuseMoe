@@ -18,4 +18,6 @@ public interface ArtistService {
 
     ArtistDTO findArtistById(Long artistId);
 
+    List<ArtistDTO> findAllArtists();
+
 }

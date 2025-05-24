@@ -86,5 +86,15 @@ public class ArtistAPI {
         }
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<List<ArtistDTO>> findAllArtists() {
+        try {
+            List<ArtistDTO> res = artistService.findAllArtists();
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
 
 }

@@ -85,4 +85,14 @@ public class AlbumAPI {
         }
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<List<AlbumDTO>> findAllAlbums() {
+        try {
+            List<AlbumDTO> res = albumService.findAllAlbums();
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
 }

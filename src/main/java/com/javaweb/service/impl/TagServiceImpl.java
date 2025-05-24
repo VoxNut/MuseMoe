@@ -18,10 +18,7 @@ import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -231,5 +228,32 @@ public class TagServiceImpl implements TagService {
                 }
             });
         });
+    }
+
+    @Override
+    public Map<String, Integer> fetchTopTags(int limit) {
+        List<Object[]> results = tagRepository.fetchTopTags(limit);
+
+        return results.stream()
+                .collect(Collectors.toMap(
+                        result -> (String) result[0], // tag_name
+                        result -> ((Number) result[1]).intValue(), // song_count
+                        (v1, v2) -> v1,
+                        LinkedHashMap::new
+                ));
+    }
+
+    @Override
+    public List<TagDTO> findAllTags() {
+        try {
+            List<TagDTO> tagDTOS = tagRepository.findAll()
+                    .stream()
+                    .map(tagConverter::toDTO)
+                    .collect(Collectors.toList());
+            return tagDTOS;
+        } catch (Exception e) {
+            log.error("Error fetching all tags", e);
+            return List.of();
+        }
     }
 }

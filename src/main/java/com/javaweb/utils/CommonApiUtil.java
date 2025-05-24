@@ -9,7 +9,9 @@ import com.javaweb.model.request.AlbumRequestDTO;
 import com.javaweb.model.request.SongRequestDTO;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 //Facade Design Pattern
@@ -56,9 +58,27 @@ public class CommonApiUtil {
         return App.getBean(ApiServiceFactory.class).createArtistApiClient();
     }
 
+    private static TagApiClient getTagApiClient() {
+        return App.getBean(ApiServiceFactory.class).createTagApiClient();
+    }
+
     // USER
     public static Set<UserDTO> fetchAllUsersBaseOnRole(RoleType role) {
         return getUserApiClient().fetchAllUsersBaseOnRole(role);
+    }
+
+    public static List<UserDTO> fetchUsersByDateRange(Date from, Date to) {
+        return getUserApiClient().fetchAllUsers().stream().filter(userDTO -> {
+            Date userDate = userDTO.getCreatedAt();
+            if (userDate != null) {
+                return userDate.after(from) && userDate.before(to);
+            }
+            return false;
+        }).toList();
+    }
+
+    public static List<UserDTO> fetchAllUsers() {
+        return getUserApiClient().fetchAllUsers();
     }
 
     public static boolean checkUserArtist(Long currentArtistId) {
@@ -124,6 +144,10 @@ public class CommonApiUtil {
         return getSongApiClient().fetchPopularTracksByArtistId(artistId);
     }
 
+    public static List<SongDTO> findTopSongByPlayCount(Integer limit) {
+        return getSongApiClient().findTopByPlayCount(limit);
+    }
+
     public static boolean createSongsForAlbum(SongRequestDTO songRequestDTO) {
         return getSongApiClient().createSongs(songRequestDTO);
     }
@@ -169,6 +193,20 @@ public class CommonApiUtil {
     }
 
 
+    // Tag
+    public static Map<String, Integer> fetchTopTags(int limit) {
+        return getTagApiClient().fetchTopTags(limit);
+    }
+
+    public static List<TagDTO> fetchAllTags() {
+        return getTagApiClient().fetchAllTags();
+    }
+
+    public static List<TagDTO> findTagsBySongId(Long id) {
+        return getTagApiClient().findTagsBySongId(id);
+    }
+
+
     public static SongDTO fetchSongById(Long id) {
         return getSongApiClient().fetchSongById(id);
     }
@@ -208,17 +246,6 @@ public class CommonApiUtil {
         return getPlaylistApiClient().searchPlaylists(query, 20);
     }
 
-    public static PlaylistDTO fetchPlaylistContainsThisSong(Long songId) {
-        java.util.List<PlaylistDTO> playlists = fetchPlaylistByUserId();
-        return playlists
-                .stream()
-                .filter(playlist -> playlist.getSongs()
-                        .stream()
-                        .anyMatch(playlistSong -> playlistSong.getId().equals(songId)))
-                .findFirst()
-                .orElse(null);
-    }
-
     public static boolean addSongToPlaylist(PlaylistDTO playlistDTO) {
         return addSongsToPlaylist(playlistDTO);
     }
@@ -253,6 +280,10 @@ public class CommonApiUtil {
         return getAlbumApiClient().createAlbum(albumRequestDTO);
     }
 
+    public static List<AlbumDTO> fetchAllAlbums() {
+        return getAlbumApiClient().findAllAlbums();
+    }
+
     // Artist
     public static List<ArtistDTO> searchArtists(String query) {
         return getArtistApiClient().searchArtists(query, 20);
@@ -269,6 +300,10 @@ public class CommonApiUtil {
 
     public static ArtistDTO findArtistById(Long artistId) {
         return getArtistApiClient().findArtistById(artistId);
+    }
+
+    public static List<ArtistDTO> fetchAllArtists() {
+        return getArtistApiClient().findAllArtists();
     }
 
 
@@ -311,4 +346,6 @@ public class CommonApiUtil {
     public static List<ArtistDTO> fetchFollowedArtists() {
         return getUserArtistFollowClient().findFollowedArtists();
     }
+
+
 }

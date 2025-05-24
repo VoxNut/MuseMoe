@@ -107,6 +107,18 @@ class SongApiClientImpl implements SongApiClient {
     }
 
     @Override
+    public List<SongDTO> findTopByPlayCount(Integer limit) {
+        try {
+            String url = apiConfig.buildSongUrl("/top_by_play_count?limit=" + limit);
+            List<SongDTO> songs = apiClient.getList(url, SongDTO.class);
+            return songs;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
     public Boolean updateSong(Long id, String title, List<Long> artistIds, MultipartFile file) {
         return null;
     }

@@ -26,6 +26,8 @@ public class ArtistDTO extends AbstractDTO {
     @JsonIgnore
     private BufferedImage profileImage;
     private Integer followerCount = 0;
+    private Integer songCount = 0;
+    private Integer albumCount = 0;
 
 
 }

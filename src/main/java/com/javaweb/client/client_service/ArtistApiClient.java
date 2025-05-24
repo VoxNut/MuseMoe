@@ -17,4 +17,5 @@ public interface ArtistApiClient {
     boolean createArtist(String stageName, String bio, MultipartFile artistProfilePicture);
 
 
+    List<ArtistDTO> findAllArtists();
 }

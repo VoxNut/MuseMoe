@@ -35,6 +35,12 @@ public class ArtistConverter implements EntityConverter<ArtistEntity, ArtistRequ
         if (entity.getFollowers() != null) {
             artistDTO.setFollowerCount(entity.getFollowers().size());
         }
+        if (entity.getAlbums() != null) {
+            artistDTO.setAlbumCount(entity.getAlbums().size());
+        }
+        if (entity.getSongs() != null) {
+            artistDTO.setSongCount(entity.getSongs().size());
+        }
 
         return artistDTO;
     }

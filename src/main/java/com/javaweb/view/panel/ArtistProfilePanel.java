@@ -243,8 +243,8 @@ public class ArtistProfilePanel extends JPanel implements ThemeChangeListener, P
         JLabel popularLabel = GuiUtil.createLabel("Popular", Font.BOLD, 22);
 
         // Create tracks table
-        String[] columnNames = {"#", "TITLE", "PLAYS", "DURATION", ""};
-        int[] columnWidths = {50, 0, 150, 100, 50};
+        String[] columnNames = {"#", "TITLE", "PLAYS", "DURATION"};
+        int[] columnWidths = {50, 0, 150, 100};
 
         popularTracksTable = GuiUtil.createStyledTable(columnNames, columnWidths);
         tracksTableModel = (DefaultTableModel) popularTracksTable.getModel();

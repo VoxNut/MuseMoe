@@ -86,4 +86,15 @@ public class ArtistApiClientImpl implements ArtistApiClient {
             return false;
         }
     }
+
+    @Override
+    public List<ArtistDTO> findAllArtists() {
+        try {
+            String url = apiConfig.buildArtistsUrl("/all");
+            return apiClient.getList(url, ArtistDTO.class);
+        } catch (Exception e) {
+            log.error("Error fetching all artists: {}", e.getMessage(), e);
+            return null;
+        }
+    }
 }

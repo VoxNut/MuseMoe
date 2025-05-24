@@ -160,4 +160,17 @@ public class AlbumServiceImpl implements AlbumService {
                 .map(albumConverter::toDTO)
                 .orElse(null);
     }
+
+    @Override
+    public List<AlbumDTO> findAllAlbums() {
+        try {
+            return albumRepository.findAll()
+                    .stream()
+                    .map(albumConverter::toDTO)
+                    .toList();
+        } catch (Exception e) {
+            log.error("Error fetching all albums: {}", e.getMessage(), e);
+            return Collections.emptyList();
+        }
+    }
 }

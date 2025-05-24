@@ -19,4 +19,6 @@ public interface AlbumApiClient {
     String getAlbumCoverId(Long albumId);
 
     AlbumDTO createAlbum(AlbumRequestDTO albumRequestDTO);
+
+    List<AlbumDTO> findAllAlbums();
 }

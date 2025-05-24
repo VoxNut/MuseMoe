@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -205,5 +206,11 @@ public class UserServiceImpl implements UserService {
             log.error("Cannot check user with id: {} artist role", userId);
             return false;
         }
+    }
+
+    @Override
+    public List<UserDTO> findAll(AccountStatus accountStatus) {
+        List<UserDTO> userDTOS = userRepository.findByAccountStatus(accountStatus).stream().map(userConverter::toDTO).toList();
+        return userDTOS;
     }
 }

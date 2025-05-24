@@ -1,6 +1,7 @@
 package com.javaweb.model.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.javaweb.constant.AppConstant;
 import com.javaweb.enums.AccountStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -35,6 +36,8 @@ public class UserDTO extends AbstractDTO implements Comparable<UserDTO> {
     @JsonIgnore
     private BufferedImage avatarImage;
     private Long artistId;
+    private Date createdAt;
+    private Date lastLoginAt;
 
 
     @Override
@@ -54,5 +57,10 @@ public class UserDTO extends AbstractDTO implements Comparable<UserDTO> {
 
     public boolean hasFullName() {
         return fullName != null;
+    }
+
+    @JsonIgnore
+    public boolean isAdmin() {
+        return roles.contains(AppConstant.ROLE_ADMIN);
     }
 }

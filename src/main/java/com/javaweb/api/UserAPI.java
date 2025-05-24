@@ -1,5 +1,6 @@
 package com.javaweb.api;
 
+import com.javaweb.enums.AccountStatus;
 import com.javaweb.model.dto.MyUserDetail;
 import com.javaweb.model.dto.UserDTO;
 import com.javaweb.model.request.UserRequestDTO;
@@ -10,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -146,6 +148,16 @@ public class UserAPI {
     public ResponseEntity<Boolean> upgradeUser(@RequestBody UserRequestDTO userRequestDTO) {
         try {
             boolean res = userService.upgradeUser(userRequestDTO);
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<UserDTO>> findAll(@RequestParam AccountStatus accountStatus) {
+        try {
+            List<UserDTO> res = userService.findAll(accountStatus);
             return ResponseEntity.ok(res);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

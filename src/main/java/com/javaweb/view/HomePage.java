@@ -2,6 +2,7 @@ package com.javaweb.view;
 
 import com.javaweb.App;
 import com.javaweb.constant.AppConstant;
+import com.javaweb.enums.ActivePanel;
 import com.javaweb.enums.PlaylistSourceType;
 import com.javaweb.enums.RoleType;
 import com.javaweb.model.dto.*;
@@ -68,13 +69,10 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private JPanel centerCardPanel;
 
     private EnhancedSpectrumVisualizer visualizerPanel;
-    private boolean visualizerActive = false;
-    private boolean commitPanelActive = false;
-    private boolean instructionPanelActive = false;
-    private boolean queuePanelActive = false;
-    private boolean artistUploadPanelActive = false;
 
+    private ActivePanel activePanel = ActivePanel.HOME;
     private boolean miniplayerActive = false;
+
 
     private JButton goBackButton;
     private JButton goForwardButton;
@@ -91,6 +89,17 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private final int SEARCH_DELAY = 500; // milliseconds delay after typing
 
     private String userRole;
+
+    private ArtistProfilePanel artistProfilePanel;
+    private AlbumViewPanel albumViewPanel;
+    private SongDetailsPanel songDetailsPanel;
+    private QueuePanel queuePanel;
+    private CommitPanel commitPanel;
+    private InstructionPanel instructionPanel;
+    private SearchResultsPanel searchResultsPanel;
+    private ArtistUploadPanel artistUploadPanel;
+    private AdminStatisticsPanel adminStatisticsPanel;
+    private HomePanel homePanel;
 
     public HomePage() {
 
@@ -1619,7 +1628,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         centerCardPanel.setBorder(GuiUtil.createTitledBorder("Main", TitledBorder.LEFT));
 
         // Create the home panel
-        JPanel homePanel = new HomePanel();
+        homePanel = new HomePanel();
         homePanel.setName("home");
         centerCardPanel.add(homePanel, "home");
 
@@ -1629,37 +1638,41 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         centerCardPanel.add(visualizerPanel, "visualizer");
 
         // Create the commit panel
-        CommitPanel commitPanel = new CommitPanel();
+        commitPanel = new CommitPanel();
         commitPanel.setName("commits");
         centerCardPanel.add(commitPanel, "commits");
 
-        InstructionPanel instructionPanel = new InstructionPanel();
+        instructionPanel = new InstructionPanel();
         instructionPanel.setName("instructions");
         centerCardPanel.add(instructionPanel, "instructions");
 
-        JPanel searchResultsPanel = new SearchResultsPanel();
+        searchResultsPanel = new SearchResultsPanel();
         searchResultsPanel.setName("searchResults");
         centerCardPanel.add(searchResultsPanel, "searchResults");
 
-        JPanel albumViewPanel = new AlbumViewPanel();
+        albumViewPanel = new AlbumViewPanel();
         albumViewPanel.setName("albumView");
         centerCardPanel.add(albumViewPanel, "albumView");
 
-        JPanel songDetailsPanel = new SongDetailsPanel();
+        songDetailsPanel = new SongDetailsPanel();
         songDetailsPanel.setName("songDetails");
         centerCardPanel.add(songDetailsPanel, "songDetails");
 
-        JPanel artistProfilePanel = new ArtistProfilePanel();
+        artistProfilePanel = new ArtistProfilePanel();
         artistProfilePanel.setName("artistProfile");
         centerCardPanel.add(artistProfilePanel, "artistProfile");
 
-        JPanel queuePanel = new QueuePanel();
+        queuePanel = new QueuePanel();
         queuePanel.setName("queue");
         centerCardPanel.add(queuePanel, "queue");
 
-        JPanel artistUploadPanel = new ArtistUploadPanel();
+        artistUploadPanel = new ArtistUploadPanel();
         artistUploadPanel.setName("artistUpload");
         centerCardPanel.add(artistUploadPanel, "artistUpload");
+
+        adminStatisticsPanel = new AdminStatisticsPanel();
+        adminStatisticsPanel.setName("adminStatistics");
+        centerCardPanel.add(adminStatisticsPanel, "adminStatistics");
 
         keyEventDispatcher = e -> {
             if (e.getID() == KeyEvent.KEY_PRESSED) {
@@ -1699,15 +1712,13 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                         return true;
                     }
                     case KeyEvent.VK_E -> {
-                        if (!commitPanelActive) {
-                            toggleMiniplayer();
-                        }
+                        toggleMiniplayer();
                         return true;
                     }
 
 
                     case KeyEvent.VK_B -> {
-                        if (visualizerActive) {
+                        if (activePanel == ActivePanel.VISUALIZER) {
                             toggleVisualizerBands();
                             return true;
                         }
@@ -1749,6 +1760,17 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                         }
                     }
 
+                    case KeyEvent.VK_D -> {
+                        if (e.isShiftDown()) {
+                            if (userRole.equals("Admin")) {
+                                showAdminStatisticsPanel();
+                            } else {
+                                GuiUtil.showToast(this, "You need admin privileges to access statistics!");
+                            }
+                            return true;
+                        }
+                    }
+
                 }
             }
             return false;
@@ -1760,148 +1782,35 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     }
 
     private void toggleCommitPanel() {
-        commitPanelActive = !commitPanelActive;
-
-        if (centerCardPanel == null) {
-            return;
-        }
-
-        CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
-
-        if (commitPanelActive) {
-
-            visualizerActive = false;
-            instructionPanelActive = false;
-            queuePanelActive = false;
-            artistUploadPanelActive = false;
-
-            navigationManager.navigateTo(NavigationDestination.COMMITS, null);
-
-            playerFacade.notifyToggleCava(false);
-            cardLayout.show(centerCardPanel, "commits");
-            log.info("Commit panel activated");
-            GuiUtil.showToast(this, "Commit panel activated");
-        } else {
-            cardLayout.show(centerCardPanel, "home");
-            log.info("Commit panel deactivated");
-            GuiUtil.showToast(this, "Commit panel deactivated");
-        }
+        togglePanel(ActivePanel.COMMITS, "commits", NavigationDestination.COMMITS, null);
     }
 
     public void toggleQueuePanel() {
-        queuePanelActive = !queuePanelActive;
-
-        if (centerCardPanel == null) {
-            return;
-        }
-
-        CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
-
-        if (queuePanelActive) {
-
-            visualizerActive = false;
-            instructionPanelActive = false;
-            commitPanelActive = false;
-            artistUploadPanelActive = false;
-
-            playerFacade.notifyToggleCava(false);
-
-
-            navigationManager.navigateTo(NavigationDestination.QUEUE, null);
-            QueuePanel queuePanel = GuiUtil.findFirstComponentByType(
-                    centerCardPanel,
-                    QueuePanel.class,
-                    panel -> true
-            );
-            cardLayout.show(centerCardPanel, "queue");
-            queuePanel.updateQueueView();
-
-            log.info("Queue panel activated");
-            GuiUtil.showToast(this, "Queue panel activated");
-        } else {
-            cardLayout.show(centerCardPanel, "home");
-            log.info("Queue panel deactivated");
-            GuiUtil.showToast(this, "Queue panel deactivated");
-        }
+        togglePanel(ActivePanel.QUEUE, "queue", NavigationDestination.QUEUE, null);
     }
+
 
     private void toggleInstructionPanel() {
-        instructionPanelActive = !instructionPanelActive;
-
-        if (centerCardPanel == null) {
-            return;
-        }
-
-        CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
-
-        if (instructionPanelActive) {
-            visualizerActive = false;
-            commitPanelActive = false;
-            queuePanelActive = false;
-            artistUploadPanelActive = false;
-
-            playerFacade.notifyToggleCava(false);
-
-            navigationManager.navigateTo(NavigationDestination.INSTRUCTIONS, null);
-
-
-            cardLayout.show(centerCardPanel, "instructions");
-            log.info("Instruction panel activated");
-            GuiUtil.showToast(this, "Help panel activated");
-        } else {
-            cardLayout.show(centerCardPanel, "home");
-            log.info("Instruction panel deactivated");
-            GuiUtil.showToast(this, "Help panel deactivated");
-        }
+        togglePanel(ActivePanel.INSTRUCTIONS, "instructions", NavigationDestination.INSTRUCTIONS, null);
     }
+
 
     private void toggleHome() {
         navigationManager.navigateTo(NavigationDestination.HOME, null);
-
-        visualizerActive = false;
-        commitPanelActive = false;
-        instructionPanelActive = false;
-        queuePanelActive = false;
-        artistUploadPanelActive = false;
-
-        CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
-        cardLayout.show(centerCardPanel, "home");
-        GuiUtil.showToast(this, "Home activated");
+        switchToPanel(ActivePanel.HOME, "home");
     }
 
     private void toggleVisualizer() {
-        visualizerActive = !visualizerActive;
-
-        if (centerCardPanel == null) {
-            log.error("Center card panel is null");
-            return;
-        }
-
-        CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
-
-        if (visualizerActive) {
-
-            commitPanelActive = false;
-            instructionPanelActive = false;
-            queuePanelActive = false;
-            artistUploadPanelActive = false;
-
-            navigationManager.navigateTo(NavigationDestination.VISUALIZER, null);
-
-            playerFacade.notifyToggleCava(true);
-            cardLayout.show(centerCardPanel, "visualizer");
-
-            log.info("Visualizer activated");
-            GuiUtil.showToast(this, "Visualizer activated");
-        } else {
-            cardLayout.show(centerCardPanel, "home");
-            GuiUtil.showToast(this, "Visualizer deactivated");
-            log.info("Visualizer deactivated");
-        }
+        togglePanel(ActivePanel.VISUALIZER, "visualizer", NavigationDestination.VISUALIZER, null);
     }
 
     private void toggleVisualizerBands() {
         if (visualizerPanel == null) {
+            return;
+        }
+
+        if (activePanel != ActivePanel.VISUALIZER) {
+            GuiUtil.showToast(this, "Visualizer needs to be active first!");
             return;
         }
 
@@ -1923,6 +1832,15 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         // Show feedback
         GuiUtil.showToast(this, "Visualizer: " + newBands + " bands");
+    }
+
+
+    private void showArtistUploadPanel() {
+        togglePanel(ActivePanel.ARTIST_UPLOAD, "artistUpload", NavigationDestination.ARTIST_UPLOAD, null);
+    }
+
+    private void showAdminStatisticsPanel() {
+        togglePanel(ActivePanel.ADMIN_STATISTICS, "adminStatistics", NavigationDestination.ADMIN_STATISTICS, null);
     }
 
     @Override
@@ -1960,7 +1878,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 case SONG_LIKED_CHANGED -> refreshLikedSongsPanel();
 
                 case TOGGLE_CAVA -> {
-                    if (visualizerActive && visualizerPanel != null) {
+                    if (activePanel == ActivePanel.VISUALIZER && visualizerPanel != null) {
                         boolean isToggle = (boolean) event.data();
                         visualizerPanel.toggleCAVA(isToggle);
                     }
@@ -2102,208 +2020,88 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         worker.execute();
     }
 
-    private void showArtistUploadPanel() {
-        artistUploadPanelActive = !artistUploadPanelActive;
-
-        if (centerCardPanel == null) {
-            return;
-        }
-
-        CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
-
-        if (artistUploadPanelActive) {
-            visualizerActive = false;
-            commitPanelActive = false;
-            queuePanelActive = false;
-            instructionPanelActive = false;
-
-            playerFacade.notifyToggleCava(false);
-
-            navigationManager.navigateTo(NavigationDestination.ARTIST_UPLOAD, null);
-
-
-            cardLayout.show(centerCardPanel, "artistUpload");
-            log.info("Artist upload panel activated");
-            GuiUtil.showToast(this, "Artist upload panel activated");
-        } else {
-            cardLayout.show(centerCardPanel, "home");
-            log.info("Artist upload panel deactivated");
-            GuiUtil.showToast(this, "Artist upload deactivated");
-        }
-    }
-
 
     public void navigateToAlbumView(AlbumDTO album) {
-        AlbumViewPanel albumViewPanel = GuiUtil.findFirstComponentByType(
-                centerCardPanel,
-                AlbumViewPanel.class,
-                panel -> true
-        );
 
         if (albumViewPanel != null) {
             albumViewPanel.displayAlbum(album);
-
-            CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
-            cardLayout.show(centerCardPanel, "albumView");
-
-            visualizerActive = false;
-            commitPanelActive = false;
-            instructionPanelActive = false;
-
             Map<String, Object> navigationData = new HashMap<>();
             navigationData.put(NavigationDestination.ALBUM_DATA, album);
 
-            navigationManager.navigateTo(NavigationDestination.ALBUM_VIEW, navigationData);
+            togglePanel(ActivePanel.ALBUM_VIEW, "albumView", NavigationDestination.ALBUM_VIEW, navigationData);
 
-            log.info("Navigated to album view: {}", album.getTitle());
         }
     }
 
     public void navigateToArtistView(ArtistDTO artist) {
-        ArtistProfilePanel artistProfilePanel = GuiUtil.findFirstComponentByType(
-                centerCardPanel,
-                ArtistProfilePanel.class,
-                panel -> true
-        );
 
         if (artistProfilePanel != null) {
             artistProfilePanel.displayArtist(artist);
-            CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
-            cardLayout.show(centerCardPanel, "artistProfile");
-
-            visualizerActive = false;
-            commitPanelActive = false;
-            instructionPanelActive = false;
 
             Map<String, Object> navigationData = new HashMap<>();
             navigationData.put(NavigationDestination.ARTIST_DATA, "Artist: " + artist.getStageName());
-            navigationManager.navigateTo(NavigationDestination.ARTIST_PROFILE, navigationData);
+
+            togglePanel(ActivePanel.ARTIST_PROFILE, "artistProfile", NavigationDestination.ARTIST_PROFILE, navigationData);
         }
     }
 
     public void navigateToPlaylistView(PlaylistDTO playlist, PlaylistSourceType sourceType) {
-        AlbumViewPanel albumViewPanel = GuiUtil.findFirstComponentByType(
-                centerCardPanel,
-                AlbumViewPanel.class,
-                panel -> true
-        );
-
         if (albumViewPanel != null) {
+
             albumViewPanel.displayPlaylist(playlist, sourceType);
-
-            CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
-            cardLayout.show(centerCardPanel, "albumView");
-
-            visualizerActive = false;
-            commitPanelActive = false;
-            instructionPanelActive = false;
 
             Map<String, Object> navigationData = new HashMap<>();
             navigationData.put(NavigationDestination.PLAYLIST_DATA, playlist);
             navigationData.put(NavigationDestination.PLAYLIST_SOURCE_TYPE, sourceType);
 
-            navigationManager.navigateTo(NavigationDestination.ALBUM_VIEW, navigationData);
-
-            log.info("Navigated to playlist view: {}", playlist.getName());
+            togglePanel(ActivePanel.ALBUM_VIEW, "albumView", NavigationDestination.ALBUM_VIEW, navigationData);
         }
     }
 
     public void navigateToSongDetailsView(SongDTO song) {
-        SongDetailsPanel songDetailsPanel = GuiUtil.findFirstComponentByType(
-                centerCardPanel,
-                SongDetailsPanel.class,
-                panel -> true
-        );
-
         if (songDetailsPanel != null) {
             songDetailsPanel.displaySong(song);
-            CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
-            cardLayout.show(centerCardPanel, "songDetails");
-
-            visualizerActive = false;
-            commitPanelActive = false;
-            instructionPanelActive = false;
 
             Map<String, Object> navigationData = new HashMap<>();
             navigationData.put(NavigationDestination.SONG_DATA, song);
-            navigationManager.navigateTo(NavigationDestination.SONG_DETAILS, navigationData);
-        }
 
+            togglePanel(ActivePanel.SONG_DETAILS, "songDetails", NavigationDestination.SONG_DETAILS, navigationData);
+
+        }
     }
 
+    // For go back and go forward.
     private void applyNavigationState(NavigationManager.NavigationItem item) {
-        CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
-
         switch (item.destination()) {
             case NavigationDestination.HOME -> {
-                cardLayout.show(centerCardPanel, "home");
-                visualizerActive = false;
-                commitPanelActive = false;
-                instructionPanelActive = false;
-                queuePanelActive = false;
-                artistUploadPanelActive = false;
+                switchToPanel(ActivePanel.HOME, "home");
             }
             case NavigationDestination.VISUALIZER -> {
-                cardLayout.show(centerCardPanel, "visualizer");
-                visualizerActive = true;
-                commitPanelActive = false;
-                instructionPanelActive = false;
-                queuePanelActive = false;
-                artistUploadPanelActive = false;
-                playerFacade.notifyToggleCava(true);
+                switchToPanel(ActivePanel.VISUALIZER, "visualizer");
             }
             case NavigationDestination.COMMITS -> {
-                cardLayout.show(centerCardPanel, "commits");
-                visualizerActive = false;
-                commitPanelActive = true;
-                instructionPanelActive = false;
-                queuePanelActive = false;
-                artistUploadPanelActive = false;
+                switchToPanel(ActivePanel.COMMITS, "commits");
             }
             case NavigationDestination.INSTRUCTIONS -> {
-                cardLayout.show(centerCardPanel, "instructions");
-                visualizerActive = false;
-                commitPanelActive = false;
-                instructionPanelActive = true;
-                queuePanelActive = false;
-                artistUploadPanelActive = false;
+                switchToPanel(ActivePanel.INSTRUCTIONS, "instructions");
+
             }
 
             case NavigationDestination.SEARCH_RESULTS -> {
-                cardLayout.show(centerCardPanel, "searchResults");
-                visualizerActive = false;
-                commitPanelActive = false;
-                instructionPanelActive = false;
-                queuePanelActive = false;
-                artistUploadPanelActive = false;
+                switchToPanel(ActivePanel.SEARCH_RESULTS, "searchResults");
             }
 
             case NavigationDestination.SONG_DETAILS -> {
-                cardLayout.show(centerCardPanel, "songDetails");
-                visualizerActive = false;
-                commitPanelActive = false;
-                instructionPanelActive = false;
-                queuePanelActive = false;
-                artistUploadPanelActive = false;
+                switchToPanel(ActivePanel.SONG_DETAILS, "songDetails");
             }
 
             case NavigationDestination.ARTIST_PROFILE -> {
-                cardLayout.show(centerCardPanel, "artistProfile");
-                visualizerActive = false;
-                commitPanelActive = false;
-                instructionPanelActive = false;
-                queuePanelActive = false;
-                artistUploadPanelActive = false;
+                switchToPanel(ActivePanel.ARTIST_PROFILE, "artistProfile");
             }
 
             case NavigationDestination.ALBUM_VIEW -> {
                 if (item.data() instanceof Map) {
                     Map<String, Object> navigationData = (Map<String, Object>) item.data();
-                    AlbumViewPanel albumViewPanel = GuiUtil.findFirstComponentByType(
-                            centerCardPanel,
-                            AlbumViewPanel.class,
-                            panel -> true
-                    );
 
                     if (albumViewPanel != null) {
                         if (navigationData.containsKey(NavigationDestination.ALBUM_DATA)) {
@@ -2319,32 +2117,54 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                     }
                 }
 
-                cardLayout.show(centerCardPanel, "albumView");
-                visualizerActive = false;
-                commitPanelActive = false;
-                instructionPanelActive = false;
-                queuePanelActive = false;
-                artistUploadPanelActive = false;
+                switchToPanel(ActivePanel.ALBUM_VIEW, "albumView");
             }
 
             case NavigationDestination.QUEUE -> {
-                cardLayout.show(centerCardPanel, "queue");
-                queuePanelActive = true;
-                visualizerActive = false;
-                commitPanelActive = false;
-                instructionPanelActive = false;
-                artistUploadPanelActive = false;
+                switchToPanel(ActivePanel.QUEUE, "queue");
+
             }
 
             case NavigationDestination.ARTIST_UPLOAD -> {
-                cardLayout.show(centerCardPanel, "artistUpload");
-                queuePanelActive = false;
-                visualizerActive = false;
-                commitPanelActive = false;
-                instructionPanelActive = false;
-                artistUploadPanelActive = true;
+                switchToPanel(ActivePanel.ARTIST_UPLOAD, "artistUpload");
+
+            }
+
+            case NavigationDestination.ADMIN_STATISTICS -> {
+                switchToPanel(ActivePanel.ADMIN_STATISTICS, "adminStatistics");
+
             }
 
         }
+    }
+
+    private void switchToPanel(ActivePanel newPanel, String cardName) {
+        activePanel = newPanel;
+
+        if (activePanel != ActivePanel.VISUALIZER) {
+            playerFacade.notifyToggleCava(false);
+        }
+
+        CardLayout cardLayout = (CardLayout) centerCardPanel.getLayout();
+        cardLayout.show(centerCardPanel, cardName);
+
+        if (newPanel == ActivePanel.VISUALIZER) {
+            playerFacade.notifyToggleCava(true);
+        }
+
+        log.info("{} panel activated", newPanel.name().toLowerCase());
+        GuiUtil.showToast(this, newPanel.name().toLowerCase() + " panel activated");
+    }
+
+    private void togglePanel(ActivePanel panelType, String cardName, String navigationDestination, Object data) {
+        if (activePanel == panelType) {
+            navigationManager.navigateTo(NavigationDestination.HOME, null);
+            switchToPanel(ActivePanel.HOME, "home");
+            log.info("{} panel deactivated", panelType.name().toLowerCase());
+        } else {
+            navigationManager.navigateTo(navigationDestination, data);
+            switchToPanel(panelType, cardName);
+        }
+
     }
 }

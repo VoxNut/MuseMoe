@@ -24,6 +24,8 @@ public class NavigationDestination {
 
     public static final String ARTIST_UPLOAD = "artistUpload";
 
+    public static final String ADMIN_STATISTICS = "adminStatistics";
+
     private NavigationDestination() {
     }
 }

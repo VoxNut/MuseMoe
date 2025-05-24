@@ -34,6 +34,7 @@ public class InstructionPanel extends JPanel implements ThemeChangeListener {
                 {"Shift + V", "Toggle audio visualizer"},
                 {"Shift + C", "Toggle commit history view"},
                 {"Shift + A", "Open Artist Studio (required artist role)"},
+                {"Shift + D", "Open Admin statistics (required admin role)"},
                 {"B", "Change visualizer bands (when active)"},
                 {"H", "Toggle Home"},
                 {"K", "Toggle search field"},

@@ -626,7 +626,7 @@ public class LoginPage extends JFrame {
                 homePage.setIconImage(GuiUtil.createImageIcon(AppConstant.MUSE_MOE_LOGO_PATH, 512, 512).getImage());
                 homePage.setVisible(true);
 
-            } else if (statusCode == 401) {
+            } else if (statusCode == 401 || statusCode == 404) {
                 GuiUtil.showErrorMessageDialog(this, "Username or Password incorrect!");
             } else {
                 GuiUtil.showErrorMessageDialog(this, "Error connecting to server!");

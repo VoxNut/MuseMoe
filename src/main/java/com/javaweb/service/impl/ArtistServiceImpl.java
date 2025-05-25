@@ -100,6 +100,7 @@ public class ArtistServiceImpl implements ArtistService {
 
             // Step 3: Create and save artist entity
             ArtistEntity artistEntity = artistConverter.toEntity(artistRequestDTO);
+            user.setAvatar(artistEntity.getProfilePic());
             artistEntity.setUser(user);
 
             // Set non-null fields

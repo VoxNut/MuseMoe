@@ -128,6 +128,7 @@ public class QueuePanel extends JPanel implements ThemeChangeListener, PlayerEve
         // Song image
         currentSongImage = GuiUtil.createAsyncImageLabel(120, 120, 15);
         currentSongImage.startLoading();
+        playerFacade.populateSongImage(playerFacade.getCurrentSong(), currentSongImage::setLoadedImage);
 
         // Song info panel
         JPanel songInfoPanel = GuiUtil.createPanel(new MigLayout(
@@ -291,7 +292,7 @@ public class QueuePanel extends JPanel implements ThemeChangeListener, PlayerEve
         if (currentSong != null) {
             currentSongTitle.setText(currentSong.getTitle());
             currentSongArtist.setText(currentSong.getSongArtist() != null ? currentSong.getSongArtist() : "Unknown Artist");
-            playerFacade.populateSongImage(currentSong, currentSongImage::setLoadedImage);
+            playerFacade.populateSongImage(currentSong, image -> currentSongImage.setLoadedImage(image));
         } else {
             currentSongTitle.setText("No song playing");
             currentSongArtist.setText("");
@@ -393,9 +394,7 @@ public class QueuePanel extends JPanel implements ThemeChangeListener, PlayerEve
     @Override
     public void onPlayerEvent(PlayerEvent event) {
         switch (event.type()) {
-            case QUEUE_UPDATED, SONG_LOADED -> {
-                updateQueueView();
-            }
+            case QUEUE_UPDATED, SONG_LOADED -> updateQueueView();
         }
     }
 

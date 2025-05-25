@@ -1,15 +1,28 @@
 package com.javaweb.enums;
 
-public enum ActivePanel {
-    HOME,
-    VISUALIZER,
-    COMMITS,
-    INSTRUCTIONS,
-    QUEUE,
-    ARTIST_UPLOAD,
-    ADMIN_STATISTICS,
-    SEARCH_RESULTS,
-    ALBUM_VIEW,
-    SONG_DETAILS,
-    ARTIST_PROFILE
+public enum ActivePanel implements BaseEnum {
+    HOME("Home"),
+    VISUALIZER("Visualizer"),
+    COMMITS("Commits"),
+    INSTRUCTIONS("Instructions"),
+    QUEUE("Queue"),
+    ARTIST_UPLOAD("Artist Upload"),
+    ADMIN_STATISTICS("Admin Statistics"),
+    SEARCH_RESULTS("Search Results"),
+    ALBUM_VIEW("Album View"),
+    SONG_DETAILS("Song Details"),
+    ARTIST_PROFILE("Artist Profile");
+
+    private final String activePanelName;
+
+    ActivePanel(String activePanelName) {
+        this.activePanelName = activePanelName;
+    }
+
+    @Override
+    public String getValue() {
+        return this.activePanelName;
+    }
+
+
 }

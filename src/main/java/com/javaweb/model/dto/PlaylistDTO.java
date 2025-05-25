@@ -26,8 +26,6 @@ public class PlaylistDTO extends AbstractDTO {
     private List<SongDTO> songs;
     private List<Long> songIds;
     private PlaylistSourceType sourceType;
-    private String createdAt;
-    private String updatedAt;
 
 
     public SongDTO getSongAt(Integer position) {

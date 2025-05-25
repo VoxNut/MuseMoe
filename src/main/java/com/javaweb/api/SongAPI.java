@@ -172,5 +172,18 @@ public class SongAPI {
         }
     }
 
+    @GetMapping("/filter")
+    public ResponseEntity<List<SongDTO>> fetchSongsByFilter(
+            @RequestParam(value = "releaseYear", required = false) Integer releaseYear,
+            @RequestParam(value = "genre", required = false) String genre,
+            @RequestParam(value = "artistId", required = false) Long artistId) {
+        try {
+            List<SongDTO> results = songService.findFilteredSongs(releaseYear, genre, artistId);
+            return ResponseEntity.ok(results);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
 
 }

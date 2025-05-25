@@ -3,13 +3,11 @@ package com.javaweb.converter;
 import com.javaweb.entity.PlaylistEntity;
 import com.javaweb.entity.PlaylistSongEntity;
 import com.javaweb.entity.SongEntity;
-import com.javaweb.entity.UserEntity;
 import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.model.request.PlaylistRequestDTO;
 import com.javaweb.repository.UserRepository;
 import com.javaweb.utils.DateUtil;
-import com.javaweb.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
@@ -30,11 +28,8 @@ public class PlaylistConverter implements EntityConverter<PlaylistEntity, Playli
     public PlaylistDTO toDTO(PlaylistEntity entity) {
         PlaylistDTO res = modelMapper.map(entity, PlaylistDTO.class);
 
-        Long userId = SecurityUtils.getPrincipal().getId();
-        UserEntity user = userRepository.findById(userId)
-                .orElse(null);
-        if (user != null) {
-            res.setCreatedBy(user.getUsername());
+        if (entity.getUser() != null) {
+            res.setCreatedBy(entity.getUser().getUsername());
         }
 
 
@@ -70,8 +65,8 @@ public class PlaylistConverter implements EntityConverter<PlaylistEntity, Playli
             );
         }
 
-        res.setCreatedAt(DateUtil.formatDate(DateUtil.toDate(entity.getCreated_at())));
-        res.setUpdatedAt(DateUtil.formatDate(DateUtil.toDate(entity.getUpdated_at())));
+        res.setCreatedDate(DateUtil.toDate(entity.getCreated_at()));
+        res.setUpdateDate(DateUtil.toDate(entity.getUpdated_at()));
 
 
         return res;

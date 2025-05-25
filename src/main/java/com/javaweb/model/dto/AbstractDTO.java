@@ -19,6 +19,7 @@ public class AbstractDTO implements Serializable {
 
     private Long id;
     private Date createdDate;
+    private Date updateDate;
     private String createdBy;
     private Date modifiedDate;
     private String modifiedBy;

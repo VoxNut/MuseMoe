@@ -8,6 +8,7 @@ import com.javaweb.model.dto.ArtistDTO;
 import com.javaweb.model.dto.PlaylistDTO;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.utils.CommonApiUtil;
+import com.javaweb.utils.FontUtil;
 import com.javaweb.utils.GuiUtil;
 import com.javaweb.utils.StringUtils;
 import com.javaweb.view.HomePage;
@@ -35,12 +36,6 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
     private JPanel navigationPanel;
     private CardLayout cardLayout;
 
-    private JButton allButton;
-    private JButton songsButton;
-    private JButton playlistsButton;
-    private JButton albumsButton;
-    private JButton artistsButton;
-
     private JPanel allPanel;
     private JPanel songsPanel;
     private JPanel playlistsPanel;
@@ -49,8 +44,20 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
     private JScrollPane scrollPane;
 
     private String currentQuery = "";
-    private String currentTab = "ALL";
+    private String currentCard = "ALL";
+    private static final String ALL_CARD = "ALL";
+    private static final String SONGS_CARD = "SONGS";
+    private static final String PLAYLISTS_CARD = "PLAYLISTS";
+    private static final String ALBUMS_CARD = "ALBUMS";
+    private static final String ARTISTS_CARD = "ARTISTS";
+    private Map<String, JButton> navigationButtons = new HashMap<>();
+
+    private Color textColor;
+    private Color backgroundColor;
+    private Color accentColor;
+
     private final Map<String, JButton> playPauseButtonMap = new HashMap<>();
+
 
     @Override
     public void onPlayerEvent(PlayerEvent event) {
@@ -76,6 +83,10 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
         setOpaque(false);
         setLayout(new BorderLayout());
 
+        this.backgroundColor = ThemeManager.getInstance().getBackgroundColor();
+        this.textColor = ThemeManager.getInstance().getTextColor();
+        this.accentColor = ThemeManager.getInstance().getAccentColor();
+
         cardLayout = new CardLayout();
         contentPanel = GuiUtil.createPanel(cardLayout);
 
@@ -91,15 +102,11 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
         scrollPane = GuiUtil.createStyledScrollPane(mainPanel);
         add(scrollPane, BorderLayout.CENTER);
 
+
         ThemeManager.getInstance().addThemeChangeListener(this);
-        onThemeChanged(
-                ThemeManager.getInstance().getBackgroundColor(),
-                ThemeManager.getInstance().getTextColor(),
-                ThemeManager.getInstance().getAccentColor()
-        );
         playerFacade.subscribeToPlayerEvents(this);
 
-        updateSelectedTab(currentTab);
+        updateNavigationButtonStates(currentCard);
 
     }
 
@@ -108,58 +115,45 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
         navigationPanel = GuiUtil.createPanel(new MigLayout("insets 5 10 5 10, fillx", "", "[]"));
         navigationPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0,
                 GuiUtil.darkenColor(ThemeManager.getInstance().getBackgroundColor(), 0.1f)));
-        JPanel buttonPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
+        JPanel buttonPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         buttonPanel.setOpaque(false);
 
-        allButton = createTabButton("ALL");
-        songsButton = createTabButton("SONGS");
-        playlistsButton = createTabButton("PLAYLISTS");
-        albumsButton = createTabButton("ALBUMS");
-        artistsButton = createTabButton("ARTISTS");
+        String[] navItems = {ALL_CARD, SONGS_CARD, PLAYLISTS_CARD, ALBUMS_CARD, ARTISTS_CARD};
 
-
-        buttonPanel.add(allButton);
-        buttonPanel.add(songsButton);
-        buttonPanel.add(playlistsButton);
-        buttonPanel.add(albumsButton);
-        buttonPanel.add(artistsButton);
+        for (String navItem : navItems) {
+            JButton navButton = createTabButton(navItem);
+            buttonPanel.add(navButton);
+            navigationButtons.put(navItem, navButton);
+        }
 
         navigationPanel.add(buttonPanel, "left");
     }
 
-    private void updateSelectedTab(String selectedTab) {
-        Color backgroundColor = ThemeManager.getInstance().getBackgroundColor();
-        Color accentColor = ThemeManager.getInstance().getAccentColor();
-        Color textColor = ThemeManager.getInstance().getTextColor();
-
-        GuiUtil.styleButton(allButton, backgroundColor, textColor, accentColor);
-        GuiUtil.styleButton(songsButton, backgroundColor, textColor, accentColor);
-        GuiUtil.styleButton(playlistsButton, backgroundColor, textColor, accentColor);
-        GuiUtil.styleButton(albumsButton, backgroundColor, textColor, accentColor);
-        GuiUtil.styleButton(artistsButton, backgroundColor, textColor, accentColor);
-
-        JButton selectedButton;
-        switch (selectedTab) {
-            case "SONGS" -> selectedButton = songsButton;
-            case "PLAYLISTS" -> selectedButton = playlistsButton;
-            case "ALBUMS" -> selectedButton = albumsButton;
-            case "ARTISTS" -> selectedButton = artistsButton;
-            default -> selectedButton = allButton;
-        }
-
-        GuiUtil.styleButton(selectedButton, accentColor, backgroundColor, textColor);
-
+    private void updateNavigationButtonStates(String activeCard) {
+        navigationButtons.forEach((card, button) -> {
+            if (card.equals(activeCard)) {
+                GuiUtil.styleButton(button, accentColor, textColor, accentColor);
+                button.setFont(FontUtil.getSpotifyFont(Font.BOLD, 16));
+            } else {
+                GuiUtil.styleButton(button, textColor, backgroundColor, accentColor);
+                button.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
+            }
+        });
     }
+
 
     private JButton createTabButton(String text) {
         JButton button = GuiUtil.createButton(text);
-        button.setFont(button.getFont().deriveFont(Font.BOLD, 14f));
+        GuiUtil.styleButton(button, textColor, backgroundColor, accentColor);
+        button.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
 
+        // Add action to switch cards
         button.addActionListener(e -> {
             cardLayout.show(contentPanel, text);
-            currentTab = text;
-            updateSelectedTab(text);
+            currentCard = text;
+            updateNavigationButtonStates(text);
         });
+
         return button;
     }
 
@@ -189,7 +183,7 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
 
         // Show the all tab
         cardLayout.show(contentPanel, "ALL");
-        updateSelectedTab("ALL");
+        updateNavigationButtonStates("ALL");
 
         if (playerFacade.getCurrentSong() != null) {
             updatePlayPauseButtons(playerFacade.getCurrentSong(), !playerFacade.isPaused());
@@ -916,10 +910,12 @@ public class SearchResultsPanel extends JPanel implements ThemeChangeListener, P
 
     @Override
     public void onThemeChanged(Color backgroundColor, Color textColor, Color accentColor) {
-
+        this.backgroundColor = backgroundColor;
+        this.textColor = textColor;
+        this.accentColor = accentColor;
         GuiUtil.updatePanelColors(this, backgroundColor, textColor, accentColor);
 
-        updateSelectedTab(currentTab);
+        updateNavigationButtonStates(currentCard);
 
         revalidate();
         repaint();

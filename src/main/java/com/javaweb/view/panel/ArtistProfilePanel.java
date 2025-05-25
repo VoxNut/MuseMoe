@@ -243,8 +243,8 @@ public class ArtistProfilePanel extends JPanel implements ThemeChangeListener, P
         JLabel popularLabel = GuiUtil.createLabel("Popular", Font.BOLD, 22);
 
         // Create tracks table
-        String[] columnNames = {"#", "TITLE", "PLAYS", "DURATION"};
-        int[] columnWidths = {50, 0, 150, 100};
+        String[] columnNames = {"#", "TITLE", "PLAYS", "RELEASE YEAR", "DURATION"};
+        int[] columnWidths = {10, 100, 80, 10, 10};
 
         popularTracksTable = GuiUtil.createStyledTable(columnNames, columnWidths);
         tracksTableModel = (DefaultTableModel) popularTracksTable.getModel();
@@ -360,7 +360,10 @@ public class ArtistProfilePanel extends JPanel implements ThemeChangeListener, P
         });
 
         panel.add(popularLabel);
-        panel.add(popularTracksTable, "grow");
+
+        JScrollPane scrollPane = GuiUtil.createStyledScrollPane(popularTracksTable);
+        scrollPane.setPreferredSize(new Dimension(0, 300));
+        panel.add(scrollPane, "grow");
 
         return panel;
     }
@@ -467,6 +470,7 @@ public class ArtistProfilePanel extends JPanel implements ThemeChangeListener, P
                             i + 1,
                             song.getTitle(),
                             formattedPlays,
+                            song.getReleaseYear(),
                             song.getSongLength(),
                             ""
                     });

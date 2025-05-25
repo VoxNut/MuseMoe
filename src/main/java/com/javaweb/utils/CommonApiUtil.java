@@ -67,9 +67,14 @@ public class CommonApiUtil {
         return getUserApiClient().fetchAllUsersBaseOnRole(role);
     }
 
+    public static List<UserDTO> fetchUsersByFilter(Date from, Date to, String role) {
+        return getUserApiClient().fetchUsersByFilter(from, to, EnumUtil.fromValue(RoleType.class, role));
+
+    }
+
     public static List<UserDTO> fetchUsersByDateRange(Date from, Date to) {
         return getUserApiClient().fetchAllUsers().stream().filter(userDTO -> {
-            Date userDate = userDTO.getCreatedAt();
+            Date userDate = userDTO.getCreatedDate();
             if (userDate != null) {
                 return userDate.after(from) && userDate.before(to);
             }
@@ -142,6 +147,10 @@ public class CommonApiUtil {
 
     public static List<SongDTO> fetchPopularTracksByArtistId(Long artistId) {
         return getSongApiClient().fetchPopularTracksByArtistId(artistId);
+    }
+
+    public static List<SongDTO> findSongsByFilter(Integer releaseYear, String genre, Long artistId) {
+        return getSongApiClient().findSongsByFilter(releaseYear, genre, artistId);
     }
 
     public static List<SongDTO> findTopSongByPlayCount(Integer limit) {

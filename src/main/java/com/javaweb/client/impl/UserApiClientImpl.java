@@ -8,6 +8,7 @@ import com.javaweb.model.request.UserRequestDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -181,5 +182,30 @@ class UserApiClientImpl implements UserApiClient {
             log.error("Error fetching all users!", e.getMessage());
             return Collections.emptyList();
         }
+    }
+
+    @Override
+    public List<UserDTO> fetchUsersByFilter(Date from, Date to, RoleType roleType) {
+        // 1) Build path + query‐string
+        String path = "/filter";
+        List<String> parts = new ArrayList<>();
+        if (from != null) {
+            String fromStr = new SimpleDateFormat("yyyy-MM-dd").format(from);
+            parts.add("from=" + urlEncoder.encode(fromStr));
+        }
+        if (to != null) {
+            String toStr = new SimpleDateFormat("yyyy-MM-dd").format(to);
+            parts.add("to=" + urlEncoder.encode(toStr));
+        }
+        if (roleType != null) {
+            parts.add("roleType=" + roleType.name());
+        }
+        if (!parts.isEmpty()) {
+            path += "?" + String.join("&", parts);
+        }
+
+        // 2) Call the controller
+        String url = apiConfig.buildUserUrl(path);
+        return apiClient.getList(url, UserDTO.class);
     }
 }

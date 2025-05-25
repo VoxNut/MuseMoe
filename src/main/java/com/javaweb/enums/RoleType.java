@@ -5,7 +5,7 @@ import lombok.Getter;
 @Getter
 public enum RoleType implements BaseEnum {
 
-    FREE("Normal User"),
+    FREE("Free User"),
 
     PREMIUM("Premium User"),
 

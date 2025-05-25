@@ -8,10 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -216,5 +213,19 @@ class SongApiClientImpl implements SongApiClient {
             e.printStackTrace();
             return Collections.emptyList();
         }
+    }
+
+    @Override
+    public List<SongDTO> findSongsByFilter(Integer releaseYear, String genre, Long artistId) {
+
+        StringBuilder path = new StringBuilder("/filter");
+        List<String> qp = new ArrayList<>();
+        if (releaseYear != null) qp.add("releaseYear=" + releaseYear);
+        if (genre != null) qp.add("genre=" + genre);
+        if (artistId != null) qp.add("artistId=" + artistId);
+        if (!qp.isEmpty()) path.append("?").append(String.join("&", qp));
+
+        String url = apiConfig.buildSongUrl(path.toString());
+        return apiClient.getList(url, SongDTO.class);
     }
 }

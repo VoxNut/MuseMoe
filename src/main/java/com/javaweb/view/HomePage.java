@@ -1721,11 +1721,17 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                         if (activePanel == ActivePanel.VISUALIZER) {
                             toggleVisualizerBands();
                             return true;
+                        } else {
+                            GuiUtil.showToast(this, "Visualizer needs to be active first!");
                         }
                     }
                     case KeyEvent.VK_C -> {
                         if (e.isShiftDown()) {
-                            toggleCommitPanel();
+                            if (NetworkChecker.isNetworkAvailable()) {
+                                toggleCommitPanel();
+                            } else {
+                                GuiUtil.showToast(this, "No internet connection available!");
+                            }
                             return true;
                         }
                     }
@@ -1746,14 +1752,22 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                         return true;
                     }
                     case KeyEvent.VK_Q -> {
-                        toggleQueuePanel();
+                        if (NetworkChecker.isNetworkAvailable()) {
+                            toggleQueuePanel();
+                        } else {
+                            GuiUtil.showToast(this, "No internet connection available");
+                        }
                         return true;
                     }
 
                     case KeyEvent.VK_A -> {
                         if (e.isShiftDown()) {
-                            if (userRole.equals("Artist")) {
-                                showArtistUploadPanel();
+                            if (getCurrentUser().getRoles().contains(AppConstant.ROLE_ARTIST)) {
+                                if (NetworkChecker.isNetworkAvailable()) {
+                                    showArtistUploadPanel();
+                                } else {
+                                    GuiUtil.showToast(this, "No internet connection available");
+                                }
                             } else {
                                 GuiUtil.showToast(this, "You are not an artist, you can't upload songs!");
                             }
@@ -1763,7 +1777,11 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                     case KeyEvent.VK_D -> {
                         if (e.isShiftDown()) {
                             if (userRole.equals("Admin")) {
-                                showAdminStatisticsPanel();
+                                if (NetworkChecker.isNetworkAvailable()) {
+                                    showAdminStatisticsPanel();
+                                } else {
+                                    GuiUtil.showToast(this, "No internet connection available");
+                                }
                             } else {
                                 GuiUtil.showToast(this, "You need admin privileges to access statistics!");
                             }
@@ -1809,10 +1827,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             return;
         }
 
-        if (activePanel != ActivePanel.VISUALIZER) {
-            GuiUtil.showToast(this, "Visualizer needs to be active first!");
-            return;
-        }
 
         int[] bandOptions = {10, 16, 24, 32, 48, 64, 98, 128, 256};
         int currentBands = visualizerPanel.getNumberOfBands();
@@ -1887,6 +1901,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 case PLAYBACK_STARTED, PLAYBACK_PAUSED -> {
 
                 }
+
+                case QUEUE_UPDATED -> queuePanel.updateQueueView();
             }
         });
     }
@@ -2028,8 +2044,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             Map<String, Object> navigationData = new HashMap<>();
             navigationData.put(NavigationDestination.ALBUM_DATA, album);
 
-            togglePanel(ActivePanel.ALBUM_VIEW, "albumView", NavigationDestination.ALBUM_VIEW, navigationData);
-
+            navigationManager.navigateTo(NavigationDestination.ALBUM_VIEW, navigationData);
+            switchToPanel(ActivePanel.ALBUM_VIEW, "albumView");
         }
     }
 
@@ -2041,7 +2057,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             Map<String, Object> navigationData = new HashMap<>();
             navigationData.put(NavigationDestination.ARTIST_DATA, "Artist: " + artist.getStageName());
 
-            togglePanel(ActivePanel.ARTIST_PROFILE, "artistProfile", NavigationDestination.ARTIST_PROFILE, navigationData);
+            navigationManager.navigateTo(NavigationDestination.ARTIST_PROFILE, navigationData);
+            switchToPanel(ActivePanel.ARTIST_PROFILE, "artistProfile");
+
         }
     }
 
@@ -2054,7 +2072,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             navigationData.put(NavigationDestination.PLAYLIST_DATA, playlist);
             navigationData.put(NavigationDestination.PLAYLIST_SOURCE_TYPE, sourceType);
 
-            togglePanel(ActivePanel.ALBUM_VIEW, "albumView", NavigationDestination.ALBUM_VIEW, navigationData);
+            navigationManager.navigateTo(NavigationDestination.ALBUM_VIEW, navigationData);
+            switchToPanel(ActivePanel.ALBUM_VIEW, "albumView");
         }
     }
 
@@ -2065,8 +2084,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             Map<String, Object> navigationData = new HashMap<>();
             navigationData.put(NavigationDestination.SONG_DATA, song);
 
-            togglePanel(ActivePanel.SONG_DETAILS, "songDetails", NavigationDestination.SONG_DETAILS, navigationData);
-
+            navigationManager.navigateTo(NavigationDestination.SONG_DETAILS, navigationData);
+            switchToPanel(ActivePanel.SONG_DETAILS, "songDetails");
         }
     }
 
@@ -2153,18 +2172,17 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         }
 
         log.info("{} panel activated", newPanel.name().toLowerCase());
-        GuiUtil.showToast(this, newPanel.name().toLowerCase() + " panel activated");
+        GuiUtil.showToast(this, newPanel.getValue() + " panel activated");
     }
 
     private void togglePanel(ActivePanel panelType, String cardName, String navigationDestination, Object data) {
         if (activePanel == panelType) {
             navigationManager.navigateTo(NavigationDestination.HOME, null);
             switchToPanel(ActivePanel.HOME, "home");
-            log.info("{} panel deactivated", panelType.name().toLowerCase());
+            log.info("{} panel deactivated", panelType.getValue());
         } else {
             navigationManager.navigateTo(navigationDestination, data);
             switchToPanel(panelType, cardName);
         }
-
     }
 }

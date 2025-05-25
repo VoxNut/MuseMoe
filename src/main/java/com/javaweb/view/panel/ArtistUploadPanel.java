@@ -723,6 +723,7 @@ public class ArtistUploadPanel extends JPanel implements ThemeChangeListener {
         selectFileButton.addActionListener(e -> {
             JFileChooser fileChooser = new JFileChooser();
             fileChooser.setFileFilter(new FileNameExtensionFilter("Audio Files", "mp3", "wav", "ogg"));
+            fileChooser.setPreferredSize(AppConstant.FILE_CHOOSER_SIZE);
 
             fileChooser.setCurrentDirectory(new File("D:\\MuseMoe resources\\audio"));
             int result = fileChooser.showOpenDialog(this);
@@ -769,7 +770,7 @@ public class ArtistUploadPanel extends JPanel implements ThemeChangeListener {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setFileFilter(new FileNameExtensionFilter("Image Files", "jpg", "jpeg", "png"));
         fileChooser.setCurrentDirectory(new File("D:\\MuseMoe resources\\imgs\\album_cover"));
-
+        fileChooser.setPreferredSize(AppConstant.FILE_CHOOSER_SIZE);
         int result = fileChooser.showOpenDialog(this);
         if (result == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
@@ -793,7 +794,7 @@ public class ArtistUploadPanel extends JPanel implements ThemeChangeListener {
         fileChooser.setFileFilter(new FileNameExtensionFilter("Audio Files", "mp3", "wav", "ogg"));
         fileChooser.setMultiSelectionEnabled(true);
         fileChooser.setCurrentDirectory(new File("D:\\MuseMoe resources\\audio"));
-
+        fileChooser.setPreferredSize(AppConstant.FILE_CHOOSER_SIZE);
         int result = fileChooser.showOpenDialog(this);
         if (result == JFileChooser.APPROVE_OPTION) {
             File[] files = fileChooser.getSelectedFiles();

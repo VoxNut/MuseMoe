@@ -93,6 +93,7 @@ public class MusicPlayerFacade {
         PlaylistDTO updatedQueue = convertSongListToPlaylist(songQueue, "Current Queue");
         updatedQueue.setSourceType(PlaylistSourceType.QUEUE);
         player.setCurrentPlaylist(updatedQueue);
+        mediator.notifyQueueUpdated(songQueue);
     }
 
 

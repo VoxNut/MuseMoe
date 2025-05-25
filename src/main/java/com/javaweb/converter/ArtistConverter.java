@@ -63,6 +63,7 @@ public class ArtistConverter implements EntityConverter<ArtistEntity, ArtistRequ
                 );
 
                 entity.setProfilePic(mediaEntity);
+
             } catch (Exception e) {
                 log.error("Failed to process artist profile picture from Google Drive", e);
             }

@@ -82,7 +82,6 @@ public class PlaylistServiceImpl implements PlaylistService {
             playlist.setName(name);
             playlist.setUser(user);
             playlist.setVisibility(PlaylistEntity.Visibility.PRIVATE);
-            playlist.setLastUpdated(new Date());
             playlist.setPlaylistSongEntities(new ArrayList<>());
 
             // Save the playlist first to get its ID

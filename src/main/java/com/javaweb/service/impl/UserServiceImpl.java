@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -212,5 +213,21 @@ public class UserServiceImpl implements UserService {
     public List<UserDTO> findAll(AccountStatus accountStatus) {
         List<UserDTO> userDTOS = userRepository.findByAccountStatus(accountStatus).stream().map(userConverter::toDTO).toList();
         return userDTOS;
+    }
+
+    @Override
+    public List<UserDTO> findFilteredUsers(LocalDateTime from, LocalDateTime to, RoleType roleType) {
+        try {
+            List<UserDTO> res = userRepository
+                    .findFilteredUsers(from, to, roleType)
+                    .stream()
+                    .map(userConverter::toDTO)
+                    .collect(Collectors.toList());
+            return res;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return List.of();
+        }
+
     }
 }

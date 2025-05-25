@@ -43,4 +43,6 @@ public interface SongApiClient {
 
     List<SongDTO> findTopByPlayCount(Integer limit);
 
+    List<SongDTO> findSongsByFilter(Integer releaseYear, String genre, Long artistId);
+
 }

@@ -1,6 +1,7 @@
 package com.javaweb.service;
 
 import com.javaweb.enums.AccountStatus;
+import com.javaweb.enums.RoleType;
 import com.javaweb.model.dto.PasswordDTO;
 import com.javaweb.model.dto.UserDTO;
 import com.javaweb.model.request.UserRequestDTO;
@@ -47,4 +48,6 @@ public interface UserService {
     boolean checkUserArtist(Long currentArtistId);
 
     List<UserDTO> findAll(AccountStatus accountStatus);
+
+    List<UserDTO> findFilteredUsers(LocalDateTime from, LocalDateTime to, RoleType roleType);
 }

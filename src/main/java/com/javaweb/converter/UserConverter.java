@@ -38,7 +38,7 @@ public class UserConverter implements EntityConverter<UserEntity, UserRequestDTO
         }
         UserDTO result = modelMapper.map(entity, UserDTO.class);
         Set<String> roleDTOS = entity.getRoles() != null ? entity.getRoles().stream()
-                .map(role -> "ROLE_" + role.getCode())
+                .map(role -> role.getCode().toString())
                 .collect(Collectors.toCollection(LinkedHashSet::new)) : null;
         result.setRoles(roleDTOS);
         if (entity.getCreated_at() != null) {

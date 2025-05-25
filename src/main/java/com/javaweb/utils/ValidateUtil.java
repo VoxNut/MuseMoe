@@ -23,7 +23,7 @@ public class ValidateUtil {
             return false;
         }
 
-        if (username.length() < 5 || username.length() > 50) {
+        if (username.length() < 4 || username.length() > 50) {
             return false;
         }
 

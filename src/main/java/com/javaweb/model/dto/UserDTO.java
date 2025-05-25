@@ -36,7 +36,6 @@ public class UserDTO extends AbstractDTO implements Comparable<UserDTO> {
     @JsonIgnore
     private BufferedImage avatarImage;
     private Long artistId;
-    private Date createdAt;
     private Date lastLoginAt;
 
 

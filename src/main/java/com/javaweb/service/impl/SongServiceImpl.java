@@ -233,5 +233,14 @@ public class SongServiceImpl implements SongService {
     public List<SongDTO> findTopByPlayCount(int limit) {
         return songRepository.findTopByPlayCount(limit).stream().map(songConverter::toDTO).collect(Collectors.toList());
     }
+
+    @Override
+    public List<SongDTO> findFilteredSongs(Integer year, String genre, Long artistId) {
+        return songRepository
+                .findByFilters(year, genre, artistId)
+                .stream()
+                .map(songConverter::toDTO)
+                .collect(Collectors.toList());
+    }
 }
 

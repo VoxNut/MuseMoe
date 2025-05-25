@@ -1,7 +1,6 @@
 package com.javaweb.utils;
 
 import com.javaweb.enums.BaseEnum;
-import com.javaweb.exception.EnumNotFoundException;
 
 import java.util.Arrays;
 
@@ -10,6 +9,6 @@ public class EnumUtil {
         return Arrays.stream(enumClass.getEnumConstants())
                 .filter(e -> e.getValue().equals(value))
                 .findFirst()
-                .orElseThrow(() -> new EnumNotFoundException(enumClass.getSimpleName() + " Not Found for value: " + value));
+                .orElse(null);
     }
 }

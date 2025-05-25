@@ -1,6 +1,7 @@
 package com.javaweb.view.panel;
 
 import com.javaweb.constant.AppConstant;
+import com.javaweb.enums.RoleType;
 import com.javaweb.model.dto.*;
 import com.javaweb.utils.*;
 import com.javaweb.view.theme.ThemeChangeListener;
@@ -8,14 +9,18 @@ import com.javaweb.view.theme.ThemeManager;
 import com.javaweb.view.user.UserSessionManager;
 import lombok.extern.slf4j.Slf4j;
 import net.miginfocom.swing.MigLayout;
-import org.jdatepicker.impl.JDatePickerImpl;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.CategoryAxis;
+import org.jfree.chart.axis.CategoryLabelPositions;
+import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.renderer.category.BarRenderer;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.general.DefaultPieDataset;
 
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
@@ -62,6 +67,8 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
     private JTable albumsTable;
     private JTable usersTable;
     private JTable playlistsTable;
+    private JTable recentUserTable;
+
 
     // Table models
     private DefaultTableModel songsTableModel;
@@ -69,13 +76,15 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
     private DefaultTableModel albumsTableModel;
     private DefaultTableModel usersTableModel;
     private DefaultTableModel playlistsTableModel;
+    private DefaultTableModel recentUserModel;
 
     // Filters
     private JComboBox<String> yearFilterComboBox;
     private JComboBox<String> genreFilterComboBox;
     private JComboBox<String> artistFilterComboBox;
-    private JDatePickerImpl fromDatePicker;
-    private JDatePickerImpl toDatePicker;
+    private JComboBox<String> roleFilterComboBox;
+    private JTextField fromDateTextField;
+    private JTextField toDateTextField;
 
     // Statistics labels
     private JLabel songCountLabel;
@@ -209,13 +218,14 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
 
     private JButton createNavigationButton(String text) {
         JButton button = GuiUtil.createButton(text);
+        GuiUtil.styleButton(button, textColor, backgroundColor, accentColor);
         button.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
 
         // Add action to switch cards
         button.addActionListener(e -> {
             cardLayout.show(contentPanel, text);
-            updateNavigationButtonStates(text);
             currentCard = text;
+            updateNavigationButtonStates(text);
         });
 
         return button;
@@ -224,12 +234,10 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
     private void updateNavigationButtonStates(String activeCard) {
         navigationButtons.forEach((card, button) -> {
             if (card.equals(activeCard)) {
-                button.setBackground(accentColor);
-                button.setForeground(backgroundColor);
-                button.setFont(FontUtil.getSpotifyFont(Font.BOLD, 14));
+                GuiUtil.styleButton(button, accentColor, textColor, accentColor);
+                button.setFont(FontUtil.getSpotifyFont(Font.BOLD, 16));
             } else {
-                button.setBackground(GuiUtil.darkenColor(backgroundColor, 0.15f));
-                button.setForeground(textColor);
+                GuiUtil.styleButton(button, textColor, backgroundColor, accentColor);
                 button.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
             }
         });
@@ -246,7 +254,7 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
         JPanel statsCardsPanel = GuiUtil.createPanel(new MigLayout("fillx, wrap 3, gap 20", "[grow, fill][grow, fill][grow, fill]", "[][]"));
 
         // Create statistic cards for each entity
-        statsCardsPanel.add(createStatCard("Songs", "0", AppConstant.MUSIC_NOTE_ICON_PATH), "grow");
+        statsCardsPanel.add(createStatCard("Songs", "0", AppConstant.SONG_ICON_PATH), "grow");
         statsCardsPanel.add(createStatCard("Artists", "0", AppConstant.ARTIST_ICON_PATH), "grow");
         statsCardsPanel.add(createStatCard("Albums", "0", AppConstant.ALBUM_COVER_ICON_PATH), "grow");
         statsCardsPanel.add(createStatCard("Users", "0", AppConstant.USER_ICON_PATH), "grow");
@@ -264,13 +272,12 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
 
         // Recent users table
         String[] recentUserColumns = {"User ID", "Username", "Email", "Registered Date"};
-        DefaultTableModel recentUserModel = new DefaultTableModel(recentUserColumns, 0);
-        JTable recentUserTable = GuiUtil.createStyledTable(recentUserColumns, new int[]{50, 200, 300, 150});
+        recentUserModel = new DefaultTableModel(recentUserColumns, 0);
+        recentUserTable = GuiUtil.createStyledTable(recentUserColumns, new int[]{50, 200, 300, 150});
         recentUserTable.setModel(recentUserModel);
 
-        JScrollPane recentUserScroll = new JScrollPane(recentUserTable);
-        recentUserScroll.setPreferredSize(new Dimension(0, 200));
-        GuiUtil.applyModernScrollBar(recentUserScroll);
+        JScrollPane recentUserScroll = GuiUtil.createStyledScrollPane(recentUserTable);
+        recentUserScroll.setPreferredSize(new Dimension(0, 400));
 
         recentActivityPanel.add(recentUserScroll, "grow");
         summaryPanel.add(recentActivityPanel, "grow");
@@ -319,7 +326,7 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
         songsPanel.add(headerLabel, "left");
 
         // Filters panel
-        JPanel filtersPanel = GuiUtil.createPanel(new MigLayout("fillx", "[][grow]10[][grow]10[][grow]10[]", "[]"));
+        JPanel filtersPanel = GuiUtil.createPanel(new MigLayout("fillx", "[grow]10[][grow]10[][grow]10[][grow]10[]", "[]"));
         filtersPanel.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(GuiUtil.darkenColor(backgroundColor, 0.2f), 1, true),
                 "Filters",
@@ -327,6 +334,15 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
                 javax.swing.border.TitledBorder.TOP,
                 FontUtil.getSpotifyFont(Font.BOLD, 14),
                 textColor));
+
+
+        JLabel searchLabel = GuiUtil.createLabel("Search Song:", Font.BOLD, 14);
+        JTextField searchField = GuiUtil.createTextField(20);
+
+
+        JPanel searchPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        searchPanel.add(searchLabel);
+        searchPanel.add(searchField);
 
         // Year filter
         JLabel yearLabel = GuiUtil.createLabel("Year:", Font.BOLD, 14);
@@ -353,6 +369,7 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
         applyFilterButton.addActionListener(e -> applySongsFilters());
 
         // Add components to filters panel
+        filtersPanel.add(searchPanel, "right");
         filtersPanel.add(yearLabel, "right");
         filtersPanel.add(yearFilterComboBox);
         filtersPanel.add(genreLabel, "right");
@@ -372,11 +389,37 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
             }
         };
 
+        TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(songsTableModel);
+        searchField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                filter();
+            }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                filter();
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                filter();
+            }
+
+            private void filter() {
+                String text = searchField.getText();
+                if (text.isBlank()) {
+                    sorter.setRowFilter(null);
+                } else {
+                    sorter.setRowFilter(RowFilter.regexFilter("(?i)" + java.util.regex.Pattern.quote(text), 1));
+                }
+            }
+        });
+
         songsTable = GuiUtil.createStyledTable(songColumns, new int[]{50, 250, 150, 150, 80, 100, 100});
         songsTable.setModel(songsTableModel);
 
         // Add table sorting
-        TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(songsTableModel);
         songsTable.setRowSorter(sorter);
 
         JScrollPane scrollPane = new JScrollPane(songsTable);
@@ -407,6 +450,15 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
         JLabel headerLabel = GuiUtil.createLabel("Artists Management", Font.BOLD, 24);
         artistsPanel.add(headerLabel, "left");
 
+        JLabel searchLabel = GuiUtil.createLabel("Search Artist:", Font.BOLD, 14);
+        JTextField searchField = GuiUtil.createTextField(20);
+
+
+        JPanel searchPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        searchPanel.add(searchLabel);
+        searchPanel.add(searchField);
+        artistsPanel.add(searchPanel, "growx, wrap");
+
         // Create artists table
         String[] artistColumns = {"ID", "Stage Name", "Bio", "Song Count", "Album Count", "Listener Count"};
         artistsTableModel = new DefaultTableModel(artistColumns, 0) {
@@ -415,12 +467,37 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
                 return false;
             }
         };
+        TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(artistsTableModel);
+        searchField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                filter();
+            }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                filter();
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                filter();
+            }
+
+            private void filter() {
+                String text = searchField.getText();
+                if (text.isBlank()) {
+                    sorter.setRowFilter(null);
+                } else {
+                    sorter.setRowFilter(RowFilter.regexFilter("(?i)" + java.util.regex.Pattern.quote(text), 1));
+                }
+            }
+        });
 
         artistsTable = GuiUtil.createStyledTable(artistColumns, new int[]{50, 200, 300, 100, 100, 100});
         artistsTable.setModel(artistsTableModel);
 
         // Add table sorting
-        TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(artistsTableModel);
         artistsTable.setRowSorter(sorter);
 
         JScrollPane scrollPane = new JScrollPane(artistsTable);
@@ -451,6 +528,15 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
         JLabel headerLabel = GuiUtil.createLabel("Albums Management", Font.BOLD, 24);
         albumsPanel.add(headerLabel, "left");
 
+        JLabel searchLabel = GuiUtil.createLabel("Search Album:", Font.BOLD, 14);
+        JTextField searchField = GuiUtil.createTextField(20);
+
+
+        JPanel searchPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        searchPanel.add(searchLabel);
+        searchPanel.add(searchField);
+        albumsPanel.add(searchPanel, "growx, wrap");
+
         // Create albums table
         String[] albumColumns = {"ID", "Title", "Artist", "Year", "Song Count", "Total Duration"};
         albumsTableModel = new DefaultTableModel(albumColumns, 0) {
@@ -460,11 +546,36 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
             }
         };
 
+        TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(albumsTableModel);
+        searchField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                filter();
+            }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                filter();
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                filter();
+            }
+
+            private void filter() {
+                String text = searchField.getText();
+                if (text.isBlank()) {
+                    sorter.setRowFilter(null);
+                } else {
+                    sorter.setRowFilter(RowFilter.regexFilter("(?i)" + java.util.regex.Pattern.quote(text), 1));
+                }
+            }
+        });
+
         albumsTable = GuiUtil.createStyledTable(albumColumns, new int[]{50, 250, 200, 80, 100, 100});
         albumsTable.setModel(albumsTableModel);
 
-        // Add table sorting
-        TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(albumsTableModel);
         albumsTable.setRowSorter(sorter);
 
         JScrollPane scrollPane = new JScrollPane(albumsTable);
@@ -496,31 +607,51 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
         usersPanel.add(headerLabel, "left");
 
         // Filters panel
-        JPanel filtersPanel = GuiUtil.createPanel(new MigLayout("fillx", "[][grow]10[][grow]10[]", "[]"));
+        JPanel filtersPanel = GuiUtil.createPanel(new MigLayout("fillx", "[grow]10[][grow]10[][grow]10[]", "[]"));
         filtersPanel.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(GuiUtil.darkenColor(backgroundColor, 0.2f), 1, true),
                 "Registration Date Filter",
-                javax.swing.border.TitledBorder.LEFT,
-                javax.swing.border.TitledBorder.TOP,
+                TitledBorder.LEFT,
+                TitledBorder.TOP,
                 FontUtil.getSpotifyFont(Font.BOLD, 14),
                 textColor));
 
-        // Date range pickers
-        JLabel fromLabel = GuiUtil.createLabel("From:", Font.BOLD, 14);
-        fromDatePicker = GuiUtil.createDatePicker();
+        JLabel searchLabel = GuiUtil.createLabel("Search User:", Font.BOLD, 14);
+        JTextField searchField = GuiUtil.createTextField(20);
 
-        JLabel toLabel = GuiUtil.createLabel("To:", Font.BOLD, 14);
-        toDatePicker = GuiUtil.createDatePicker();
+
+        JPanel searchPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        searchPanel.add(searchLabel);
+        searchPanel.add(searchField);
+
+        // Date range pickers
+        JLabel fromLabel = GuiUtil.createLabel("From (yyyy-MM-dd):", Font.BOLD, 14);
+        fromDateTextField = GuiUtil.createTextField(20);
+        fromDateTextField.setToolTipText("Enter date in format: yyyy-MM-dd");
+
+        JLabel toLabel = GuiUtil.createLabel("To (yyyy-MM-dd):", Font.BOLD, 14);
+        toDateTextField = GuiUtil.createTextField(20);
+        toDateTextField.setToolTipText("Enter date in format: yyyy-MM-dd");
+
+        JLabel roleLabel = GuiUtil.createLabel("Role:", Font.BOLD, 14);
+        roleFilterComboBox = GuiUtil.createComboBox();
+        roleFilterComboBox.addItem("All Roles");
+        for (RoleType rt : RoleType.values()) {
+            roleFilterComboBox.addItem(rt.getRoleCode());
+        }
+        filtersPanel.add(roleLabel, "right");
+        filtersPanel.add(roleFilterComboBox);
 
         // Apply button
         JButton applyFilterButton = GuiUtil.createButton("Apply Filter");
         applyFilterButton.addActionListener(e -> applyUserDateFilter());
 
         // Add components to filters panel
+        filtersPanel.add(searchPanel, "right");
         filtersPanel.add(fromLabel, "right");
-        filtersPanel.add(fromDatePicker);
+        filtersPanel.add(fromDateTextField);
         filtersPanel.add(toLabel, "right");
-        filtersPanel.add(toDatePicker);
+        filtersPanel.add(toDateTextField);
         filtersPanel.add(applyFilterButton);
 
         usersPanel.add(filtersPanel, "growx");
@@ -533,12 +664,38 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
                 return false;
             }
         };
+        TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(usersTableModel);
+        searchField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                filter();
+            }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                filter();
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                filter();
+            }
+
+            private void filter() {
+                String text = searchField.getText();
+                if (text.isBlank()) {
+                    sorter.setRowFilter(null);
+                } else {
+                    sorter.setRowFilter(RowFilter.regexFilter("(?i)" + java.util.regex.Pattern.quote(text), 1));
+                }
+            }
+        });
+
 
         usersTable = GuiUtil.createStyledTable(userColumns, new int[]{50, 150, 250, 150, 150, 100});
         usersTable.setModel(usersTableModel);
 
         // Add table sorting
-        TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(usersTableModel);
         usersTable.setRowSorter(sorter);
 
         JScrollPane scrollPane = new JScrollPane(usersTable);
@@ -569,6 +726,15 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
         JLabel headerLabel = GuiUtil.createLabel("Playlists Management", Font.BOLD, 24);
         playlistsPanel.add(headerLabel, "left");
 
+        JLabel searchLabel = GuiUtil.createLabel("Search Playlist:", Font.BOLD, 14);
+        JTextField searchField = GuiUtil.createTextField(20);
+
+
+        JPanel searchPanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        searchPanel.add(searchLabel);
+        searchPanel.add(searchField);
+        playlistsPanel.add(searchPanel, "growx, wrap");
+
         // Create playlists table
         String[] playlistColumns = {"ID", "Name", "Creator", "Song Count", "Created Date", "Updated Date"};
         playlistsTableModel = new DefaultTableModel(playlistColumns, 0) {
@@ -578,11 +744,38 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
             }
         };
 
+        TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(playlistsTableModel);
+        searchField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                filter();
+            }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                filter();
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                filter();
+            }
+
+            private void filter() {
+                String text = searchField.getText();
+                if (text.isBlank()) {
+                    sorter.setRowFilter(null);
+                } else {
+                    sorter.setRowFilter(RowFilter.regexFilter("(?i)" + java.util.regex.Pattern.quote(text), 1));
+                }
+            }
+        });
+
+
         playlistsTable = GuiUtil.createStyledTable(playlistColumns, new int[]{50, 250, 150, 100, 150, 150});
         playlistsTable.setModel(playlistsTableModel);
 
         // Add table sorting
-        TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(playlistsTableModel);
         playlistsTable.setRowSorter(sorter);
 
         JScrollPane scrollPane = new JScrollPane(playlistsTable);
@@ -694,6 +887,7 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
 
                 // Create chart panel
                 ChartPanel chartPanel = new ChartPanel(chart);
+                chartPanel.setOpaque(false);
                 chartPanel.setPreferredSize(new Dimension(400, 300));
 
                 container.add(chartPanel, BorderLayout.CENTER);
@@ -735,6 +929,7 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
 
                 // Create chart panel
                 ChartPanel chartPanel = new ChartPanel(chart);
+                chartPanel.setOpaque(false);
                 chartPanel.setPreferredSize(new Dimension(400, 300));
 
                 container.add(chartPanel, BorderLayout.CENTER);
@@ -778,6 +973,7 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
 
                 // Create chart panel
                 ChartPanel chartPanel = new ChartPanel(chart);
+                chartPanel.setOpaque(false);
                 chartPanel.setPreferredSize(new Dimension(400, 300));
 
                 container.add(chartPanel, BorderLayout.CENTER);
@@ -804,26 +1000,41 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
             // Clear the container
             container.removeAll();
 
-            // Create dataset for songs by year
             DefaultCategoryDataset dataset = new DefaultCategoryDataset();
 
-            // Fetch song data by year using CommonApiUtil
             Map<Integer, Integer> songsByYear = fetchSongCountByYear();
             if (songsByYear != null && !songsByYear.isEmpty()) {
-                // Sort years in ascending order
-                songsByYear.entrySet().stream()
+                List<Map.Entry<Integer, Integer>> sortedEntries = songsByYear.entrySet().stream()
                         .sorted(Map.Entry.comparingByKey())
-                        .forEach(entry -> {
-                            dataset.addValue(entry.getValue(), "Songs", entry.getKey().toString());
-                        });
+                        .collect(Collectors.toList());
+
+                sortedEntries.forEach(entry ->
+                        dataset.addValue(entry.getValue(), "Songs", entry.getKey().toString()));
 
                 // Create the bar chart
                 JFreeChart chart = GuiUtil.createBarChart(
                         "", "Year", "Number of Songs", dataset,
                         PlotOrientation.VERTICAL);
 
+                CategoryPlot plot = chart.getCategoryPlot();
+                CategoryAxis domainAxis = plot.getDomainAxis();
+
+                domainAxis.setCategoryLabelPositions(
+                        CategoryLabelPositions.createUpRotationLabelPositions(Math.PI / 6.0));
+
+                domainAxis.setTickLabelFont(FontUtil.getJetBrainsMonoFont(Font.BOLD, 10));
+
+                if (songsByYear.size() > 15) {
+                    domainAxis.setCategoryLabelPositions(
+                            CategoryLabelPositions.createUpRotationLabelPositions(Math.PI / 4.0));
+
+                    BarRenderer renderer = (BarRenderer) plot.getRenderer();
+                    renderer.setItemMargin(0.05);
+                }
+
                 // Create chart panel
                 ChartPanel chartPanel = new ChartPanel(chart);
+                chartPanel.setOpaque(false);
                 chartPanel.setPreferredSize(new Dimension(400, 300));
 
                 container.add(chartPanel, BorderLayout.CENTER);
@@ -853,6 +1064,7 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
         loadAlbumsData();
         loadUsersData();
         loadPlaylistsData();
+        loadRecentUsers();
 
         // Load filter options
         loadFilterOptions();
@@ -923,7 +1135,7 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
                                     .orElse(null);
                         }
 
-                        return fetchFilteredSongs(year, genre, artistId);
+                        return CommonApiUtil.findSongsByFilter(year, genre, artistId);
                     }
                 } catch (Exception e) {
                     log.error("Error loading songs data", e);
@@ -1055,16 +1267,42 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
             @Override
             protected List<UserDTO> doInBackground() {
                 try {
-                    Date fromDate = fromDatePicker.getModel().getValue() != null ?
-                            (Date) fromDatePicker.getModel().getValue() : null;
-                    Date toDate = toDatePicker.getModel().getValue() != null ?
-                            (Date) toDatePicker.getModel().getValue() : null;
+                    Date fromDate = null;
+                    Date toDate = null;
 
-                    if (fromDate != null || toDate != null) {
-                        return CommonApiUtil.fetchUsersByDateRange(fromDate, toDate);
-                    } else {
-                        return CommonApiUtil.fetchAllUsers();
+                    // Parse date from text fields
+                    String fromDateText = fromDateTextField.getText().trim();
+                    String toDateText = toDateTextField.getText().trim();
+
+                    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                    dateFormat.setLenient(false);
+
+                    if (!fromDateText.isEmpty()) {
+                        try {
+                            fromDate = dateFormat.parse(fromDateText);
+                        } catch (Exception e) {
+                            log.error("Invalid from date format: {}", fromDateText, e);
+                            SwingUtilities.invokeLater(() -> GuiUtil.showToast(AdminStatisticsPanel.this,
+                                    "Invalid date format. Use yyyy-MM-dd"));
+                        }
                     }
+
+                    if (!toDateText.isEmpty()) {
+                        try {
+                            toDate = dateFormat.parse(toDateText);
+                            Calendar c = Calendar.getInstance();
+                            c.setTime(toDate);
+                            c.add(Calendar.DATE, 1);
+                            toDate = c.getTime();
+                        } catch (Exception e) {
+                            log.error("Invalid to date format: {}", toDateText, e);
+                            SwingUtilities.invokeLater(() -> GuiUtil.showToast(AdminStatisticsPanel.this,
+                                    "Invalid date format. Use yyyy-MM-dd"));
+                        }
+                    }
+
+                    return CommonApiUtil.fetchUsersByFilter(fromDate, toDate, "All Roles".equals(roleFilterComboBox.getSelectedItem().toString()) ? null : roleFilterComboBox.getSelectedItem().toString());
+
                 } catch (Exception e) {
                     log.error("Error loading users data", e);
                     return null;
@@ -1084,8 +1322,8 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
 
                         // Add data to table
                         for (UserDTO user : users) {
-                            String createdAt = user.getCreatedAt() != null ?
-                                    dateFormat.format(user.getCreatedAt()) : "";
+                            String createdAt = user.getCreatedDate() != null ?
+                                    dateFormat.format(user.getCreatedDate()) : "";
                             String lastLogin = user.getLastLoginAt() != null ?
                                     dateFormat.format(user.getLastLoginAt()) : "";
 
@@ -1095,12 +1333,78 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
                                     user.getEmail(),
                                     createdAt,
                                     lastLogin,
-                                    user.getRoles() != null ? String.join(", ", user.getRoles()) : ""
+                                    determineUserRole(user.getRoles())
                             });
                         }
                     }
                 } catch (Exception e) {
                     log.error("Error setting users data", e);
+                }
+            }
+        };
+
+        worker.execute();
+    }
+
+    public String determineUserRole(Set<String> roles) {
+        if (roles.contains(AppConstant.ROLE_ADMIN)) {
+            return "Admin";
+        } else if (roles.contains(AppConstant.ROLE_ARTIST)) {
+            return "Artist";
+        } else if (roles.contains(AppConstant.ROLE_PREMIUM)) {
+            return "Premium User";
+        } else {
+            return "Free User";
+        }
+    }
+
+    private void loadRecentUsers() {
+        SwingWorker<List<UserDTO>, Void> worker = new SwingWorker<>() {
+            @Override
+            protected List<UserDTO> doInBackground() {
+                try {
+                    List<UserDTO> allUsers = CommonApiUtil.fetchAllUsers();
+
+                    allUsers.sort((u1, u2) -> {
+                        if (u1.getCreatedDate() == null) return 1;
+                        if (u2.getCreatedDate() == null) return -1;
+                        return u2.getCreatedDate().compareTo(u1.getCreatedDate());
+                    });
+
+                    // Return top 10 or less
+                    return allUsers.stream()
+                            .limit(20)
+                            .collect(Collectors.toList());
+                } catch (Exception e) {
+                    log.error("Error loading recent users", e);
+                    return null;
+                }
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    List<UserDTO> recentUsers = get();
+                    // Clear existing data
+                    recentUserModel.setRowCount(0);
+
+                    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+                    // Add recent users
+                    if (recentUsers != null) {
+                        for (UserDTO user : recentUsers) {
+                            String createdAt = user.getCreatedDate() != null ?
+                                    dateFormat.format(user.getCreatedDate()) : "";
+
+                            recentUserModel.addRow(new Object[]{
+                                    user.getId(),
+                                    user.getUsername(),
+                                    user.getEmail(),
+                                    createdAt
+                            });
+                        }
+                    }
+                } catch (Exception e) {
+                    log.error("Error displaying recent users", e);
                 }
             }
         };
@@ -1133,10 +1437,10 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
 
                         // Add data to table
                         for (PlaylistDTO playlist : playlists) {
-                            String createdAt = playlist.getCreatedAt() != null ?
-                                    dateFormat.format(playlist.getCreatedAt()) : "";
-                            String updatedAt = playlist.getUpdatedAt() != null ?
-                                    dateFormat.format(playlist.getUpdatedAt()) : "";
+                            String createdAt = playlist.getCreatedDate() != null ?
+                                    dateFormat.format(playlist.getCreatedDate()) : "";
+                            String updatedAt = playlist.getUpdateDate() != null ?
+                                    dateFormat.format(playlist.getUpdateDate()) : "";
 
                             playlistsTableModel.addRow(new Object[]{
                                     playlist.getId(),
@@ -1163,7 +1467,7 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
             @Override
             protected List<String> doInBackground() {
                 try {
-                    return CommonApiUtil.fetchAllTags().stream().map(TagDTO::getType).collect(Collectors.toList());
+                    return CommonApiUtil.fetchAllTags().stream().map(TagDTO::getName).collect(Collectors.toList());
                 } catch (Exception e) {
                     log.error("Error loading genre filter options", e);
                     return null;
@@ -1341,14 +1645,14 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
             Map<String, Integer> registrationsByMonth = new LinkedHashMap<>();
 
             if (allUsers != null && !allUsers.isEmpty()) {
-                // SimpleDateFormat for month-year formatting
-                SimpleDateFormat monthFormat = new SimpleDateFormat("MMM yyyy");
+                // SimpleDateFormat with explicit English locale
+                SimpleDateFormat monthFormat = new SimpleDateFormat("MMM yyyy", Locale.ENGLISH);
 
                 // Group users by month of registration
                 Map<String, List<UserDTO>> usersByMonth = allUsers.stream()
-                        .filter(user -> user.getCreatedAt() != null)
+                        .filter(user -> user.getCreatedDate() != null)
                         .collect(Collectors.groupingBy(
-                                user -> monthFormat.format(user.getCreatedAt()),
+                                user -> monthFormat.format(user.getCreatedDate()),
                                 LinkedHashMap::new,
                                 Collectors.toList()
                         ));
@@ -1356,8 +1660,9 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
                 List<String> sortedMonths = new ArrayList<>(usersByMonth.keySet());
                 Collections.sort(sortedMonths, (m1, m2) -> {
                     try {
-                        Date date1 = new SimpleDateFormat("MMM yyyy").parse(m1);
-                        Date date2 = new SimpleDateFormat("MMM yyyy").parse(m2);
+                        // Use the same English locale here
+                        Date date1 = new SimpleDateFormat("MMM yyyy", Locale.ENGLISH).parse(m1);
+                        Date date2 = new SimpleDateFormat("MMM yyyy", Locale.ENGLISH).parse(m2);
                         return date1.compareTo(date2);
                     } catch (Exception e) {
                         return 0;
@@ -1372,53 +1677,6 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
             return registrationsByMonth;
         } catch (Exception e) {
             return new LinkedHashMap<>();
-        }
-    }
-
-    public static List<SongDTO> fetchFilteredSongs(Integer year, String genre, Long artistId) {
-        try {
-            List<SongDTO> allSongs = CommonApiUtil.fetchAllSongs();
-
-            if (year == null && genre == null && artistId == null) {
-                return allSongs;
-            }
-
-            List<SongDTO> filteredSongs = allSongs.stream()
-                    // Filter by year if specified
-                    .filter(song -> year == null || (song.getReleaseYear() != null && song.getReleaseYear().equals(year)))
-                    // Filter by artist if specified
-                    .filter(song -> {
-                        if (artistId == null) {
-                            return true;
-                        }
-                        try {
-                            List<ArtistDTO> songArtists = CommonApiUtil.findArtistsBySongId(song.getId());
-                            return songArtists.stream().anyMatch(artist -> artist.getId().equals(artistId));
-                        } catch (Exception e) {
-                            log.error("Error finding artists for song: {}", e.getMessage(), e);
-                            return false;
-                        }
-                    })
-                    .collect(Collectors.toList());
-
-            if (genre != null) {
-                filteredSongs = filteredSongs.stream()
-                        .filter(song -> {
-                            try {
-                                List<TagDTO> songTags = CommonApiUtil.findTagsBySongId(song.getId());
-                                return songTags.stream().anyMatch(tag -> tag.getType().equals(genre));
-                            } catch (Exception e) {
-                                log.error("Error finding tags for song: {}", e.getMessage(), e);
-                                return false;
-                            }
-                        })
-                        .collect(Collectors.toList());
-            }
-
-            return filteredSongs;
-        } catch (Exception e) {
-            log.error("Error fetching filtered songs: {}", e.getMessage(), e);
-            return Collections.emptyList();
         }
     }
 }

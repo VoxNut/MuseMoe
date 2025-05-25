@@ -1,16 +1,20 @@
 package com.javaweb.api;
 
 import com.javaweb.enums.AccountStatus;
+import com.javaweb.enums.RoleType;
 import com.javaweb.model.dto.MyUserDetail;
 import com.javaweb.model.dto.UserDTO;
 import com.javaweb.model.request.UserRequestDTO;
 import com.javaweb.service.UserService;
+import com.javaweb.utils.DateUtil;
 import com.javaweb.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -162,6 +166,20 @@ public class UserAPI {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    @GetMapping("/filter")
+    public ResponseEntity<List<UserDTO>> fetchUsersByFilter(
+
+            @RequestParam(value = "from", required = false)
+            @DateTimeFormat(pattern = "yyyy-MM-dd") Date from,
+            @RequestParam(value = "to", required = false)
+            @DateTimeFormat(pattern = "yyyy-MM-dd") Date to,
+
+            @RequestParam(value = "roleType", required = false) RoleType roleType
+    ) {
+        List<UserDTO> results = userService.findFilteredUsers(DateUtil.toLocalDateTime(from), DateUtil.toLocalDateTime(to), roleType);
+        return ResponseEntity.ok(results);
     }
 
 

@@ -3,6 +3,7 @@ package com.javaweb.client.client_service;
 import com.javaweb.enums.RoleType;
 import com.javaweb.model.dto.UserDTO;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -33,4 +34,6 @@ public interface UserApiClient {
     boolean checkUserArtist(Long currentArtistId);
 
     List<UserDTO> fetchAllUsers();
+
+    List<UserDTO> fetchUsersByFilter(Date from, Date to, RoleType roleType);
 }

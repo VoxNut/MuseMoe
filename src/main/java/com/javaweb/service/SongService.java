@@ -37,4 +37,7 @@ public interface SongService {
     List<SongDTO> fetchSongsByArtist(String artistName, int limit);
 
     List<SongDTO> findTopByPlayCount(int limit);
+
+    List<SongDTO> findFilteredSongs(Integer year, String genre, Long artistId);
+
 }

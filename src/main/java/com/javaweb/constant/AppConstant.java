@@ -51,7 +51,7 @@ public class AppConstant {
     public static final String DESELECT_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/deselected-icon.png";
     public static final String LOOKUP_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/lookup-icon.png";
     public static final String DISCOUNT_PATH = "src/main/java/com/javaweb/view/imgs/icon/discount-img.png";
-    public static final String CALENDAR_PATH = "src/main/java/com/javeaweb/view/imgs/icon/calendar-icon.png";
+    public static final String CALENDAR_PATH = "src/main/java/com/javaweb/view/imgs/icon/calendar-icon.png";
     public static final String ALBUM_COVER_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/album-cover-icon.png";
     public static final String USER_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/user-icon.png";
     public static final String TAG_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/tag-icon.jpg";
@@ -78,7 +78,7 @@ public class AppConstant {
     public static final String ADD_TO_PLAYLIST_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/Plus-circle-08.png";
     public static final String MORE_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/more-icon.png";
     public static final String VERIFIED_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/verified-icon.png";
-
+    public static final String SONG_ICON_PATH = "src/main/java/com/javaweb/view/imgs/icon/song-icon.jpg";
 
     //LOGO
     public static final String MUSE_MOE_LOGO_PATH = "src/main/java/com/javaweb/view/imgs/logo/muse_moe_no_bg.png";
@@ -97,7 +97,7 @@ public class AppConstant {
 
 
     //SIZE
-    public static final Dimension FILE_CHOOSER_SIZE = new Dimension(1100, 600);
+    public static final Dimension FILE_CHOOSER_SIZE = new Dimension(1500, 800);
     public static final Dimension TEXT_FIELD_SIZE = new Dimension(300, 30);
 
     //MISCELLANEOUS

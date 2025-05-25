@@ -217,7 +217,7 @@ public class AlbumViewPanel extends JPanel implements ThemeChangeListener, Playe
 
         // Create column names and widths
         String[] columnNames = {"#", "TITLE", "ARTIST", "PLAYS", "DURATION"};
-        int[] columnWidths = {50, 0, 0, 80, 80};
+        int[] columnWidths = {10, 100, 80, 10, 10};
 
         // Create styled table
         tracksTable = GuiUtil.createStyledTable(columnNames, columnWidths);
@@ -333,7 +333,9 @@ public class AlbumViewPanel extends JPanel implements ThemeChangeListener, Playe
             return cell;
         });
 
-        tracksPanel.add(tracksTable);
+        JScrollPane scrollPane = GuiUtil.createStyledScrollPane(tracksTable);
+        scrollPane.setPreferredSize(new Dimension(0, 300));
+        tracksPanel.add(scrollPane);
     }
 
     private JPopupMenu createSongContextMenu(SongDTO song) {
@@ -542,7 +544,7 @@ public class AlbumViewPanel extends JPanel implements ThemeChangeListener, Playe
                             <b> Updated at: </b> %s
                         </html>
                         """
-                , playlist.getCreatedAt(), playlist.getUpdatedAt()));
+                , playlist.getCreatedDate(), playlist.getUpdateDate()));
 
         // Update tracks table
         updateTracklistTable();

@@ -94,6 +94,7 @@ public class TagServiceImpl implements TagService {
                     - "melodic dubstep" not just "dubstep"
                     - "language" not just "english"
                     
+                    Remember the tag must not exceed 25 characters.
                     Return a maximum of 5 tags total.
                     Do not return explanations, just the categorized tags as described.
                     """;

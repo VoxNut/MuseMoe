@@ -8,7 +8,6 @@ import com.javaweb.model.dto.SongDTO;
 import com.javaweb.model.dto.UserDTO;
 import com.javaweb.view.HomePage;
 import com.javaweb.view.components.AsyncImageLabel;
-import com.javaweb.view.custom.spinner.DateLabelFormatter;
 import com.javaweb.view.custom.table.BorderedHeaderRenderer;
 import com.javaweb.view.custom.table.BorderedTableCellRenderer;
 import com.javaweb.view.dialog.PlaylistSelectionDialog;
@@ -19,10 +18,8 @@ import net.coobird.thumbnailator.Thumbnails;
 import net.coobird.thumbnailator.geometry.Positions;
 import net.coobird.thumbnailator.resizers.configurations.Antialiasing;
 import net.miginfocom.swing.MigLayout;
-import org.jdatepicker.impl.JDatePanelImpl;
-import org.jdatepicker.impl.JDatePickerImpl;
-import org.jdatepicker.impl.SqlDateModel;
 import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.CategoryAxis;
 import org.jfree.chart.axis.NumberAxis;
@@ -35,7 +32,6 @@ import org.jfree.chart.renderer.category.BarRenderer;
 import org.jfree.chart.renderer.category.LineAndShapeRenderer;
 import org.jfree.chart.renderer.category.StandardBarPainter;
 import org.jfree.chart.title.LegendTitle;
-import org.jfree.chart.util.Rotation;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.general.DefaultPieDataset;
 
@@ -59,6 +55,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.logging.Handler;
@@ -109,21 +106,23 @@ public class GuiUtil {
 
         // Style table
         table.setRowHeight(40);
-        table.setShowGrid(false);
         table.setIntercellSpacing(new Dimension(0, 0));
         table.setFillsViewportHeight(true);
         table.setSelectionBackground(accentColor);
         table.setSelectionForeground(backgroundColor);
         table.setOpaque(false);
         table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        table.setShowGrid(false);
 
         // Style header
         JTableHeader header = table.getTableHeader();
         header.setBackground(backgroundColor);
         header.setForeground(GuiUtil.darkenColor(textColor, 0.3f));
-        header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, GuiUtil.darkenColor(textColor, 0.7f)));
         header.setFont(FontUtil.getSpotifyFont(Font.BOLD, 12));
+        header.setBorder(BorderFactory.createEmptyBorder());
         header.setReorderingAllowed(false);
+        header.setResizingAllowed(false);
+
 
         // Set column widths
         TableColumnModel columnModel = table.getColumnModel();
@@ -319,8 +318,8 @@ public class GuiUtil {
         // Add hover effect
         button.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
-                button.setForeground(bgColor);
-                button.setBackground(accentColor);
+                button.setForeground(GuiUtil.lightenColor(textColor, 0.15f));
+                button.setBackground(GuiUtil.lightenColor(bgColor, 0.15f));
             }
 
             public void mouseExited(java.awt.event.MouseEvent evt) {
@@ -536,6 +535,11 @@ public class GuiUtil {
                     popup.setBorder(BorderFactory.createLineBorder(accentColor, 1));
                     popup.setBackground(backgroundColor);
                     popup.setForeground(textColor);
+                    for (Component c : popup.getComponents()) {
+                        if (c instanceof JScrollPane sp) {
+                            GuiUtil.applyModernScrollBar(sp);
+                        }
+                    }
                 }
             }
 
@@ -696,8 +700,6 @@ public class GuiUtil {
             // Style scrollbars
             sp.getVerticalScrollBar().setBackground(backgroundColor);
             sp.getVerticalScrollBar().setForeground(textColor);
-            sp.getHorizontalScrollBar().setBackground(backgroundColor);
-            sp.getHorizontalScrollBar().setForeground(accentColor);
         }
     }
 
@@ -873,48 +875,6 @@ public class GuiUtil {
         setComponentBackground(timeSpinner, AppConstant.TEXTFIELD_BACKGROUND_COLOR);
 
         return timeSpinner;
-    }
-
-    public static JDatePickerImpl createDatePicker() {
-        SqlDateModel model = new SqlDateModel();
-        Properties p = new Properties();
-        p.put("text.today", "Today");
-        p.put("text.month", "Month");
-        p.put("text.year", "Year");
-        JDatePanelImpl datePanel = new JDatePanelImpl(model, p);
-        JDatePickerImpl datePicker = new JDatePickerImpl(datePanel, new DateLabelFormatter());
-
-        datePicker.setOpaque(true);
-        datePicker.getJFormattedTextField().setBackground(AppConstant.TEXTFIELD_BACKGROUND_COLOR);
-        datePicker.getJFormattedTextField().setForeground(AppConstant.TEXT_COLOR);
-        datePicker.getJFormattedTextField().setFont(FontUtil.getJetBrainsMonoFont(Font.PLAIN, 16));
-
-        setComponentBackground(datePanel, AppConstant.TEXTFIELD_BACKGROUND_COLOR);
-
-        datePanel.setPreferredSize(new Dimension(300, 200));
-
-        // Change the button icon
-        for (Component component : datePicker.getComponents()) {
-            if (component instanceof JButton button) {
-                button.setIcon(GuiUtil.createImageIcon(AppConstant.CALENDAR_PATH, 30, 30));
-                button.setText("");
-                button.setBorderPainted(false);
-                button.setContentAreaFilled(false);
-                button.setOpaque(true);
-                button.setBackground(AppConstant.TEXTFIELD_BACKGROUND_COLOR);
-            }
-        }
-        datePicker.getJFormattedTextField().addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
-                    datePicker.getModel().setSelected(false);
-                    datePicker.getJFormattedTextField().setText("");
-                }
-            }
-        });
-
-        return datePicker;
     }
 
 
@@ -1681,9 +1641,14 @@ public class GuiUtil {
         }
     }
 
+
     public static JFreeChart createPieChart(String title, DefaultPieDataset dataset) {
+        Color textColor = ThemeManager.getInstance().getAccentColor();
+        Color backgroundColor = ThemeManager.getInstance().getBackgroundColor();
+        Color accentColor = ThemeManager.getInstance().getAccentColor();
+
         // Create chart
-        JFreeChart chart = ChartFactory.createPieChart3D(
+        JFreeChart chart = ChartFactory.createPieChart(
                 title,
                 dataset,
                 true,
@@ -1692,34 +1657,61 @@ public class GuiUtil {
         );
 
         chart.getTitle().setFont(FontUtil.getJetBrainsMonoFont(Font.BOLD, 30));
-        chart.getTitle().setPaint(AppConstant.TEXT_COLOR);
-        chart.setBackgroundPaint(AppConstant.BACKGROUND_COLOR);
+        chart.getTitle().setPaint(textColor);
+        chart.setBackgroundPaint(null);
+
         LegendTitle legend = chart.getLegend();
         legend.setItemFont((FontUtil.getJetBrainsMonoFont(Font.PLAIN, 14)));
-        legend.setBackgroundPaint(AppConstant.BACKGROUND_COLOR);
-        legend.setItemPaint(AppConstant.TEXT_COLOR);
+        legend.setBackgroundPaint(null);
+        legend.setItemPaint(textColor);
 
         //show percentage
         PiePlot plot = (PiePlot) chart.getPlot();
         plot.setLabelGenerator(new StandardPieSectionLabelGenerator("{0}: {2}"));
         plot.setLabelLinkStyle(PieLabelLinkStyle.STANDARD);
         plot.setLabelFont(FontUtil.getJetBrainsMonoFont(Font.BOLD, 12));
-        plot.setLabelPaint(AppConstant.TEXT_COLOR);
-        plot.setLabelBackgroundPaint(AppConstant.BACKGROUND_COLOR);
+        plot.setLabelPaint(textColor);
+        plot.setLabelBackgroundPaint(backgroundColor);
 
+        plot.setShadowPaint(null);
+        plot.setBackgroundPaint(null);
 
-        // Set 3D properties
-        plot.setStartAngle(290);
-        plot.setDirection(Rotation.CLOCKWISE);
-        plot.setForegroundAlpha(1.0f);
-        plot.setBackgroundPaint(AppConstant.BACKGROUND_COLOR);
+//        plot.setCircular(true);
+//        plot.setIgnoreZeroValues(true);
+//        plot.setLabelShadowPaint(null);
         plot.setOutlineVisible(false);
-        plot.setSectionOutlinesVisible(false);
+//        plot.setSectionOutlinesVisible(false);
+
+        generateHarmoniousColors(plot, textColor);
 
         return chart;
     }
 
+    private static void generateHarmoniousColors(PiePlot plot, Color baseColor) {
+        Color[] colors = new Color[10];
+
+        for (int i = 0; i < colors.length; i++) {
+            float fraction = 0.1f + (i / 2) * 0.12f;
+            colors[i] = lightenColor(baseColor, fraction);
+        }
+
+        colors[0] = baseColor;
+
+        @SuppressWarnings("unchecked")
+        List<Comparable<?>> keys = plot.getDataset().getKeys();
+        int index = 0;
+
+        for (Comparable<?> key : keys) {
+            plot.setSectionPaint(key, colors[index % colors.length]);
+            index++;
+        }
+    }
+
     public static JFreeChart createBarChart(String title, String xAxisLabel, String yAxisLabel, DefaultCategoryDataset dataset, PlotOrientation orientation) {
+        Color textColor = ThemeManager.getInstance().getTextColor();
+        Color backgroundColor = ThemeManager.getInstance().getBackgroundColor();
+        Color accentColor = ThemeManager.getInstance().getAccentColor();
+
         JFreeChart chart = ChartFactory.createBarChart(
                 title,
                 xAxisLabel,
@@ -1729,40 +1721,40 @@ public class GuiUtil {
                 true, true, false);
 
         chart.getTitle().setFont(FontUtil.getJetBrainsMonoFont(Font.BOLD, 30));
-        chart.getTitle().setPaint(AppConstant.TEXT_COLOR);
-        chart.setBackgroundPaint(AppConstant.BACKGROUND_COLOR);
+        chart.getTitle().setPaint(textColor);
+        chart.setBackgroundPaint(null);
 
         LegendTitle legend = chart.getLegend();
         legend.setItemFont((FontUtil.getJetBrainsMonoFont(Font.PLAIN, 14)));
-        legend.setBackgroundPaint(AppConstant.BACKGROUND_COLOR);
-        legend.setItemPaint(AppConstant.TEXT_COLOR);
+        legend.setBackgroundPaint(null);
+        legend.setItemPaint(textColor);
 
 
         // Customize the plot
         CategoryPlot plot = chart.getCategoryPlot();
-        plot.setBackgroundPaint(AppConstant.BACKGROUND_COLOR);
-        plot.setRangeGridlinePaint(AppConstant.TEXT_COLOR);
+        plot.setBackgroundPaint(null);
+        plot.setRangeGridlinePaint(textColor);
         plot.setOutlineVisible(false);
 
         // Customize the renderer
         BarRenderer renderer = (BarRenderer) plot.getRenderer();
         renderer.setBarPainter(new StandardBarPainter());
         renderer.setShadowVisible(false); // Disable shadows
-        renderer.setSeriesPaint(0, AppConstant.TEXT_COLOR);
+        renderer.setSeriesPaint(0, textColor);
 
 
         // Customize the domain axis (x-axis)
         CategoryAxis domainAxis = plot.getDomainAxis();
-        domainAxis.setTickLabelPaint(AppConstant.TEXT_COLOR);
-        domainAxis.setLabelPaint(AppConstant.TEXT_COLOR);
+        domainAxis.setTickLabelPaint(textColor);
+        domainAxis.setLabelPaint(textColor);
         domainAxis.setLabelFont(FontUtil.getJetBrainsMonoFont(Font.BOLD, 14));
         domainAxis.setTickLabelFont(FontUtil.getJetBrainsMonoFont(Font.PLAIN, 12));
 
 
         // Customize the range axis (y-axis)
         NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
-        rangeAxis.setTickLabelPaint(AppConstant.TEXT_COLOR);
-        rangeAxis.setLabelPaint(AppConstant.TEXT_COLOR);
+        rangeAxis.setTickLabelPaint(textColor);
+        rangeAxis.setLabelPaint(textColor);
         rangeAxis.setLabelFont(FontUtil.getJetBrainsMonoFont(Font.BOLD, 14));
         rangeAxis.setTickLabelFont(FontUtil.getJetBrainsMonoFont(Font.PLAIN, 12));
 
@@ -1881,6 +1873,10 @@ public class GuiUtil {
     }
 
     public static JFreeChart createLineChart(String title, String xAxisLabel, String yAxisLabel, DefaultCategoryDataset dataset, PlotOrientation orientation) {
+        Color textColor = ThemeManager.getInstance().getTextColor();
+        Color backgroundColor = ThemeManager.getInstance().getBackgroundColor();
+        Color accentColor = ThemeManager.getInstance().getAccentColor();
+
         JFreeChart chart = ChartFactory.createLineChart(
                 title,
                 xAxisLabel,
@@ -1894,26 +1890,26 @@ public class GuiUtil {
 
         // Customize chart appearance
         chart.getTitle().setFont(FontUtil.getJetBrainsMonoFont(Font.BOLD, 30));
-        chart.getTitle().setPaint(AppConstant.TEXT_COLOR);
-        chart.setBackgroundPaint(AppConstant.BACKGROUND_COLOR);
+        chart.getTitle().setPaint(textColor);
+        chart.setBackgroundPaint(null);
 
         LegendTitle legend = chart.getLegend();
         legend.setItemFont((FontUtil.getJetBrainsMonoFont(Font.PLAIN, 14)));
-        legend.setBackgroundPaint(AppConstant.BACKGROUND_COLOR);
-        legend.setItemPaint(AppConstant.TEXT_COLOR);
+        legend.setBackgroundPaint(null);
+        legend.setItemPaint(textColor);
 
 
         CategoryPlot plot = chart.getCategoryPlot();
         plot.setOutlineVisible(false);
-        plot.setBackgroundPaint(AppConstant.BACKGROUND_COLOR);
-        plot.setRangeGridlinePaint(AppConstant.TEXT_COLOR);
+        plot.setBackgroundPaint(null);
+        plot.setRangeGridlinePaint(textColor);
         plot.setDomainGridlinesVisible(true);
-        plot.setDomainGridlinePaint(AppConstant.TEXT_COLOR);
+        plot.setDomainGridlinePaint(textColor);
 
         // Customize the domain axis (x-axis)
         CategoryAxis domainAxis = plot.getDomainAxis();
-        domainAxis.setTickLabelPaint(AppConstant.TEXT_COLOR);
-        domainAxis.setLabelPaint(AppConstant.TEXT_COLOR);
+        domainAxis.setTickLabelPaint(textColor);
+        domainAxis.setLabelPaint(textColor);
         domainAxis.setLabelFont(FontUtil.getJetBrainsMonoFont(Font.BOLD, 14));
         domainAxis.setTickLabelFont(FontUtil.getJetBrainsMonoFont(Font.PLAIN, 12));
 
@@ -1921,13 +1917,13 @@ public class GuiUtil {
         // Customize the range axis (y-axis)
         NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
         rangeAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
-        rangeAxis.setTickLabelPaint(AppConstant.TEXT_COLOR);
-        rangeAxis.setLabelPaint(AppConstant.TEXT_COLOR);
+        rangeAxis.setTickLabelPaint(textColor);
+        rangeAxis.setLabelPaint(textColor);
         rangeAxis.setLabelFont(FontUtil.getJetBrainsMonoFont(Font.BOLD, 14));
         rangeAxis.setTickLabelFont(FontUtil.getJetBrainsMonoFont(Font.PLAIN, 12));
 
         LineAndShapeRenderer renderer = (LineAndShapeRenderer) plot.getRenderer();
-        renderer.setSeriesPaint(0, AppConstant.TEXT_COLOR);
+        renderer.setSeriesPaint(0, textColor);
         renderer.setSeriesStroke(0, new BasicStroke(2.0f));
 
         return chart;
@@ -2242,11 +2238,15 @@ public class GuiUtil {
                         public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
                             JComboBox<?> box = (JComboBox<?>) e.getSource();
                             Object comp = box.getUI().getAccessibleChild(box, 0);
-                            if (comp instanceof JPopupMenu) {
-                                JPopupMenu popup = (JPopupMenu) comp;
+                            if (comp instanceof JPopupMenu popup) {
                                 popup.setBorder(BorderFactory.createLineBorder(accentColor, 1));
                                 popup.setBackground(backgroundColor);
                                 popup.setForeground(textColor);
+                                for (Component c : popup.getComponents()) {
+                                    if (c instanceof JScrollPane sp) {
+                                        GuiUtil.applyModernScrollBar(sp);
+                                    }
+                                }
                             }
                         }
 
@@ -2285,6 +2285,63 @@ public class GuiUtil {
                 dialog.setBackground(backgroundColor);
             } else if (component instanceof JOptionPane optionPane) {
                 optionPane.setBackground(backgroundColor);
+            }
+            //FreeChart
+            else if (component instanceof ChartPanel chartPanel) {
+                JFreeChart chart = chartPanel.getChart();
+                if (chart != null) {
+                    // Update chart background
+                    chart.setBackgroundPaint(null);
+
+                    // Update title
+                    if (chart.getTitle() != null) {
+                        chart.getTitle().setPaint(textColor);
+                    }
+
+                    // Update legend
+                    LegendTitle legend = chart.getLegend();
+                    if (legend != null) {
+                        legend.setBackgroundPaint(null);
+                        legend.setItemPaint(textColor);
+                    }
+
+                    // Update plot - handle different plot types
+                    if (chart.getPlot() instanceof PiePlot piePlot) {
+                        piePlot.setBackgroundPaint(null);
+                        piePlot.setLabelPaint(textColor);
+                        piePlot.setLabelBackgroundPaint(backgroundColor);
+                        piePlot.setOutlinePaint(textColor);
+
+                        generateHarmoniousColors(piePlot, textColor);
+
+                    } else if (chart.getPlot() instanceof CategoryPlot categoryPlot) {
+                        categoryPlot.setBackgroundPaint(null);
+                        categoryPlot.setRangeGridlinePaint(textColor);
+                        categoryPlot.setDomainGridlinePaint(textColor);
+
+                        // Update axes
+                        CategoryAxis domainAxis = categoryPlot.getDomainAxis();
+                        if (domainAxis != null) {
+                            domainAxis.setTickLabelPaint(textColor);
+                            domainAxis.setLabelPaint(textColor);
+                        }
+
+                        NumberAxis rangeAxis = (NumberAxis) categoryPlot.getRangeAxis();
+                        if (rangeAxis != null) {
+                            rangeAxis.setTickLabelPaint(textColor);
+                            rangeAxis.setLabelPaint(textColor);
+                        }
+
+                        // Update renderer
+                        if (categoryPlot.getRenderer() instanceof BarRenderer barRenderer) {
+                            barRenderer.setSeriesPaint(0, textColor);
+                        } else if (categoryPlot.getRenderer() instanceof LineAndShapeRenderer lineRenderer) {
+                            lineRenderer.setSeriesPaint(0, textColor);
+                        }
+                    }
+
+                    chartPanel.repaint();
+                }
             }
 
             // Recursively update child containers
@@ -3747,6 +3804,10 @@ public class GuiUtil {
         list.setFocusable(false);
 
         return list;
+    }
+
+    public static boolean isValidColors(Color backgroundColor, Color textColor) {
+        return calculateContrast(backgroundColor, textColor) > 4.5;
     }
 
 

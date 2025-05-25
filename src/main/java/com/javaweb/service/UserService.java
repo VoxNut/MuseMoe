@@ -29,7 +29,7 @@ public interface UserService {
     boolean resetPassword(Long userId, String newPassword);
 
 
-    void updateUser(UserRequestDTO userDTO);
+    boolean updateUser(UserRequestDTO userDTO);
 
     Boolean saveSignUpUser(UserRequestDTO userRequestDTO);
 
@@ -50,4 +50,10 @@ public interface UserService {
     List<UserDTO> findAll(AccountStatus accountStatus);
 
     List<UserDTO> findFilteredUsers(LocalDateTime from, LocalDateTime to, RoleType roleType);
+
+    boolean changePassword(String newPassword);
+
+    boolean checkCurrentPassword(String currentPassword);
+
+    boolean closeAccount(AccountStatus accountStatus);
 }

@@ -2,6 +2,7 @@ package com.javaweb.client.client_service;
 
 import com.javaweb.enums.RoleType;
 import com.javaweb.model.dto.UserDTO;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Date;
 import java.util.List;
@@ -36,4 +37,12 @@ public interface UserApiClient {
     List<UserDTO> fetchAllUsers();
 
     List<UserDTO> fetchUsersByFilter(Date from, Date to, RoleType roleType);
+
+    boolean updateUserProfile(String fullName, String email, MultipartFile profilePicture);
+
+    boolean changeUserPassword(String newPassword);
+
+    boolean checkCurrentPassword(String currentPassword);
+
+    boolean closeUserAccount();
 }

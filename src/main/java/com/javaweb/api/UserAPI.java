@@ -91,16 +91,6 @@ public class UserAPI {
 
     }
 
-    @PutMapping
-    public ResponseEntity<Void> updateUser(@RequestBody UserRequestDTO userRequestDTO) {
-        try {
-            userService.updateUser(userRequestDTO);
-            return ResponseEntity.ok().build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
     @PutMapping("/last_login")
     public ResponseEntity<Void> updateLastLoginTime(@RequestBody UserDTO userDTO) {
         try {
@@ -180,6 +170,47 @@ public class UserAPI {
     ) {
         List<UserDTO> results = userService.findFilteredUsers(DateUtil.toLocalDateTime(from), DateUtil.toLocalDateTime(to), roleType);
         return ResponseEntity.ok(results);
+    }
+
+    @PutMapping("/update")
+    public ResponseEntity<Boolean> updateUser(@ModelAttribute UserRequestDTO userRequestDTO) {
+
+        try {
+            boolean res = userService.updateUser(userRequestDTO);
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            return ResponseEntity.ok(false);
+        }
+    }
+
+    @PutMapping("/change_password")
+    public ResponseEntity<Boolean> changePassword(@RequestBody UserRequestDTO userDTO) {
+        try {
+            boolean isChanged = userService.changePassword(userDTO.getNewPassword());
+            return ResponseEntity.ok(isChanged);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(false);
+        }
+    }
+
+    @PutMapping("/close_account")
+    public ResponseEntity<Boolean> closeAccount(@RequestBody UserRequestDTO userRequestDTO) {
+        try {
+            boolean isClosed = userService.closeAccount(userRequestDTO.getAccountStatus());
+            return ResponseEntity.ok(isClosed);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(false);
+        }
+    }
+
+    @GetMapping("/check_current_password")
+    public ResponseEntity<Boolean> checkCurrentPassword(@RequestParam String currentPassword) {
+        try {
+            boolean isMatched = userService.checkCurrentPassword(currentPassword);
+            return ResponseEntity.ok(isMatched);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(false);
+        }
     }
 
 

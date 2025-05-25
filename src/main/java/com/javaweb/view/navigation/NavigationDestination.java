@@ -26,6 +26,8 @@ public class NavigationDestination {
 
     public static final String ADMIN_STATISTICS = "adminStatistics";
 
+    public static final String ACCOUNT_SETTINGS = "accountSettings";
+
     private NavigationDestination() {
     }
 }

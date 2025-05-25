@@ -3,9 +3,7 @@ package com.javaweb.client.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.javaweb.model.dto.SongDTO;
 import com.javaweb.view.user.UserSessionManager;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.*;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -14,7 +12,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -224,46 +221,88 @@ public class ApiClient {
         }
     }
 
-    public SongDTO uploadSong(String url, Map<String, Object> songData, File audioFile, File imageFile) {
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+    public <T> T putMultipart(String url, Map<String, Object> parts, Class<T> responseType) {
+        try {
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
 
-        // Add files
-        if (audioFile != null) {
-            body.add("audioFile", new FileSystemResource(audioFile));
+            if (parts != null) {
+                parts.forEach((key, value) -> {
+                    if (value != null) {
+                        if (value instanceof List<?> && !((List<?>) value).isEmpty() && ((List<?>) value).get(0) instanceof MultipartFile) {
+                            // Handle list of MultipartFiles
+                            @SuppressWarnings("unchecked")
+                            List<MultipartFile> files = (List<MultipartFile>) value;
+
+                            for (int i = 0; i < files.size(); i++) {
+                                MultipartFile file = files.get(i);
+                                try {
+                                    HttpHeaders headers = new HttpHeaders();
+                                    headers.setContentType(MediaType.parseMediaType(file.getContentType()));
+
+                                    // Create a resource from the file bytes - NOT from the input stream
+                                    org.springframework.core.io.Resource resource = new org.springframework.core.io.ByteArrayResource(file.getBytes()) {
+                                        @Override
+                                        public String getFilename() {
+                                            return file.getOriginalFilename();
+                                        }
+                                    };
+
+                                    // Use array-style parameter names for lists (mp3Files[0], mp3Files[1], etc.)
+                                    body.add(key + "[" + i + "]", new HttpEntity<>(resource, headers));
+                                } catch (Exception e) {
+                                    throw new RuntimeException("Failed to process file upload", e);
+                                }
+                            }
+                        } else if (value instanceof MultipartFile) {
+                            // Handle single MultipartFile
+                            MultipartFile file = (MultipartFile) value;
+                            try {
+                                HttpHeaders headers = new HttpHeaders();
+                                headers.setContentType(MediaType.parseMediaType(file.getContentType()));
+
+                                org.springframework.core.io.Resource resource = new org.springframework.core.io.ByteArrayResource(file.getBytes()) {
+                                    @Override
+                                    public String getFilename() {
+                                        return file.getOriginalFilename();
+                                    }
+                                };
+
+                                body.add(key, new HttpEntity<>(resource, headers));
+                            } catch (Exception e) {
+                                throw new RuntimeException("Failed to process file upload", e);
+                            }
+                        } else {
+                            body.add(key, value);
+                        }
+                    }
+                });
+            }
+
+            // Create headers with authentication
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+            String token = UserSessionManager.getInstance().getAuthToken();
+            if (token != null && !token.isEmpty()) {
+                headers.set(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+            }
+
+            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+            // Use PUT instead of POST
+            ResponseEntity<T> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.PUT,
+                    requestEntity,
+                    responseType
+            );
+
+            return response.getBody();
+        } catch (Exception e) {
+            throw new RuntimeException("Error in putMultipart request: " + e.getMessage(), e);
         }
-
-        if (imageFile != null) {
-            body.add("imageFile", new FileSystemResource(imageFile));
-        }
-
-        // Add other song data
-        if (songData != null) {
-            songData.forEach((key, value) -> {
-                if (value != null) {
-                    body.add(key, value.toString());
-                }
-            });
-        }
-
-        // Create headers with authentication
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-
-        String token = UserSessionManager.getInstance().getAuthToken();
-        if (token != null && !token.isEmpty()) {
-            headers.set(HttpHeaders.AUTHORIZATION, "Bearer " + token);
-        }
-
-        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-        ResponseEntity<SongDTO> response = restTemplate.exchange(
-                url,
-                HttpMethod.POST,
-                requestEntity,
-                SongDTO.class
-        );
-
-        return response.getBody();
     }
+
 
     public String get(String url) {
         return addAuthHeader(webClient.get().uri(url))

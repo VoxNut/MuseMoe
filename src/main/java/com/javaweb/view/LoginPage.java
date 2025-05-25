@@ -1,7 +1,6 @@
 package com.javaweb.view;
 
 import com.javaweb.constant.AppConstant;
-import com.javaweb.enums.AccountStatus;
 import com.javaweb.model.dto.UserDTO;
 import com.javaweb.utils.*;
 import com.javaweb.view.theme.ThemeManager;
@@ -607,10 +606,6 @@ public class LoginPage extends JFrame {
 
                 log.info("username '{}', with token '{}'", user.getUsername(), token);
 
-                if (user == null || user.getAccountStatus().equals(AccountStatus.INACTIVE)) {
-                    GuiUtil.showErrorMessageDialog(this, "User not existed or deleted");
-                    return;
-                }
 
                 // Store token in UserSessionManager
                 UserSessionManager.getInstance().initializeSession(user, token);

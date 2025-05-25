@@ -2,6 +2,7 @@ package com.javaweb.utils;
 
 import com.javaweb.App;
 import com.javaweb.constant.AppConstant;
+import com.javaweb.enums.RoleType;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.service.impl.GoogleDriveService;
 import com.javaweb.view.HomePage;
@@ -27,9 +28,9 @@ public class SongDownloadUtil {
 
     public static boolean hasDownloadPermission() {
         Set<String> roles = UserSessionManager.getInstance().getCurrentUser().getRoles();
-        return roles.contains(AppConstant.ROLE_PREMIUM) ||
-                roles.contains(AppConstant.ROLE_ARTIST) ||
-                roles.contains(AppConstant.ROLE_ADMIN);
+        return roles.contains(RoleType.ADMIN.name()) ||
+                roles.contains(RoleType.PREMIUM.name()) ||
+                roles.contains(RoleType.ARTIST.name());
     }
 
     public static void downloadSong(Component parentComponent, SongDTO song) {

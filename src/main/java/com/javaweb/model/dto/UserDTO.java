@@ -1,8 +1,8 @@
 package com.javaweb.model.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.javaweb.constant.AppConstant;
 import com.javaweb.enums.AccountStatus;
+import com.javaweb.enums.RoleType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -58,8 +58,16 @@ public class UserDTO extends AbstractDTO implements Comparable<UserDTO> {
         return fullName != null;
     }
 
-    @JsonIgnore
-    public boolean isAdmin() {
-        return roles.contains(AppConstant.ROLE_ADMIN);
+
+    public String determineUserRole() {
+        if (roles.contains(RoleType.ADMIN.name())) {
+            return RoleType.ADMIN.getValue();
+        } else if (roles.contains(RoleType.ARTIST.name())) {
+            return RoleType.ARTIST.getValue();
+        } else if (roles.contains(RoleType.PREMIUM.name())) {
+            return RoleType.PREMIUM.getValue();
+        } else {
+            return RoleType.FREE.getValue();
+        }
     }
 }

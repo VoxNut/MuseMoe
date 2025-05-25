@@ -465,24 +465,32 @@ public class GuiUtil {
 
     public static JTextField createLineInputField(Dimension textFieldDimension) {
         JTextField textField = new JTextField();
-        styleInputField(textField, textFieldDimension);
+        textField.setPreferredSize(textFieldDimension);
+        styleInputField(textField);
         return textField;
     }
 
     public static JPasswordField createLineInputPasswordField(Dimension textFieldDimension) {
-        JPasswordField textField = new JPasswordField();
-        styleInputField(textField, textFieldDimension);
+        JPasswordField passwordField = new JPasswordField();
+        passwordField.setPreferredSize(textFieldDimension);
+        styleInputField(passwordField);
+        return passwordField;
+    }
+
+    public static JPasswordField createPasswordField(int column) {
+        JPasswordField textField = new JPasswordField(column);
+        styleInputField(textField);
         return textField;
     }
 
-    private static void styleInputField(JTextField textField, Dimension textFieldDimension) {
+
+    private static void styleInputField(JTextField textField) {
         Color textColor = ThemeManager.getInstance().getTextColor();
         Color accentcolor = ThemeManager.getInstance().getAccentColor();
         textField.setForeground(textColor);
         textField.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, textColor));
         textField.setBackground(accentcolor);
         textField.setCaretColor(textColor);
-        textField.setPreferredSize(textFieldDimension);
     }
 
 
@@ -1106,6 +1114,26 @@ public class GuiUtil {
             // Apply the color overlay
             g2d.setComposite(AlphaComposite.SrcAtop);
             g2d.setColor(ThemeManager.getInstance().getTextColor());
+            g2d.fillRect(0, 0, bufferedImage.getWidth(), bufferedImage.getHeight());
+            g2d.dispose();
+
+            label.setIcon(new ImageIcon(bufferedImage));
+        }
+    }
+
+    public static void changeLabelIconColor(JLabel label, Color color) {
+        Icon icon = label.getIcon();
+        if (icon instanceof ImageIcon imageIcon) {
+            Image image = imageIcon.getImage();
+
+            BufferedImage bufferedImage = new BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+
+            Graphics2D g2d = bufferedImage.createGraphics();
+            g2d.drawImage(image, 0, 0, null);
+
+            // Apply the color overlay
+            g2d.setComposite(AlphaComposite.SrcAtop);
+            g2d.setColor(color);
             g2d.fillRect(0, 0, bufferedImage.getWidth(), bufferedImage.getHeight());
             g2d.dispose();
 

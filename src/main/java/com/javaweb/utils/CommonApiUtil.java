@@ -67,24 +67,28 @@ public class CommonApiUtil {
         return getUserApiClient().fetchAllUsersBaseOnRole(role);
     }
 
+    public static boolean closeUserAccount() {
+        return getUserApiClient().closeUserAccount();
+    }
+
+    public static boolean checkCurrentPassword(String currentPassword) {
+        return getUserApiClient().checkCurrentPassword(currentPassword);
+    }
+
+    // admin feature.
     public static List<UserDTO> fetchUsersByFilter(Date from, Date to, String role) {
         return getUserApiClient().fetchUsersByFilter(from, to, EnumUtil.fromValue(RoleType.class, role));
 
     }
 
-    public static List<UserDTO> fetchUsersByDateRange(Date from, Date to) {
-        return getUserApiClient().fetchAllUsers().stream().filter(userDTO -> {
-            Date userDate = userDTO.getCreatedDate();
-            if (userDate != null) {
-                return userDate.after(from) && userDate.before(to);
-            }
-            return false;
-        }).toList();
-    }
-
     public static List<UserDTO> fetchAllUsers() {
         return getUserApiClient().fetchAllUsers();
     }
+
+    public static boolean changeUserPassword(String newPassword) {
+        return getUserApiClient().changeUserPassword(newPassword);
+    }
+
 
     public static boolean checkUserArtist(Long currentArtistId) {
         return getUserApiClient().checkUserArtist(currentArtistId);
@@ -134,6 +138,10 @@ public class CommonApiUtil {
 
     public static boolean unfollowArtist(Long artistId) {
         return getUserArtistFollowClient().unfollowArtist(artistId);
+    }
+
+    public static boolean updateUserProfile(String fullName, String email, MultipartFile profilePicture) {
+        return getUserApiClient().updateUserProfile(fullName, email, profilePicture);
     }
 
     public static boolean followArtist(Long artistId) {
@@ -299,6 +307,11 @@ public class CommonApiUtil {
     }
 
 
+    public static List<ArtistDTO> fetchAllArtists() {
+        return getArtistApiClient().findAllArtists();
+    }
+
+
     public static List<ArtistDTO> findArtistsBySongId(Long songId) {
         return getArtistApiClient().findArtistsBySongId(songId);
     }
@@ -309,10 +322,6 @@ public class CommonApiUtil {
 
     public static ArtistDTO findArtistById(Long artistId) {
         return getArtistApiClient().findArtistById(artistId);
-    }
-
-    public static List<ArtistDTO> fetchAllArtists() {
-        return getArtistApiClient().findAllArtists();
     }
 
 

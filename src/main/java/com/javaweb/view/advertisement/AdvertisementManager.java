@@ -1,6 +1,7 @@
 package com.javaweb.view.advertisement;
 
 import com.javaweb.constant.AppConstant;
+import com.javaweb.enums.RoleType;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.model.dto.UserDTO;
 import lombok.Getter;
@@ -37,9 +38,9 @@ public class AdvertisementManager {
 
     public boolean shouldShowAd(UserDTO user) {
         Set<String> roles = user.getRoles();
-        if (roles.contains(AppConstant.ROLE_PREMIUM) ||
-                roles.contains(AppConstant.ROLE_ADMIN) ||
-                roles.contains(AppConstant.ROLE_ADMIN)) {
+        if (roles.contains(RoleType.ADMIN.name()) ||
+                roles.contains(RoleType.PREMIUM.name()) ||
+                roles.contains(RoleType.ARTIST.name())) {
             return false;
         }
 

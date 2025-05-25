@@ -260,6 +260,22 @@ public class GoogleDriveService {
                 .collect(Collectors.toList());
     }
 
+    public boolean deleteFile(String fileId) {
+        if (fileId == null || fileId.isEmpty()) {
+            log.warn("Attempted to delete a file with null or empty ID");
+            return false;
+        }
+
+        try {
+            driveService.files().delete(fileId).execute();
+            log.info("Successfully deleted file with ID: {}", fileId);
+            return true;
+        } catch (IOException e) {
+            log.error("Failed to delete file with ID: {}", fileId, e);
+            return false;
+        }
+    }
+
     public static class DriveFileBundle {
         private File songFile;
         private File albumArtFile;

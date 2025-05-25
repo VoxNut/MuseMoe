@@ -1,6 +1,7 @@
 package com.javaweb.constant;
 
 import java.awt.*;
+import java.io.File;
 
 public class AppConstant {
     //COLOR
@@ -23,13 +24,6 @@ public class AppConstant {
     public static final Color PENDING = Color.decode("#FFFFFF"); // Glowing white for pending elements
     public static final Color DISABLE_BACKGROUND_BUTTON = Color.decode("#555555"); // Unchanged, muted gray for disabled buttons
     public static final Color DISABLE_TEXT_BUTTON = Color.decode("#777777"); // Muted gray for disabled button text
-
-
-    //ROLE
-    public static final String ROLE_ADMIN = "ADMIN";
-    public static final String ROLE_FREE = "FREE";
-    public static final String ROLE_PREMIUM = "PREMIUM";
-    public static final String ROLE_ARTIST = "ARTIST";
 
 
     //HOMEPAGE
@@ -127,4 +121,11 @@ public class AppConstant {
     public static final String STUDY_SMART_AD = "13R3QMh-7Gbkek9LlMoPAtH0x3SrxvMzl";
     public static final String BREW_SPOT_AD = "18t4TUrdqgHrYciGYZSQf7J8o3U6dEfIB";
     public static final String INSPIRATION_AD = "1kaLdCrgHZ52GEYFcIMUAuWq33bp0PFyf";
+
+
+    //DIRECTORY
+    public static final File USER_AVATAR_DIRECTORY = new File("D:\\MuseMoe resources\\imgs\\avatars");
+    public static final File ALBUM_COVER_DIRECTORY = new File("D:\\MuseMoe resources\\imgs\\album_cover");
+    public static final File MUSIC_FILE_DIRECTORY = new File("D:\\MuseMoe resources\\audio");
+    public static final File ARTIST_PROFILE_DIRECTORY = new File("D:\\MuseMoe resources\\imgs\\artist_profile");
 }

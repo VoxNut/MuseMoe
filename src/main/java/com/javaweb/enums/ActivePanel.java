@@ -11,7 +11,8 @@ public enum ActivePanel implements BaseEnum {
     SEARCH_RESULTS("Search Results"),
     ALBUM_VIEW("Album View"),
     SONG_DETAILS("Song Details"),
-    ARTIST_PROFILE("Artist Profile");
+    ARTIST_PROFILE("Artist Profile"),
+    ACCOUNT_SETTINGS("Account Settings");
 
     private final String activePanelName;
 

@@ -6,7 +6,6 @@ import com.javaweb.model.dto.*;
 import com.javaweb.utils.*;
 import com.javaweb.view.theme.ThemeChangeListener;
 import com.javaweb.view.theme.ThemeManager;
-import com.javaweb.view.user.UserSessionManager;
 import lombok.extern.slf4j.Slf4j;
 import net.miginfocom.swing.MigLayout;
 import org.jfree.chart.ChartPanel;
@@ -98,15 +97,8 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
     private Map<String, JButton> navigationButtons = new HashMap<>();
     private String currentCard = SUMMARY_CARD;
 
-    /**
-     * Constructor - initializes the admin panel
-     */
-    public AdminStatisticsPanel() {
-        if (!UserSessionManager.getInstance().getCurrentUser().isAdmin()) {
-            showAccessDeniedPanel();
-            return;
-        }
 
+    public AdminStatisticsPanel() {
         // Initialize theme colors
         this.backgroundColor = ThemeManager.getInstance().getBackgroundColor();
         this.textColor = ThemeManager.getInstance().getTextColor();
@@ -158,41 +150,6 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
         updateNavigationButtonStates(SUMMARY_CARD);
     }
 
-    private void showAccessDeniedPanel() {
-        setLayout(new BorderLayout());
-
-        JPanel accessDeniedPanel = GuiUtil.createPanel(new MigLayout("fill, wrap, insets 50", "[center]", "[center]"));
-
-        // Add warning icon
-        JLabel iconLabel = GuiUtil.createIconLabel(AppConstant.WARNING_ICON_PATH, 100, ThemeManager.getInstance().getAccentColor());
-        accessDeniedPanel.add(iconLabel, "center");
-
-        // Add message
-        JLabel messageLabel = GuiUtil.createLabel("Access Denied", Font.BOLD, 32);
-        accessDeniedPanel.add(messageLabel, "center");
-
-        JLabel detailsLabel = GuiUtil.createLabel("You need administrator privileges to access this area.", Font.PLAIN, 16);
-        accessDeniedPanel.add(detailsLabel, "center");
-
-        // Add button to go back to main panel
-        JButton backButton = GuiUtil.createButton("Return to Dashboard");
-        backButton.addActionListener(e -> {
-            // Navigate back to main dashboard
-            Component parent = getParent();
-            while (parent != null && !(parent instanceof JFrame)) {
-                parent = parent.getParent();
-            }
-
-            if (parent instanceof JFrame) {
-                CardLayout mainCardLayout = (CardLayout) ((JFrame) parent).getContentPane().getLayout();
-                mainCardLayout.show(((JFrame) parent).getContentPane(), "home");
-            }
-        });
-
-        accessDeniedPanel.add(backButton, "center, gaptop 20");
-
-        add(accessDeniedPanel, BorderLayout.CENTER);
-    }
 
     private void createNavigationPanel() {
         navigationPanel = GuiUtil.createPanel(new MigLayout("fillx, insets 10 20 10 20", "[left][grow, right]", "[]"));
@@ -657,7 +614,7 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
         usersPanel.add(filtersPanel, "growx");
 
         // Create users table
-        String[] userColumns = {"ID", "Username", "Email", "Registration Date", "Last Login", "Role"};
+        String[] userColumns = {"ID", "Username", "Email", "Registration Date", "Last Login", "Role", "Status"};
         usersTableModel = new DefaultTableModel(userColumns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -692,7 +649,7 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
         });
 
 
-        usersTable = GuiUtil.createStyledTable(userColumns, new int[]{50, 150, 250, 150, 150, 100});
+        usersTable = GuiUtil.createStyledTable(userColumns, new int[]{50, 150, 250, 150, 150, 100, 100});
         usersTable.setModel(usersTableModel);
 
         // Add table sorting
@@ -1333,7 +1290,8 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
                                     user.getEmail(),
                                     createdAt,
                                     lastLogin,
-                                    determineUserRole(user.getRoles())
+                                    user.determineUserRole(),
+                                    user.getAccountStatus()
                             });
                         }
                     }
@@ -1346,17 +1304,6 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
         worker.execute();
     }
 
-    public String determineUserRole(Set<String> roles) {
-        if (roles.contains(AppConstant.ROLE_ADMIN)) {
-            return "Admin";
-        } else if (roles.contains(AppConstant.ROLE_ARTIST)) {
-            return "Artist";
-        } else if (roles.contains(AppConstant.ROLE_PREMIUM)) {
-            return "Premium User";
-        } else {
-            return "Free User";
-        }
-    }
 
     private void loadRecentUsers() {
         SwingWorker<List<UserDTO>, Void> worker = new SwingWorker<>() {

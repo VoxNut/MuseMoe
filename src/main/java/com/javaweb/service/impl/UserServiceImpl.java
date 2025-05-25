@@ -1,7 +1,9 @@
 package com.javaweb.service.impl;
 
+import com.google.api.services.drive.model.File;
 import com.javaweb.converter.UserConverter;
 import com.javaweb.entity.RoleEntity;
+import com.javaweb.entity.StreamingMediaEntity;
 import com.javaweb.entity.UserEntity;
 import com.javaweb.enums.AccountStatus;
 import com.javaweb.enums.RoleType;
@@ -12,8 +14,10 @@ import com.javaweb.model.request.UserRequestDTO;
 import com.javaweb.repository.RoleRepository;
 import com.javaweb.repository.UserRepository;
 import com.javaweb.service.PasswordService;
+import com.javaweb.service.StreamingMediaService;
 import com.javaweb.service.UserService;
 import com.javaweb.utils.SecurityUtils;
+import com.javaweb.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -37,6 +41,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordService passwordService;
     private final UserConverter userConverter;
     private final GoogleDriveService googleDriveService;
+    private final StreamingMediaService streamingMediaService;
 
     @Override
     public boolean upgradeUser(UserRequestDTO userRequestDTO) {
@@ -148,27 +153,90 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void updateUser(UserRequestDTO userRequestDTO) {
-//        UserEntity existingUser = userRepository.findById(userRequestDTO.getId()).orElseThrow(() -> new EntityNotFoundException("UserEntity not found!"));
-//        if (userRequestDTO.getPassword().isEmpty()) {
-//            userRequestDTO.setPassword(existingUser.getPassword());
-//        } else {
-//            userRequestDTO.setPassword(passwordService.encodePassword(userRequestDTO.getPassword()));
-//        }
-//        UserEntity UserEntity = userConverter.convertToEntity(userRequestDTO);
-//        UserEntity.setCustomer(existingUser.getCustomer());
-//        if (UserEntity.getCustomer() != null) {
-//            CustomerEntity customerEntity = UserEntity.getCustomer();
-//            customerEntity.setFullName(userRequestDTO.getFullName());
-//            customerEntity.setEmail(userRequestDTO.getEmail());
-//            customerEntity.setPhone(userRequestDTO.getPhone());
-//            customerRepository.save(customerEntity);
-//        }
-//        UserEntity.setOrders(existingUser.getOrders());
-//
-//        UserEntity.setProducts(existingUser.getProducts());
-//
-//        userRepository.save(UserEntity);
+    public boolean updateUser(UserRequestDTO userRequestDTO) {
+        Long userId = Objects.requireNonNull(SecurityUtils.getPrincipal()).getId();
+        try {
+            UserEntity userEntity = userRepository.findById(userId)
+                    .orElseThrow(() -> new EntityNotFoundException("UserEntity not found!"));
+
+            boolean updated = false;
+
+            if (StringUtils.isNotBlank(userRequestDTO.getFullName()) &&
+                    !userRequestDTO.getFullName().equals(userEntity.getFullName())) {
+                userEntity.setFullName(userRequestDTO.getFullName());
+                updated = true;
+            }
+
+            if (StringUtils.isNotBlank(userRequestDTO.getEmail()) &&
+                    !userRequestDTO.getEmail().equals(userEntity.getEmail())) {
+                userEntity.setEmail(userRequestDTO.getEmail());
+                updated = true;
+            }
+
+            if (userRequestDTO.getUserAvatar() != null && !userRequestDTO.getUserAvatar().isEmpty()) {
+                String currentAvatarId = userEntity.getAvatar().getGoogleDriveId();
+                boolean shouldUpdateAvatar = true;
+
+                if (StringUtils.isNotBlank(currentAvatarId)) {
+                    try {
+                        long newFileSize = userRequestDTO.getUserAvatar().getSize();
+                        String newFileName = userRequestDTO.getUserAvatar().getOriginalFilename();
+
+                        File existingFile = googleDriveService.getFileMetadata(currentAvatarId);
+
+                        if (existingFile != null &&
+                                existingFile.getSize() != null &&
+                                existingFile.getSize() == newFileSize &&
+                                existingFile.getName().equals(newFileName)) {
+                            shouldUpdateAvatar = false;
+                            log.info("Avatar file appears unchanged, skipping upload");
+                        }
+                    } catch (Exception e) {
+                        log.warn("Could not compare avatar files, will upload new one", e);
+                    }
+                }
+
+                if (shouldUpdateAvatar) {
+                    String newDriveFileId = googleDriveService.uploadImageFile(
+                            userRequestDTO.getUserAvatar(),
+                            GoogleDriveService.AVATAR_FOLDER_ID
+                    );
+
+
+                    if (StringUtils.isNotBlank(currentAvatarId)) {
+                        if (googleDriveService.deleteFile(currentAvatarId)) {
+                            log.info("Deleted old avatar file with ID: {}", currentAvatarId);
+                        } else {
+                            log.warn("Failed to delete old avatar file with ID: {}", currentAvatarId);
+                            throw new Exception("Failed to delete old avatar file with ID: " + currentAvatarId);
+                        }
+                    }
+
+                    File driveFile = googleDriveService.getFileMetadata(newDriveFileId);
+                    StreamingMediaEntity mediaEntity = streamingMediaService.getOrCreateStreamingMedia(
+                            driveFile.getId(),
+                            driveFile.getName(),
+                            driveFile.getMimeType(),
+                            driveFile.getSize(),
+                            driveFile.getWebContentLink()
+                    );
+
+                    userEntity.setAvatar(mediaEntity);
+                    updated = true;
+                    log.info("Updated user avatar with new Google Drive file ID: {}", newDriveFileId);
+                }
+            }
+
+            if (updated) {
+                userRepository.save(userEntity);
+            } else {
+                log.info("No changes detected for user ID: {}, skipping update", userId);
+            }
+            return true;
+        } catch (Exception e) {
+            log.error("Cannot update user with id: {}", userId, e);
+            return false;
+        }
     }
 
 
@@ -230,4 +298,62 @@ public class UserServiceImpl implements UserService {
         }
 
     }
+
+    @Override
+    public boolean changePassword(String newPassword) {
+        try {
+            Long userId = Objects.requireNonNull(SecurityUtils.getPrincipal()).getId();
+
+            UserEntity userEntity = userRepository.findById(userId)
+                    .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+
+            String encodedPassword = passwordService.encodePassword(newPassword);
+            userEntity.setPassword(encodedPassword);
+
+            userRepository.save(userEntity);
+            log.info("Password successfully changed for user ID: {}", userId);
+            return true;
+        } catch (Exception e) {
+            log.error("Error changing password", e);
+            return false;
+        }
+    }
+
+    @Override
+    public boolean checkCurrentPassword(String currentPassword) {
+        try {
+            Long userId = Objects.requireNonNull(SecurityUtils.getPrincipal()).getId();
+            UserEntity userEntity = userRepository.findById(userId)
+                    .orElseThrow(() -> new EntityNotFoundException("User not found"));
+            return passwordService.matches(currentPassword, userEntity.getPassword());
+        } catch (Exception e) {
+            log.error("Error checking current password", e);
+            return false;
+        }
+    }
+
+    @Override
+    public boolean closeAccount(AccountStatus accountStatus) {
+        try {
+            Long userId = Objects.requireNonNull(SecurityUtils.getPrincipal()).getId();
+
+            UserEntity userEntity = userRepository.findById(userId)
+                    .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+            userEntity.setAccountStatus(AccountStatus.DELETED);
+
+            userEntity.setUpdated_at(LocalDateTime.now());
+
+            userRepository.save(userEntity);
+
+
+            log.info("Account successfully closed for user ID: {}", userId);
+            return true;
+        } catch (Exception e) {
+            log.error("Error closing user account", e);
+            return false;
+        }
+    }
+
 }

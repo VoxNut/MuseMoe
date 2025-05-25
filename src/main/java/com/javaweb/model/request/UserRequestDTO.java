@@ -1,5 +1,6 @@
 package com.javaweb.model.request;
 
+import com.javaweb.enums.AccountStatus;
 import com.javaweb.enums.RoleType;
 import com.javaweb.model.dto.AbstractDTO;
 import com.javaweb.model.dto.RoleDTO;
@@ -22,6 +23,7 @@ public class UserRequestDTO extends AbstractDTO {
     private Long id;
     private String username;
     private String password;
+    private String newPassword;
     private String email;
     private String fullName;
     private String phone;
@@ -36,6 +38,7 @@ public class UserRequestDTO extends AbstractDTO {
     private String googleDriveFileId;
     private MultipartFile userAvatar;
     private RoleType roleType;
+    private AccountStatus accountStatus;
 
 
 }

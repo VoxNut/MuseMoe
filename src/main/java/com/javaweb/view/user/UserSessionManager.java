@@ -47,6 +47,11 @@ public class UserSessionManager {
         return currentUser != null ? attributeGetter.get(currentUser) : defaultValue;
     }
 
+    public void updateUserInfo(UserDTO currentUser) {
+        this.currentUser.setEmail(currentUser.getEmail());
+        this.currentUser.setFullName(currentUser.getFullName());
+    }
+
     @FunctionalInterface
     public interface UserAttributeGetter<T> {
         T get(UserDTO user);

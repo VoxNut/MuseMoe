@@ -2,11 +2,13 @@ package com.javaweb.client.impl;
 
 import com.javaweb.client.ApiConfig;
 import com.javaweb.client.client_service.UserApiClient;
+import com.javaweb.enums.AccountStatus;
 import com.javaweb.enums.RoleType;
 import com.javaweb.model.dto.UserDTO;
 import com.javaweb.model.request.UserRequestDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -207,5 +209,67 @@ class UserApiClientImpl implements UserApiClient {
         // 2) Call the controller
         String url = apiConfig.buildUserUrl(path);
         return apiClient.getList(url, UserDTO.class);
+    }
+
+    @Override
+    public boolean updateUserProfile(String fullName, String email, MultipartFile profilePicture) {
+        try {
+            String url = apiConfig.buildUserUrl("/update");
+
+            Map<String, Object> parts = new HashMap<>();
+            parts.put("fullName", fullName);
+            parts.put("email", email);
+
+            if (profilePicture != null) {
+                parts.put("userAvatar", profilePicture);
+            }
+
+            boolean result = apiClient.putMultipart(url, parts, Boolean.class);
+            return result;
+        } catch (Exception e) {
+            log.error("Error creating artist: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
+    @Override
+    public boolean changeUserPassword(String newPassword) {
+        try {
+            String url = apiConfig.buildUserUrl("/change_password");
+            return apiClient.put(url,
+                    UserRequestDTO.builder()
+                            .newPassword(newPassword)
+                            .build()
+                    , Boolean.class);
+        } catch (Exception e) {
+            log.error("Error changing user password: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
+    @Override
+    public boolean checkCurrentPassword(String currentPassword) {
+        try {
+            String url = apiConfig.buildUserUrl("/check_current_password?currentPassword=" + currentPassword);
+            return apiClient.get(url, Boolean.class);
+        } catch (Exception e) {
+            log.error("Error checking current password: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
+    @Override
+    public boolean closeUserAccount() {
+        try {
+            String url = apiConfig.buildUserUrl("/close_account");
+            return apiClient.put(url,
+                    UserRequestDTO.builder()
+                            .accountStatus(AccountStatus.DELETED)
+                            .build()
+                    , Boolean.class);
+        } catch (Exception e) {
+            log.error("Error closing user account: {}", e.getMessage(), e);
+            return false;
+        }
     }
 }

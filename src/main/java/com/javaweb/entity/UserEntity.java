@@ -27,6 +27,9 @@ public class UserEntity extends BaseEntity {
     @Column(unique = true, nullable = false, length = 100)
     private String email;
 
+    @Column(name = "date_of_birth")
+    private LocalDateTime dateOfBirth;
+
     @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinColumn(name = "avatar_id")
     private StreamingMediaEntity avatar;

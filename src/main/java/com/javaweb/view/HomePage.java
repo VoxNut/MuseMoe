@@ -37,7 +37,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 
 @Slf4j
@@ -60,6 +59,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private JPanel loadingOverlay;
     private JProgressBar progressBar;
     private JLabel progressLabel;
+    private JLabel fullNameLabel;
 
     private JPanel headerPanel;
     private JPanel combinedPanel;
@@ -99,7 +99,13 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private SearchResultsPanel searchResultsPanel;
     private ArtistUploadPanel artistUploadPanel;
     private AdminStatisticsPanel adminStatisticsPanel;
+    private AccountSettingsPanel accountSettingsPanel;
     private HomePanel homePanel;
+
+    private UserDTO currentUser;
+
+
+    private AsyncImageLabel avatarLabel;
 
     public HomePage() {
 
@@ -111,6 +117,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         navigationManager.navigateTo(NavigationDestination.HOME, null);
 
         playerFacade = App.getBean(MusicPlayerFacade.class);
+
+        currentUser = UserSessionManager.getInstance().getCurrentUser();
 
 
         initializeFrame();
@@ -581,7 +589,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         JPanel upgradePanel = GuiUtil.createPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
 
         // Add upgrade button based on user role
-        userRole = determineUserRole(getCurrentUser().getRoles());
+        userRole = currentUser.determineUserRole();
         upgradeButton = null;
 
         if (userRole.equals("Free User")) {
@@ -616,8 +624,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         // User info display
 
-        JLabel fullNameLabel = GuiUtil.createLabel(getCurrentUser().getFullName() != null
-                ? getCurrentUser().getFullName() + " - " + userRole : "??? - " + userRole);
+        fullNameLabel = GuiUtil.createLabel(currentUser.getFullName() != null
+                ? currentUser.getFullName() + " - " + userRole : "??? - " + userRole);
 
         GuiUtil.setSmartTooltip(fullNameLabel, "Your full name and role");
 
@@ -639,6 +647,11 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         headerPanel.add(headerContent, BorderLayout.CENTER);
 
         return headerPanel;
+    }
+
+    public void setFullNameLabel(String fullName) {
+        fullNameLabel.setText(fullName != null
+                ? fullName + " - " + userRole : "??? - " + userRole);
     }
 
     private void handlePremiumUpgrade() {
@@ -686,7 +699,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             final JLabel imageNameLabel = new JLabel("No image selected");
             final JFileChooser fileChooser = new JFileChooser();
             fileChooser.setFileFilter(new FileNameExtensionFilter("Image files", "jpg", "jpeg", "png"));
-            fileChooser.setCurrentDirectory(new File("D:\\MuseMoe resources\\imgs\\artist_profile"));
+            fileChooser.setCurrentDirectory(AppConstant.ARTIST_PROFILE_DIRECTORY);
+            fileChooser.setPreferredSize(AppConstant.FILE_CHOOSER_SIZE);
             final File[] selectedFile = {null};
 
             selectImageButton.addActionListener(e -> {
@@ -914,19 +928,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
             // Log
             log.info("Showing search results for: {}", query);
-        }
-    }
-
-
-    public String determineUserRole(Set<String> roles) {
-        if (roles.contains(AppConstant.ROLE_ADMIN)) {
-            return "Admin";
-        } else if (roles.contains(AppConstant.ROLE_ARTIST)) {
-            return "Artist";
-        } else if (roles.contains(AppConstant.ROLE_PREMIUM)) {
-            return "Premium User";
-        } else {
-            return "Free User";
         }
     }
 
@@ -1583,10 +1584,16 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         JMenuItem logoutItem = GuiUtil.createMenuItem("Log out");
 
         logoutItem.addActionListener(e -> logout());
-        profileItem.addActionListener(e -> {/* navigate to profile */
+        profileItem.addActionListener(e -> {
+            if (NetworkChecker.isNetworkAvailable()) {
+                showAccountSettingsPanel();
+            } else {
+                GuiUtil.showToast(this, "No internet connection available");
+            }
         });
-        AsyncImageLabel avatarLabel = GuiUtil.createInteractiveUserAvatar(
-                getCurrentUser(),
+
+        avatarLabel = GuiUtil.createInteractiveUserAvatar(
+                currentUser,
                 40,
                 ThemeManager.getInstance().getBackgroundColor(),
                 ThemeManager.getInstance().getTextColor(),
@@ -1596,7 +1603,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         // Start loading and populate the image
         avatarLabel.startLoading();
-        playerFacade.populateUserProfile(getCurrentUser(), avatarLabel::setLoadedImage);
+        playerFacade.populateUserProfile(currentUser, avatarLabel::setLoadedImage);
         return avatarLabel;
     }
 
@@ -1609,7 +1616,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             SwingUtilities.invokeLater(() -> {
                 LoginPage loginPage = new LoginPage();
                 UIManager.put("TitlePane.iconSize", new Dimension(24, 24));
-                loginPage.getUsernameField().setText(getCurrentUser().getUsername());
+                loginPage.getUsernameField().setText(currentUser.getUsername());
                 loginPage.setIconImage(GuiUtil.createImageIcon(AppConstant.MUSE_MOE_LOGO_PATH, 512, 512).getImage());
                 loginPage.setVisible(true);
             });
@@ -1673,6 +1680,10 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         adminStatisticsPanel = new AdminStatisticsPanel();
         adminStatisticsPanel.setName("adminStatistics");
         centerCardPanel.add(adminStatisticsPanel, "adminStatistics");
+
+        accountSettingsPanel = new AccountSettingsPanel();
+        accountSettingsPanel.setName("accountSettings");
+        centerCardPanel.add(accountSettingsPanel, "accountSettings");
 
         keyEventDispatcher = e -> {
             if (e.getID() == KeyEvent.KEY_PRESSED) {
@@ -1762,7 +1773,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
                     case KeyEvent.VK_A -> {
                         if (e.isShiftDown()) {
-                            if (getCurrentUser().getRoles().contains(AppConstant.ROLE_ARTIST)) {
+                            if (currentUser.getRoles().contains(RoleType.ARTIST.name())) {
                                 if (NetworkChecker.isNetworkAvailable()) {
                                     showArtistUploadPanel();
                                 } else {
@@ -1784,6 +1795,17 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                                 }
                             } else {
                                 GuiUtil.showToast(this, "You need admin privileges to access statistics!");
+                            }
+                            return true;
+                        }
+                    }
+
+                    case KeyEvent.VK_I -> {
+                        if (e.isControlDown()) {
+                            if (NetworkChecker.isNetworkAvailable()) {
+                                showAccountSettingsPanel();
+                            } else {
+                                GuiUtil.showToast(this, "No internet connection available");
                             }
                             return true;
                         }
@@ -1857,6 +1879,10 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         togglePanel(ActivePanel.ADMIN_STATISTICS, "adminStatistics", NavigationDestination.ADMIN_STATISTICS, null);
     }
 
+    private void showAccountSettingsPanel() {
+        togglePanel(ActivePanel.ACCOUNT_SETTINGS, "accountSettings", NavigationDestination.ACCOUNT_SETTINGS, null);
+    }
+
     @Override
     public void onThemeChanged(Color backgroundColor, Color textColor, Color accentColor) {
         // Title Bar
@@ -1921,10 +1947,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         ThemeManager.getInstance().removeThemeChangeListener(this);
         playerFacade.unsubscribeFromPlayerEvents(this);
         super.dispose();
-    }
-
-    private UserDTO getCurrentUser() {
-        return UserSessionManager.getInstance().getCurrentUser();
     }
 
     @Override
@@ -2153,6 +2175,9 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                 switchToPanel(ActivePanel.ADMIN_STATISTICS, "adminStatistics");
 
             }
+            case NavigationDestination.ACCOUNT_SETTINGS -> {
+                switchToPanel(ActivePanel.ACCOUNT_SETTINGS, "accountSettings");
+            }
 
         }
     }
@@ -2183,6 +2208,17 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         } else {
             navigationManager.navigateTo(navigationDestination, data);
             switchToPanel(panelType, cardName);
+        }
+    }
+
+    public void refreshUserAvatar() {
+        if (avatarLabel != null) {
+            // Reload the current user information
+            currentUser = CommonApiUtil.fetchCurrentUser();
+
+            // Reset and reload the avatar image
+            avatarLabel.startLoading();
+            playerFacade.populateUserProfile(currentUser, avatarLabel::setLoadedImage);
         }
     }
 }

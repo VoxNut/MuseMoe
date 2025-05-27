@@ -114,8 +114,10 @@ public class SongDetailsPanel extends JPanel implements ThemeChangeListener, Pla
 
         // Album Cover (left side)
         coverPanel = GuiUtil.createPanel(new BorderLayout());
-        coverLabel = GuiUtil.createAsyncImageLabel(250, 250, 15);
+        coverLabel = new AsyncImageLabel(250, 250, 15);
         coverLabel.startLoading();
+        playerFacade.populateSongImage(currentSong, image -> coverLabel.setLoadedImage(image));
+
         coverPanel.add(coverLabel, BorderLayout.CENTER);
 
         // Metadata and Controls Panel (right side)
@@ -304,6 +306,10 @@ public class SongDetailsPanel extends JPanel implements ThemeChangeListener, Pla
 
         // Load album cover
         playerFacade.populateSongImage(song, coverLabel::setLoadedImage);
+        if (currentSong != null) {
+            GuiUtil.addSongContextMenu(coverLabel, currentSong);
+        }
+
 
         // Update lyrics
         lyricsTextArea.setText(song.getSongLyrics() != null && !song.getSongLyrics().isEmpty() ? song.getSongLyrics() : "No lyrics available");

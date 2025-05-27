@@ -503,39 +503,77 @@ public class LoginPage extends JFrame {
     }
 
     private void handleForgotPassword() {
-        int option = GuiUtil.showConfirmMessageDialog(mainPanel, "You're going to be received an email. Do you actually want to reset your password?", "Reset password");
+        int option = GuiUtil.showConfirmMessageDialog(mainPanel,
+                "You're going to receive an email with reset instructions. Do you want to continue?",
+                "Reset password");
+
         if (option == JOptionPane.YES_OPTION) {
             String username = usernameField.getText().trim();
 
             if (username.isEmpty()) {
-                GuiUtil.showWarningMessageDialog(this, "Please enter Username!.");
+                GuiUtil.showWarningMessageDialog(this, "Please enter Username!");
                 return;
             }
 
+            // Disable controls and show progress
+            forgotPasswordLabel.setEnabled(false);
 
-            UserDTO user = CommonApiUtil.fetchUserByUsername(username);
+            SwingWorker<Boolean, Void> worker = new SwingWorker<>() {
+                private String errorMessage;
 
-            if (user == null) {
-                GuiUtil.showWarningMessageDialog(this, "This user did not exist!");
-                return;
-            }
+                @Override
+                protected Boolean doInBackground() {
+                    try {
+                        UserDTO user = CommonApiUtil.fetchUserByUsername(username);
 
-            String userEmail = user.getEmail();
+                        if (user == null) {
+                            errorMessage = "This user does not exist!";
+                            return false;
+                        }
 
-            // Generate a temporary password
-            String tempPassword = generateTemporaryPassword();
+                        String userEmail = user.getEmail();
 
-            // Update the user's password in the database
-            if (updatePasswordInDatabase(user.getId(), tempPassword)) {
-                // Send email with the temporary password
-                SendEmailUtil.sendEmail(userEmail, tempPassword);
-                GuiUtil.showInfoMessageDialog(this, "An email with instruction have been sending to you.");
-            } else {
-                GuiUtil.showErrorMessageDialog(this, "An error has occurred!");
-            }
+                        // Generate a temporary password
+                        String tempPassword = generateTemporaryPassword();
 
+                        // Update the user's password in the database
+                        if (!updatePasswordInDatabase(user.getId(), tempPassword)) {
+                            errorMessage = "Failed to update password!";
+                            return false;
+                        }
+
+                        // Send email with the temporary password
+                        SendEmailUtil.sendEmail(userEmail, tempPassword);
+                        return true;
+                    } catch (Exception e) {
+                        log.error("Error in password reset", e);
+                        errorMessage = "An error occurred: " + e.getMessage();
+                        return false;
+                    }
+                }
+
+                @Override
+                protected void done() {
+                    forgotPasswordLabel.setEnabled(true);
+
+                    try {
+                        boolean success = get();
+                        if (success) {
+                            GuiUtil.showInfoMessageDialog(LoginPage.this,
+                                    "A temporary password has been sent to your email address.");
+                        } else {
+                            GuiUtil.showErrorMessageDialog(LoginPage.this, errorMessage);
+                        }
+                    } catch (Exception e) {
+                        log.error("Error completing password reset", e);
+                        GuiUtil.showErrorMessageDialog(LoginPage.this,
+                                "An unexpected error occurred. Please try again later.");
+                    }
+                }
+            };
+
+            worker.execute();
         }
-
     }
 
     // Method to generate a temporary password
@@ -580,55 +618,104 @@ public class LoginPage extends JFrame {
             return;
         }
 
-        try {
-            String url = "http://localhost:8081/api/auth/login";
-            HttpPost httpPost = new HttpPost(url);
-
-            // Create JSON for body
-            String jsonBody = "{\"username\":\"" + username + "\",\"password\":\"" + password + "\"}";
-            StringEntity entity = new StringEntity(jsonBody);
-            httpPost.setEntity(entity);
-            httpPost.setHeader("Content-type", "application/json");
-
-            CloseableHttpClient httpClient = HttpClientProvider.getHttpClient();
-            CloseableHttpResponse response = httpClient.execute(httpPost);
-
-            int statusCode = response.getStatusLine().getStatusCode();
-
-            if (statusCode == 200) {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
-                String responseBody = reader.readLine();
-
-                String token = responseBody.split("\"token\":\"")[1].split("\"")[0];
-
-                UserDTO user = JwtTokenUtil.extractUserFromToken(token);
+        // Disable login controls to prevent multiple attempts
+        loginButton.setEnabled(false);
+        passwordField.setEnabled(false);
+        usernameField.setEnabled(false);
 
 
-                log.info("username '{}', with token '{}'", user.getUsername(), token);
+        SwingWorker<LoginResult, Void> worker = new SwingWorker<>() {
+            @Override
+            protected LoginResult doInBackground() {
+                try {
+                    String url = "http://localhost:8081/api/auth/login";
+                    HttpPost httpPost = new HttpPost(url);
 
+                    // Create JSON for body
+                    String jsonBody = "{\"username\":\"" + username + "\",\"password\":\"" + password + "\"}";
+                    StringEntity entity = new StringEntity(jsonBody);
+                    httpPost.setEntity(entity);
+                    httpPost.setHeader("Content-type", "application/json");
 
-                // Store token in UserSessionManager
-                UserSessionManager.getInstance().initializeSession(user, token);
-                // Save token for auto-login on next start
-                TokenStorage.saveToken(token, user);
+                    CloseableHttpClient httpClient = HttpClientProvider.getHttpClient();
+                    CloseableHttpResponse response = httpClient.execute(httpPost);
 
+                    int statusCode = response.getStatusLine().getStatusCode();
 
-                GuiUtil.showSuccessMessageDialog(this, "Login successfully!");
-                dispose();
+                    if (statusCode == 200) {
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+                        String responseBody = reader.readLine();
 
-                HomePage homePage = new HomePage();
-                UIManager.put("TitlePane.iconSize", new Dimension(24, 24));
-                homePage.setIconImage(GuiUtil.createImageIcon(AppConstant.MUSE_MOE_LOGO_PATH, 512, 512).getImage());
-                homePage.setVisible(true);
+                        String token = responseBody.split("\"token\":\"")[1].split("\"")[0];
+                        UserDTO user = JwtTokenUtil.extractUserFromToken(token);
 
-            } else if (statusCode == 401 || statusCode == 404) {
-                GuiUtil.showErrorMessageDialog(this, "Username or Password incorrect!");
-            } else {
-                GuiUtil.showErrorMessageDialog(this, "Error connecting to server!");
+                        return new LoginResult(true, user, token, null);
+                    } else if (statusCode == 401 || statusCode == 404) {
+                        return new LoginResult(false, null, null, "Username or Password incorrect!");
+                    } else {
+                        return new LoginResult(false, null, null, "Error connecting to server!");
+                    }
+                } catch (Exception e) {
+                    log.error("Authentication error", e);
+                    return new LoginResult(false, null, null, "Error: " + e.getMessage());
+                }
             }
-        } catch (Exception e) {
-            GuiUtil.showErrorMessageDialog(this, "Error: " + e.getMessage());
-        }
+
+            @Override
+            protected void done() {
+                try {
+                    // Re-enable login controls
+                    loginButton.setEnabled(true);
+                    passwordField.setEnabled(true);
+                    usernameField.setEnabled(true);
+
+                    LoginResult result = get();
+
+                    if (result.success) {
+                        UserDTO user = result.user;
+                        String token = result.token;
+
+                        log.info("username '{}', with token '{}'", user.getUsername(), token);
+
+                        // Store token in UserSessionManager
+                        UserSessionManager.getInstance().initializeSession(user, token);
+                        // Save token for auto-login on next start
+                        TokenStorage.saveToken(token, user);
+
+                        GuiUtil.showSuccessMessageDialog(LoginPage.this, "Login successful!");
+                        dispose();
+
+                        // Create the HomePage
+                        SwingUtilities.invokeLater(() -> {
+                            HomePage homePage = new HomePage();
+                            UIManager.put("TitlePane.iconSize", new Dimension(24, 24));
+                            homePage.setIconImage(GuiUtil.createImageIcon(AppConstant.MUSE_MOE_LOGO_PATH, 512, 512).getImage());
+                            homePage.setVisible(true);
+                        });
+                    } else {
+                        GuiUtil.showErrorMessageDialog(LoginPage.this, result.errorMessage);
+                    }
+                } catch (Exception e) {
+                    log.error("Error processing login result", e);
+                    GuiUtil.showErrorMessageDialog(LoginPage.this, "Unexpected error: " + e.getMessage());
+                }
+            }
+        };
+
+        worker.execute();
     }
 
+    private static class LoginResult {
+        final boolean success;
+        final UserDTO user;
+        final String token;
+        final String errorMessage;
+
+        LoginResult(boolean success, UserDTO user, String token, String errorMessage) {
+            this.success = success;
+            this.user = user;
+            this.token = token;
+            this.errorMessage = errorMessage;
+        }
+    }
 }

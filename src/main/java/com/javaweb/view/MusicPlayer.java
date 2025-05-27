@@ -154,11 +154,11 @@ public class MusicPlayer extends PlaybackListener {
         resetPlaybackPosition();
         stopSong();
 
-//        try {
-//            Thread.sleep(50);
-//        } catch (InterruptedException e) {
-//            Thread.currentThread().interrupt();
-//        }
+        try {
+            Thread.sleep(50);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
 
         if (adManager.shouldShowAd(getCurrentUser())) {
             adManager.storeLastSong(song);

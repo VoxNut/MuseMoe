@@ -1335,7 +1335,7 @@ public class GuiUtil {
         dialog.setContentPane(contentPanel);
 
         // Style the dialog
-        styleDialog(dialog, backgroundColor, textColor);
+        styleTitleBar(dialog, backgroundColor, textColor);
 
         // Size and position
         dialog.pack();
@@ -1808,7 +1808,7 @@ public class GuiUtil {
         mainPanel.setBorder(BorderFactory.createEmptyBorder(25, 25, 20, 25));
 
         // Style the dialog frame
-        styleDialog(dialog, backgroundColor, textColor);
+        styleTitleBar(dialog, backgroundColor, textColor);
 
         // Create icon
         Icon icon = createCustomDialogIcon(JOptionPane.QUESTION_MESSAGE, 48, accentColor, backgroundColor);
@@ -2590,8 +2590,7 @@ public class GuiUtil {
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 15, 20));
 
         // Style the dialog frame
-        styleDialog(dialog, backgroundColor, textColor);
-        GuiUtil.styleTitleBar(dialog, GuiUtil.darkenColor(backgroundColor, 0.1), ThemeManager.getInstance().getTextColor());
+        styleTitleBar(dialog, backgroundColor, textColor);
 
 
         // Create icon for visual indicator
@@ -2698,7 +2697,7 @@ public class GuiUtil {
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         // Style the dialog frame
-        styleDialog(dialog, backgroundColor, textColor);
+        styleTitleBar(dialog, backgroundColor, textColor);
 
         // Create message label
         JLabel messageLabel = new JLabel(message);
@@ -2896,6 +2895,10 @@ public class GuiUtil {
     }
 
     public static void addSongContextMenu(Component component, SongDTO song) {
+        if (!NetworkChecker.isNetworkAvailable()) {
+            GuiUtil.showToast(component, "No internet connection!");
+            return;
+        }
         JPopupMenu contextMenu = createPopupMenu(ThemeManager.getInstance().getBackgroundColor(), ThemeManager.getInstance().getTextColor());
         MusicPlayerFacade playerFacade = App.getBean(MusicPlayerFacade.class);
         JMenuItem viewDetailsItem = createMenuItem("View Details");
@@ -3088,7 +3091,7 @@ public class GuiUtil {
         mainPanel.setBackground(bgColor);
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        styleDialog(dialog, bgColor, textColor);
+        styleTitleBar(dialog, bgColor, textColor);
 
         JLabel messageLabel = new JLabel("<html><div style='text-align: center;'>" + message + "</div></html>");
         messageLabel.setFont(FontUtil.getSpotifyFont(Font.PLAIN, 14));
@@ -3255,58 +3258,52 @@ public class GuiUtil {
         }
     }
 
-    public static void styleDialog(JDialog dialog, Color backgroundColor, Color textColor) {
-        dialog.getRootPane().putClientProperty("TitlePane.font", FontUtil.getSpotifyFont(Font.BOLD, 16));
-        dialog.getRootPane().putClientProperty("JRootPane.titleBarBackground", backgroundColor);
-        dialog.getRootPane().putClientProperty("JRootPane.titleBarForeground", textColor);
-        dialog.getRootPane().putClientProperty("JRootPane.titleBarInactiveBackground", backgroundColor);
-        dialog.getRootPane().putClientProperty("JRootPane.titleBarInactiveForeground", textColor);
+    public static void styleTitleBar(Window window, Color backgroundColor, Color textColor, int fontSize, Float darkBackgroundFactor) {
+        // Get the root pane from either JFrame or JDialog
+        JRootPane rootPane = null;
+        if (window instanceof JFrame) {
+            rootPane = ((JFrame) window).getRootPane();
+        } else if (window instanceof JDialog) {
+            rootPane = ((JDialog) window).getRootPane();
+        } else {
+            return; // Unsupported window type
+        }
 
-        dialog.getRootPane().setBorder(BorderFactory.createEmptyBorder());
+        // Calculate title bar background (optionally darker)
+        Color titleBarBackground = backgroundColor;
+        if (darkBackgroundFactor != null) {
+            titleBarBackground = darkenColor(backgroundColor, darkBackgroundFactor);
+        }
 
-        // Apply the changes
-        SwingUtilities.updateComponentTreeUI(dialog);
+        // Set common properties
+        rootPane.putClientProperty("TitlePane.font", FontUtil.getSpotifyFont(Font.BOLD, fontSize));
+        rootPane.putClientProperty("JRootPane.titleBarBackground", titleBarBackground);
+        rootPane.putClientProperty("JRootPane.titleBarForeground", textColor);
+        rootPane.putClientProperty("JRootPane.titleBarInactiveBackground", titleBarBackground);
+        rootPane.putClientProperty("JRootPane.titleBarInactiveForeground", darkenColor(textColor, 0.2f));
+
+        // Apply changes
+        Container contentPane = window instanceof JFrame ?
+                ((JFrame) window).getContentPane() :
+                ((JDialog) window).getContentPane();
+        SwingUtilities.updateComponentTreeUI(contentPane);
     }
 
-    public static void styleTitleBar(JDialog dialog, Color backgroundColor, Color textColor, int fontSize) {
-        Color titleBarBackground = darkenColor(backgroundColor, 0.1f);
-
-        dialog.getRootPane().putClientProperty("TitlePane.font", FontUtil.getSpotifyFont(Font.BOLD, fontSize));
-
-        dialog.getRootPane().putClientProperty("JRootPane.titleBarBackground", titleBarBackground);
-        dialog.getRootPane().putClientProperty("JRootPane.titleBarForeground", textColor);
-
-        dialog.getRootPane().putClientProperty("JRootPane.titleBarInactiveBackground", titleBarBackground);
-        dialog.getRootPane().putClientProperty("JRootPane.titleBarInactiveForeground", darkenColor(textColor, 0.2f));
-
-        SwingUtilities.updateComponentTreeUI(dialog.getContentPane());
-    }
-
-    public static void styleTitleBar(JDialog dialog, Color backgroundColor, Color textColor) {
-        styleTitleBar(dialog, backgroundColor, textColor, 16);
-    }
-
+    // Simplified overloads
     public static void styleTitleBar(JFrame frame, Color backgroundColor, Color textColor, int fontSize) {
-        // Create a slightly darker background for the title bar
-        Color titleBarBackground = darkenColor(backgroundColor, 0.1f);
-
-        // Set title bar font
-        frame.getRootPane().putClientProperty("TitlePane.font", FontUtil.getSpotifyFont(Font.BOLD, fontSize));
-
-        // Set title bar colors
-        frame.getRootPane().putClientProperty("JRootPane.titleBarBackground", titleBarBackground);
-        frame.getRootPane().putClientProperty("JRootPane.titleBarForeground", textColor);
-
-        // Set inactive state colors
-        frame.getRootPane().putClientProperty("JRootPane.titleBarInactiveBackground", titleBarBackground);
-        frame.getRootPane().putClientProperty("JRootPane.titleBarInactiveForeground", darkenColor(textColor, 0.2f));
-
-        // Apply the changes to the frame
-        SwingUtilities.updateComponentTreeUI(frame.getContentPane());
+        styleTitleBar(frame, backgroundColor, textColor, fontSize, 0.1f);
     }
 
     public static void styleTitleBar(JFrame frame, Color backgroundColor, Color textColor) {
-        styleTitleBar(frame, backgroundColor, textColor, 18);
+        styleTitleBar(frame, backgroundColor, textColor, 18, 0.1f);
+    }
+
+    public static void styleTitleBar(JDialog dialog, Color backgroundColor, Color textColor, int fontSize) {
+        styleTitleBar(dialog, backgroundColor, textColor, fontSize, null);
+    }
+
+    public static void styleTitleBar(JDialog dialog, Color backgroundColor, Color textColor) {
+        styleTitleBar(dialog, backgroundColor, textColor, 18, null);
     }
 
     public static void setGradientBackground(JToolBar toolBar, Color centerColor, Color outerColor,
@@ -3366,7 +3363,7 @@ public class GuiUtil {
         mainPanel.setBackground(bgColor);
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         // Add title bar styling
-        styleDialog(dialog, bgColor, textColor);
+        styleTitleBar(dialog, bgColor, textColor);
 
         // Create message label with proper styling
         JLabel messageLabel = new JLabel("<html><div style='text-align: center;'>" + message + "</div></html>");

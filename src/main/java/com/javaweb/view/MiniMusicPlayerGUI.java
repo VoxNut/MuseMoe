@@ -202,7 +202,7 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (NetworkChecker.isNetworkAvailable()) {
-                    if (SwingUtilities.isLeftMouseButton(e)) {
+                    if (SwingUtilities.isLeftMouseButton(e) && playerFacade.getCurrentSong() != null && !playerFacade.getCurrentSong().getIsLocalFile()) {
                         HomePage homePage = GuiUtil.findHomePageInstance(MiniMusicPlayerGUI.this);
                         homePage.navigateToSongDetailsView(playerFacade.getCurrentSong());
                     }
@@ -211,7 +211,9 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
                 }
             }
         });
-        GuiUtil.addSongContextMenu(songImageLabel, playerFacade.getCurrentSong());
+        if (playerFacade.getCurrentSong() != null && !playerFacade.getCurrentSong().getIsLocalFile()) {
+            GuiUtil.addSongContextMenu(songImageLabel, playerFacade.getCurrentSong());
+        }
 
 
         //Add the imagePanel

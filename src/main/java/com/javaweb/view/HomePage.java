@@ -120,6 +120,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
         currentUser = UserSessionManager.getInstance().getCurrentUser();
 
+        MiniMusicPlayerGUI.getInstance();
 
         initializeFrame();
 

@@ -40,6 +40,7 @@ public class WebSecurityConfig {
                                 .requestMatchers("/api/user/register", "/api/auth/login").permitAll()
                                 .requestMatchers("/api/user/email").permitAll()
                                 .requestMatchers("/api/user/username/{username}/user_dto").permitAll()
+                                .requestMatchers("/api/user/reset_password").permitAll()
 //                        .requestMatchers("/api/user/**").permitAll()
 //                        .requestMatchers("/api/playlists/**").permitAll()
 //                        .requestMatchers("/api/tags/**").permitAll()

@@ -544,7 +544,7 @@ public class AlbumViewPanel extends JPanel implements ThemeChangeListener, Playe
                             <b> Updated at: </b> %s
                         </html>
                         """
-                , playlist.getCreatedDate(), playlist.getUpdateDate()));
+                , DateUtil.formatDate(playlist.getCreatedDate()), DateUtil.formatDate(playlist.getUpdateDate())));
 
         // Update tracks table
         updateTracklistTable();

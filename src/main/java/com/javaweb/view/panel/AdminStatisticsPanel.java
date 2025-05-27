@@ -24,7 +24,6 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.io.File;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
 import java.util.function.Consumer;
@@ -1231,12 +1230,9 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
                     String fromDateText = fromDateTextField.getText().trim();
                     String toDateText = toDateTextField.getText().trim();
 
-                    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-                    dateFormat.setLenient(false);
-
                     if (!fromDateText.isEmpty()) {
                         try {
-                            fromDate = dateFormat.parse(fromDateText);
+                            fromDate = DateUtil.parseDate(fromDateText);
                         } catch (Exception e) {
                             log.error("Invalid from date format: {}", fromDateText, e);
                             SwingUtilities.invokeLater(() -> GuiUtil.showToast(AdminStatisticsPanel.this,
@@ -1246,7 +1242,7 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
 
                     if (!toDateText.isEmpty()) {
                         try {
-                            toDate = dateFormat.parse(toDateText);
+                            toDate = DateUtil.parseDate(toDateText);
                             Calendar c = Calendar.getInstance();
                             c.setTime(toDate);
                             c.add(Calendar.DATE, 1);
@@ -1275,14 +1271,13 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
                     usersTableModel.setRowCount(0);
 
                     if (users != null) {
-                        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 
                         // Add data to table
                         for (UserDTO user : users) {
                             String createdAt = user.getCreatedDate() != null ?
-                                    dateFormat.format(user.getCreatedDate()) : "";
+                                    DateUtil.formatDate(user.getCreatedDate()) : "";
                             String lastLogin = user.getLastLoginAt() != null ?
-                                    dateFormat.format(user.getLastLoginAt()) : "";
+                                    DateUtil.formatDate(user.getLastLoginAt()) : "";
 
                             usersTableModel.addRow(new Object[]{
                                     user.getId(),
@@ -1335,12 +1330,11 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
                     // Clear existing data
                     recentUserModel.setRowCount(0);
 
-                    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
                     // Add recent users
                     if (recentUsers != null) {
                         for (UserDTO user : recentUsers) {
                             String createdAt = user.getCreatedDate() != null ?
-                                    dateFormat.format(user.getCreatedDate()) : "";
+                                    DateUtil.formatDate(user.getCreatedDate()) : "";
 
                             recentUserModel.addRow(new Object[]{
                                     user.getId(),
@@ -1380,14 +1374,13 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
                     playlistsTableModel.setRowCount(0);
 
                     if (playlists != null) {
-                        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 
                         // Add data to table
                         for (PlaylistDTO playlist : playlists) {
                             String createdAt = playlist.getCreatedDate() != null ?
-                                    dateFormat.format(playlist.getCreatedDate()) : "";
+                                    DateUtil.formatDate(playlist.getCreatedDate()) : "";
                             String updatedAt = playlist.getUpdateDate() != null ?
-                                    dateFormat.format(playlist.getUpdateDate()) : "";
+                                    DateUtil.formatDate(playlist.getUpdateDate()) : "";
 
                             playlistsTableModel.addRow(new Object[]{
                                     playlist.getId(),
@@ -1592,14 +1585,12 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
             Map<String, Integer> registrationsByMonth = new LinkedHashMap<>();
 
             if (allUsers != null && !allUsers.isEmpty()) {
-                // SimpleDateFormat with explicit English locale
-                SimpleDateFormat monthFormat = new SimpleDateFormat("MMM yyyy", Locale.ENGLISH);
 
                 // Group users by month of registration
                 Map<String, List<UserDTO>> usersByMonth = allUsers.stream()
                         .filter(user -> user.getCreatedDate() != null)
                         .collect(Collectors.groupingBy(
-                                user -> monthFormat.format(user.getCreatedDate()),
+                                user -> DateUtil.formatDate(user.getCreatedDate(), "MMM yyyy", Locale.ENGLISH),
                                 LinkedHashMap::new,
                                 Collectors.toList()
                         ));
@@ -1608,8 +1599,8 @@ public class AdminStatisticsPanel extends JPanel implements ThemeChangeListener 
                 Collections.sort(sortedMonths, (m1, m2) -> {
                     try {
                         // Use the same English locale here
-                        Date date1 = new SimpleDateFormat("MMM yyyy", Locale.ENGLISH).parse(m1);
-                        Date date2 = new SimpleDateFormat("MMM yyyy", Locale.ENGLISH).parse(m2);
+                        Date date1 = DateUtil.parseDate(m1, "MMM yyyy", Locale.ENGLISH);
+                        Date date2 = DateUtil.parseDate(m2, "MMM yyyy", Locale.ENGLISH);
                         return date1.compareTo(date2);
                     } catch (Exception e) {
                         return 0;

@@ -1930,8 +1930,8 @@ public class GuiUtil {
         CategoryPlot plot = chart.getCategoryPlot();
         plot.setOutlineVisible(false);
         plot.setBackgroundPaint(null);
-        plot.setRangeGridlinePaint(textColor);
         plot.setDomainGridlinesVisible(true);
+        plot.setRangeGridlinePaint(textColor);
         plot.setDomainGridlinePaint(textColor);
 
         // Customize the domain axis (x-axis)

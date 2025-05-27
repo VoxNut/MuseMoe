@@ -45,7 +45,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
 
     private static final Dimension FRAME_SIZE = new Dimension(1024, 768);
 
-    private final MusicPlayerFacade playerFacade;
+    private MusicPlayerFacade playerFacade;
 
     private JLabel timerLabel;
     private JLabel statusLabel;
@@ -747,7 +747,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                     if (success) {
                         GuiUtil.showSuccessMessageDialog(this, "Congratulations! You are now an Artist.\nPlease restart the application to apply changes.");
                         // Reload the UI
-                        SwingUtilities.invokeLater(this::dispose);
                         SwingUtilities.invokeLater(() -> {
                             logout();
                         });
@@ -1582,6 +1581,7 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
     private JLabel createUserProfileAvatar() {
         JMenuItem profileItem = GuiUtil.createMenuItem("Account");
         JMenuItem logoutItem = GuiUtil.createMenuItem("Log out");
+        JMenuItem defaultColorScheme = GuiUtil.createMenuItem("Default theme");
 
         logoutItem.addActionListener(e -> logout());
         profileItem.addActionListener(e -> {
@@ -1592,12 +1592,32 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             }
         });
 
+        defaultColorScheme.addActionListener(e -> {
+            int opt = GuiUtil.showConfirmMessageDialog(this, "Are you sure you want to change to default color scheme?", "Confirm");
+            if (opt == JOptionPane.YES_OPTION) {
+                if (ThemeManager.getInstance().getBackgroundColor().equals(AppConstant.BACKGROUND_COLOR)
+                        && ThemeManager.getInstance().getTextColor().equals(AppConstant.TEXT_COLOR)
+                        && ThemeManager.getInstance().getAccentColor().equals(AppConstant.TEXT_FIELD_SIZE)) {
+                    GuiUtil.showInfoMessageDialog(this, "Already using default color scheme");
+
+                } else {
+                    ThemeManager.getInstance().setThemeColors(
+                            AppConstant.BACKGROUND_COLOR,
+                            AppConstant.TEXT_COLOR,
+                            AppConstant.TEXTFIELD_BACKGROUND_COLOR
+                    );
+                    GuiUtil.showSuccessMessageDialog(this, "Color scheme changed to default");
+                }
+            }
+        });
+
         avatarLabel = GuiUtil.createInteractiveUserAvatar(
                 currentUser,
                 40,
                 ThemeManager.getInstance().getBackgroundColor(),
                 ThemeManager.getInstance().getTextColor(),
                 profileItem,
+                defaultColorScheme,
                 logoutItem
         );
 
@@ -1612,7 +1632,6 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         if (option == JOptionPane.YES_OPTION) {
             TokenStorage.clearToken();
 
-            this.dispose();
             SwingUtilities.invokeLater(() -> {
                 LoginPage loginPage = new LoginPage();
                 UIManager.put("TitlePane.iconSize", new Dimension(24, 24));
@@ -1622,10 +1641,11 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
             });
 
             if (MiniMusicPlayerGUI.getInstance() != null) {
-                playerFacade.pauseSong();
+                playerFacade.stopSong();
                 MiniMusicPlayerGUI.getInstance().setVisible(false);
             }
             ThemeManager.getInstance().setThemeColors(AppConstant.BACKGROUND_COLOR, AppConstant.TEXT_COLOR, AppConstant.TEXTFIELD_BACKGROUND_COLOR);
+            this.dispose();
         }
     }
 
@@ -1768,6 +1788,11 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
                         } else {
                             GuiUtil.showToast(this, "No internet connection available");
                         }
+                        return true;
+                    }
+
+                    case KeyEvent.VK_BACK_QUOTE -> {
+                        logout();
                         return true;
                     }
 
@@ -1946,6 +1971,8 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         navigationManager.removeNavigationListener(this);
         ThemeManager.getInstance().removeThemeChangeListener(this);
         playerFacade.unsubscribeFromPlayerEvents(this);
+        MiniMusicPlayerGUI.clearInstance();
+        playerFacade = null;
         super.dispose();
     }
 

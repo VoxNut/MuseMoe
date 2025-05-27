@@ -20,9 +20,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.nio.file.Files;
-import java.text.SimpleDateFormat;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 @Slf4j
@@ -240,8 +238,7 @@ public class AccountSettingsPanel extends JPanel implements ThemeChangeListener 
         JLabel joinDateLabel = GuiUtil.createLabel("Joined:", Font.BOLD, 15);
         String joinDate = "N/A";
         if (currentUser.getCreatedDate() != null) {
-            SimpleDateFormat dateFormat = new SimpleDateFormat("MMMM d, yyyy", Locale.US);
-            joinDate = dateFormat.format(currentUser.getCreatedDate());
+            joinDate = DateUtil.formatDate(currentUser.getCreatedDate(), "MMMM d, yyyy");
         }
         JLabel joinDateValue = GuiUtil.createLabel(joinDate, Font.PLAIN, 15);
         userDetailsPanel.add(joinDateLabel);

@@ -880,22 +880,21 @@ public class ArtistUploadPanel extends JPanel implements ThemeChangeListener {
             @Override
             protected Boolean doInBackground() {
                 try {
-                    publish(10);
+                    publish(5);
 
                     Long albumId;
 
                     if (selectedAlbum == null) {
-                        // Prepare album data
+                        publish(10);
+
                         AlbumRequestDTO album = new AlbumRequestDTO();
                         album.setTitle(albumTitleField.getText().trim());
                         album.setReleaseYear(Integer.parseInt(albumYearField.getText().trim()));
 
-                        // Use the first artist as primary artist for the album
                         Long primaryArtistId = selectedArtistsModel.getElementAt(0).getId();
                         album.setArtistId(primaryArtistId);
 
-                        // Upload album cover
-                        publish(20);
+                        publish(15);
                         String coverFileName = album.getTitle() + ".jpg";
                         MockMultipartFile coverFile = new MockMultipartFile(
                                 coverFileName,
@@ -905,36 +904,33 @@ public class ArtistUploadPanel extends JPanel implements ThemeChangeListener {
                         );
                         album.setAlbumCover(coverFile);
 
-                        // Create album in database
-                        publish(30);
+                        publish(20);
                         AlbumDTO createdAlbum = CommonApiUtil.createAlbum(album);
                         if (createdAlbum == null || createdAlbum.getId() == null) {
                             return false;
                         }
 
                         albumId = createdAlbum.getId();
+                        publish(30);
                     } else {
-                        albumId = selectedAlbum == null ? null : selectedAlbum.getId();
+                        albumId = selectedAlbum.getId();
+                        publish(30);
                     }
 
-
-                    // Prepare artist IDs for songs
                     List<Long> artistIds = new ArrayList<>();
                     for (int i = 0; i < selectedArtistsModel.getSize(); i++) {
                         artistIds.add(selectedArtistsModel.getElementAt(i).getId());
                     }
 
-                    // Upload songs
                     SongRequestDTO songRequest = new SongRequestDTO();
-
                     List<MultipartFile> songFiles = new ArrayList<>();
                     int total = songsListModel.getSize();
 
                     for (int i = 0; i < total; i++) {
+                        int preparationProgress = 30 + (i * 30 / total);
+                        publish(preparationProgress);
+
                         File songFile = songsListModel.getElementAt(i);
-                        // Upload song file
-                        int progress = 30 + (i * 60 / total);
-                        publish(progress);
 
                         String songFileName = songFile.getName();
                         MockMultipartFile multipartFile = new MockMultipartFile(
@@ -944,16 +940,38 @@ public class ArtistUploadPanel extends JPanel implements ThemeChangeListener {
                                 Files.readAllBytes(songFile.toPath())
                         );
 
-                        // Add to list
                         songFiles.add(multipartFile);
+
+                        try {
+                            Thread.sleep(50);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
                     }
 
                     songRequest.setAlbumId(albumId);
                     songRequest.setArtistIds(artistIds);
                     songRequest.setMp3Files(songFiles);
-                    // Save songs
-                    publish(90);
+
+                    publish(65);
+
+                    Thread progressUpdater = new Thread(() -> {
+                        try {
+                            for (int progress = 65; progress < 95; progress += 3) {
+                                Thread.sleep(1500);
+                                publish(progress);
+                            }
+                        } catch (InterruptedException e) {
+                        }
+                    });
+
+                    progressUpdater.start();
+
                     boolean success = CommonApiUtil.createSongsForAlbum(songRequest);
+
+                    progressUpdater.interrupt();
+
+                    // Final progress
                     publish(100);
 
                     return success;

@@ -158,6 +158,10 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         return instance;
     }
 
+    public static synchronized void clearInstance() {
+        instance = null;
+    }
+
 
     private JPanel addGuiComponents() {
 
@@ -190,6 +194,21 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
         songImageLabel.setIcon(GuiUtil.createImageIcon(AppConstant.DEFAULT_COVER_PATH, 300, 300));
         songImageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         songImageLabel.setBounds(50, 25, 300, 300);
+        songImageLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        songImageLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (NetworkChecker.isNetworkAvailable()) {
+                    if (SwingUtilities.isLeftMouseButton(e)) {
+                        HomePage homePage = GuiUtil.findHomePageInstance(MiniMusicPlayerGUI.this);
+                        homePage.navigateToSongDetailsView(playerFacade.getCurrentSong());
+                    }
+                } else {
+                    GuiUtil.showNetworkErrorDialog(MiniMusicPlayerGUI.this, "Internet connection is unavailable!");
+                }
+            }
+        });
+        GuiUtil.addSongContextMenu(songImageLabel, playerFacade.getCurrentSong());
 
 
         //Add the imagePanel
@@ -851,8 +870,8 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
 
                     if (playlist != null) {
 
-                        playlistNameLabel.setText(StringUtils.getTruncatedText(playlist.getName()));
-
+                        playlistNameLabel.setText(StringUtils.getTruncatedText(playlist.getName(), 25));
+                        GuiUtil.setSmartTooltip(playlistNameLabel, playlist.getName());
                         hidePlaylistNameLabel(false);
                         toggleShuffleButton(true);
 

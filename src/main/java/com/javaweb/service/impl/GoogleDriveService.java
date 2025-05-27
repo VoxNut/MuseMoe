@@ -16,6 +16,7 @@ import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
 import com.javaweb.constant.AppConstant;
+import com.javaweb.utils.DateUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.utils.IOUtils;
@@ -26,7 +27,6 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.security.GeneralSecurityException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -452,7 +452,7 @@ public class GoogleDriveService {
 
 
     private String generateUniqueFilename(String originalFilename) {
-        String timestamp = new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date());
+        String timestamp = DateUtil.formatDate(new Date(), "yyyyMMdd-HHmmss");
         String extension = "";
 
         if (originalFilename != null && originalFilename.contains(".")) {
@@ -600,7 +600,7 @@ public class GoogleDriveService {
         }
 
         // Generate a unique filename for the album cover
-        String timestamp = new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date());
+        String timestamp = DateUtil.formatDate(new Date(), "yyyyMMdd-HHmmss");
         String sanitizedAlbumName = albumName.replaceAll("[^a-zA-Z0-9\\s-]", "_").trim();
         String fileName = sanitizedAlbumName + "-cover-" + timestamp + ".jpg";
 

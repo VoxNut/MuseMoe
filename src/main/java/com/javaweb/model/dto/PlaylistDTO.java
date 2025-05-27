@@ -52,6 +52,11 @@ public class PlaylistDTO extends AbstractDTO {
     }
 
 
+    public boolean contains(SongDTO song) {
+        return songs.contains(song);
+    }
+
+
     public int getIndexFromSong(SongDTO song) {
         if (song.getPosition() != null) {
             for (int i = 0; i < songs.size(); i++) {

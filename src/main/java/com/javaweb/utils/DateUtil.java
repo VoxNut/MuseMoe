@@ -11,13 +11,23 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
 
 public class DateUtil {
 
-    public static String formatDate(Date date) {
-        SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss dd-MM-yyyy");
+    public static String formatDate(Date date, String pattern, Locale locale) {
+        SimpleDateFormat formatter = new SimpleDateFormat(pattern, locale);
         return formatter.format(date);
     }
+
+    public static String formatDate(Date date) {
+        return formatDate(date, "yyyy-MM-dd HH:mm", Locale.ENGLISH);
+    }
+
+    public static String formatDate(Date date, String pattern) {
+        return formatDate(date, pattern, Locale.ENGLISH);
+    }
+
 
     public static Date toDate(LocalDateTime localDateTime) {
         if (localDateTime == null) return null;
@@ -101,16 +111,21 @@ public class DateUtil {
         return calendar.getTime();
     }
 
-    public static Date parseDate(String dateString) {
+    public static Date parseDate(String dateString, String pattern, Locale locale) {
         try {
             if (dateString == null || dateString.isEmpty()) {
                 return null;
             }
-            SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy");
+            SimpleDateFormat inputFormat = new SimpleDateFormat(pattern, locale);
+            inputFormat.setLenient(false);
             return inputFormat.parse(dateString);
         } catch (Exception e) {
             return null;
         }
+    }
+
+    public static Date parseDate(String dateString) {
+        return parseDate(dateString, "yyyy-MM-dd", Locale.ENGLISH);
     }
 
 

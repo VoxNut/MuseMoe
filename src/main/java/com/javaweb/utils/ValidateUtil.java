@@ -41,25 +41,25 @@ public class ValidateUtil {
             return false;
         }
 
-        // Check password length (e.g., at least 8 characters)
+//        // Check password length (e.g., at least 8 characters)
 //        if (password.length() < 8) {
 //            return false;
 //        }
 
-        // Check for at least one uppercase letter
+//         Check for at least one uppercase letter
 //        if (!password.matches(".*[A-Z].*")) {
 //            return false;
 //        }
-
-        // Check for at least one lowercase letter
+//
+////         Check for at least one lowercase letter
 //        if (!password.matches(".*[a-z].*")) {
 //            return false;
 //        }
-
-        // Check for at least one digit
-        if (!password.matches(".*[0-9].*")) {
-            return false;
-        }
+//
+//        // Check for at least one digit
+//        if (!password.matches(".*[0-9].*")) {
+//            return false;
+//        }
 
 //        if (!password.matches(".*[!@#$%^&*().?<>~_+=-].*")) {
 //            return false;

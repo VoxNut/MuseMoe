@@ -6,11 +6,11 @@ import com.javaweb.enums.AccountStatus;
 import com.javaweb.enums.RoleType;
 import com.javaweb.model.dto.UserDTO;
 import com.javaweb.model.request.UserRequestDTO;
+import com.javaweb.utils.DateUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -192,11 +192,11 @@ class UserApiClientImpl implements UserApiClient {
         String path = "/filter";
         List<String> parts = new ArrayList<>();
         if (from != null) {
-            String fromStr = new SimpleDateFormat("yyyy-MM-dd").format(from);
+            String fromStr = DateUtil.formatDate(from, "yyyy-MM-dd");
             parts.add("from=" + urlEncoder.encode(fromStr));
         }
         if (to != null) {
-            String toStr = new SimpleDateFormat("yyyy-MM-dd").format(to);
+            String toStr = DateUtil.formatDate(to, "yyyy-MM-dd");
             parts.add("to=" + urlEncoder.encode(toStr));
         }
         if (roleType != null) {

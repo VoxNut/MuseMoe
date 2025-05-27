@@ -39,12 +39,14 @@ public class MusicPlayerFacade {
     }
 
     public void loadSongWithContext(SongDTO song, PlaylistDTO playlist, PlaylistSourceType sourceType) {
+        if (isHavingAd()) return;
         clearQueue();
         setPlaylistContext(playlist, sourceType);
         player.loadSong(song);
     }
 
     public void playQueueFrom(int position) {
+        if (isHavingAd()) return;
         if (isQueueActive && position >= 0 && position < songQueue.size()) {
             for (int i = 0; i < position; i++) {
                 songQueue.removeFirst();
@@ -105,6 +107,10 @@ public class MusicPlayerFacade {
         } catch (IOException iOE) {
             iOE.printStackTrace();
         }
+    }
+
+    public void stopSong() {
+        musicPlayer.stopSong();
     }
 
 

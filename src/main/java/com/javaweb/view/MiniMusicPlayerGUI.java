@@ -65,6 +65,8 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
     private JDialog playlistDialog;
     private JDialog songPlaylistDialog;
     private final JPanel rootPanel;
+    private CardLayout cardLayout;
+    private JPanel contentPanel;
 
     private MiniMusicPlayerGUI() {
         super("MuseMoe Miniplayer");
@@ -121,7 +123,8 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
     }
 
     public JPanel createContentPanel() {
-        JPanel contentPanel = GuiUtil.createPanel(new CardLayout());
+        cardLayout = new CardLayout();
+        contentPanel = GuiUtil.createPanel(cardLayout);
         contentPanel.setOpaque(false);
 
         JPanel messagePanel = GuiUtil.createPanel(new GridBagLayout());
@@ -826,10 +829,6 @@ public class MiniMusicPlayerGUI extends JFrame implements PlayerEventListener, T
     @Override
     public void onPlayerEvent(PlayerEvent event) {
         SwingUtilities.invokeLater(() -> {
-            Container contentPane = getContentPane();
-            JPanel rootPanel = (JPanel) contentPane.getComponent(0);
-            JPanel contentPanel = (JPanel) rootPanel.getComponent(1);
-            CardLayout cardLayout = (CardLayout) contentPanel.getLayout();
             switch (event.type()) {
                 case SONG_LOADED -> {
                     SongDTO song = (SongDTO) event.data();

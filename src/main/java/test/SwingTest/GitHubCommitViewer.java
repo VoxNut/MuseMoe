@@ -53,7 +53,7 @@ public class GitHubCommitViewer extends JFrame {
 
         try {
             // Kết nối GitHub API
-            GitHub github = new GitHubBuilder().withOAuthToken("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").build();
+            GitHub github = new GitHubBuilder().withOAuthToken(System.getenv("GITHUB_TOKEN")).build();
             GHRepository repo = github.getRepository(repoInput);
 
             // Lấy danh sách branch

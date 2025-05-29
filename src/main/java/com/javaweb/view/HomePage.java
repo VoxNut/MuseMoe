@@ -1968,6 +1968,10 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         if (globalClickListener != null) {
             Toolkit.getDefaultToolkit().removeAWTEventListener(globalClickListener);
         }
+        if (visualizerPanel != null) {
+            visualizerPanel.dispose();
+        }
+
 
         navigationManager.removeNavigationListener(this);
         ThemeManager.getInstance().removeThemeChangeListener(this);

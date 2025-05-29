@@ -3638,12 +3638,10 @@ public class GuiUtil {
     private static Color createHighContrastTextColor(Color backgroundColor) {
         float[] hsb = Color.RGBtoHSB(backgroundColor.getRed(), backgroundColor.getGreen(), backgroundColor.getBlue(), null);
 
-        // For darker backgrounds, use lighter text
         if (hsb[2] < 0.5) {
-            return new Color(245, 245, 245); // Almost white
+            return new Color(245, 245, 245);
         } else {
-            // For lighter backgrounds, use darker text
-            return new Color(25, 25, 25); // Almost black
+            return new Color(25, 25, 25);
         }
     }
 
@@ -3831,8 +3829,8 @@ public class GuiUtil {
         return list;
     }
 
-    public static boolean isValidColors(Color backgroundColor, Color textColor) {
-        return calculateContrast(backgroundColor, textColor) > 4.5;
+    public static boolean isValidColors(Color color1, Color color2) {
+        return calculateContrast(color1, color2) >= 4.5;
     }
 
 

@@ -618,11 +618,6 @@ public class LoginPage extends JFrame {
             return;
         }
 
-        // Disable login controls to prevent multiple attempts
-        loginButton.setEnabled(false);
-        passwordField.setEnabled(false);
-        usernameField.setEnabled(false);
-
 
         SwingWorker<LoginResult, Void> worker = new SwingWorker<>() {
             @Override
@@ -664,10 +659,6 @@ public class LoginPage extends JFrame {
             @Override
             protected void done() {
                 try {
-                    // Re-enable login controls
-                    loginButton.setEnabled(true);
-                    passwordField.setEnabled(true);
-                    usernameField.setEnabled(true);
 
                     LoginResult result = get();
 

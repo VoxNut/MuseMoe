@@ -376,7 +376,6 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
                     int timeInMillis = (int) (frame / playerFacade.getCurrentSong().getFrameRatePerMilliseconds());
 
                     updateSongTimeLabel(timeInMillis);
-                    updateLabelColors(percentage);
 
                     playerFacade.notifySliderDragging(frame, timeInMillis);
                 }
@@ -396,7 +395,6 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
             float progress = (float) frame / totalFrames;
 
             progressTrackBar.setProgress(progress);
-            updateLabelColors(progress);
         }
     }
 
@@ -420,17 +418,6 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
     }
 
 
-    public void updateLabelColors(float progress) {
-        int midpoint = progressTrackBar.getWidth() / 2;
-        int progressPosition = (int) (progress * progressTrackBar.getWidth());
-
-        if (progressPosition >= midpoint) {
-            progressTrackBar.setTimeTextColor(backgroundColor);
-        } else {
-            progressTrackBar.setTimeTextColor(textColor);
-        }
-    }
-
     public void updateSongTimeLabel(int currentTimeInMilli) {
         if (playerFacade.getCurrentSong() != null) {
             int minutes = (currentTimeInMilli / 1000) / 60;
@@ -441,7 +428,6 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
 
             progressTrackBar.setTimeText(formattedTime);
 
-            updateLabelColors(progressTrackBar.getProgress());
         }
     }
 
@@ -628,9 +614,7 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
         // Update component colors
         progressTrackBar.setBackground(GuiUtil.darkenColor(backgroundColor, 0.2f));
         progressTrackBar.setForeground(accentColor);
-
-        // Update label colors
-        updateLabelColors(progressTrackBar.getProgress());
+        progressTrackBar.setTimeTextColor(textColor);
 
         // Refresh the panel
         repaint();
@@ -783,7 +767,6 @@ public class MiniPlayerPanel extends JPanel implements PlayerEventListener, Them
                     int charWidth = fm.stringWidth(currentChar);
 
                     boolean isCovered = (textStartX + charWidth / 2) <= progressPosition;
-
                     g2d.setColor(isCovered ? backgroundColor : textColor);
 
                     g2d.drawString(currentChar, textStartX, y);

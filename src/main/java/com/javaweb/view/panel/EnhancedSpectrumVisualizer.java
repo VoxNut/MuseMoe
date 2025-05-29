@@ -54,18 +54,11 @@ public class EnhancedSpectrumVisualizer extends JPanel implements ThemeChangeLis
     private int historyIndex = 0;
 
 
-    /**
-     * Default constructor
-     */
     public EnhancedSpectrumVisualizer() {
         this(DEFAULT_NUM_BANDS);
     }
 
-    /**
-     * Constructor specifying number of bands
-     *
-     * @param numberOfBands Number of frequency bands to display
-     */
+
     public EnhancedSpectrumVisualizer(int numberOfBands) {
         this.numberOfBands = numberOfBands;
         this.bands = new float[numberOfBands];
@@ -102,15 +95,12 @@ public class EnhancedSpectrumVisualizer extends JPanel implements ThemeChangeLis
      */
     private void setupCavaConfig() {
         try {
-            // Ensure config directory exists
             String userHome = System.getProperty("user.home");
             Path configDir = Paths.get(userHome, ".config", "cava");
             Files.createDirectories(configDir);
 
-            // Set the config file path
             configPath = configDir.resolve("musemoe.conf").toString();
 
-            // Create the config file with appropriate settings
             String config =
                     "[general]\n" +
                             "framerate = " + DEFAULT_FRAMERATE + "\n" +
@@ -143,18 +133,16 @@ public class EnhancedSpectrumVisualizer extends JPanel implements ThemeChangeLis
      */
     public void startCava() {
         if (running) {
-            return; // Already running
+            return;
         }
 
         try {
-            // Check if CAVA is installed and accessible
             if (!isCavaAvailable()) {
                 log.error("CAVA is not installed or not in PATH. Falling back to demo mode.");
                 demoMode = true;
                 return;
             }
 
-            // Configure and start CAVA process
             ProcessBuilder pb = new ProcessBuilder(
                     "cava",
                     "-p",
@@ -164,14 +152,12 @@ public class EnhancedSpectrumVisualizer extends JPanel implements ThemeChangeLis
             cavaProcess = pb.start();
             running = true;
 
-            // Create thread to read CAVA output
             readerThread = new Thread(() -> {
                 try (BufferedReader reader = new BufferedReader(
                         new InputStreamReader(cavaProcess.getInputStream()))) {
                     String line;
                     while ((line = reader.readLine()) != null && running) {
                         String[] parts = line.trim().split(";");
-                        // Update bar values from CAVA output
                         if (parts.length > 0) {
                             synchronized (bands) {
                                 for (int i = 0; i < parts.length && i < bands.length; i++) {
@@ -179,13 +165,10 @@ public class EnhancedSpectrumVisualizer extends JPanel implements ThemeChangeLis
                                         float value = Float.parseFloat(parts[i]) / 100.0f;
                                         bands[i] = value;
 
-                                        // Add to history for smoothing
                                         barHistory[historyIndex][i] = value;
                                     } catch (NumberFormatException ignored) {
-                                        // Skip invalid values
                                     }
                                 }
-                                // Update history index
                                 historyIndex = (historyIndex + 1) % historySize;
                             }
 
@@ -259,39 +242,29 @@ public class EnhancedSpectrumVisualizer extends JPanel implements ThemeChangeLis
         float pulseDepth = 0.4f;
         float pulseAmount = 1.0f + pulseDepth * (float) Math.sin(timeSeconds * pulseRate);
 
-        // More dynamic behavior for bars
         for (int i = 0; i < numberOfBands; i++) {
-            // Create more variation in bar heights
             float baseFrequency = 0.8f + (i / (float) numberOfBands) * 1.0f;
             float baseValue = 0.35f + 0.3f * (float) Math.sin(timeSeconds * baseFrequency + i * 0.2f);
 
-            // Add slightly more randomization
             baseValue += 0.05f * (float) Math.random();
 
-            // Apply pulse effect
             float value = baseValue * pulseAmount;
 
-            // Less influence from neighbors for more independent bars
             if (i > 0) {
                 value = value * 0.9f + demoData[i - 1] * 0.1f;
             }
 
-            // Increase chance of random jumps for more dynamic visualization
-            if (Math.random() < 0.03) { // Increased from 0.01
+            if (Math.random() < 0.03) {
                 value += 0.2f * (float) Math.random();
             }
 
-            // Moderate inertia - balance between responsive and smooth
             demoData[i] = demoData[i] * 0.7f + value * 0.3f;
 
-            // Ensure values stay in valid range
             demoData[i] = Math.max(0.05f, Math.min(0.95f, demoData[i]));
         }
 
-        // Smooth the bars to prevent jarring transitions
         smoothBarValues();
 
-        // Apply demo data to the visualization bands
         System.arraycopy(demoData, 0, bands, 0, numberOfBands);
     }
 
@@ -302,7 +275,6 @@ public class EnhancedSpectrumVisualizer extends JPanel implements ThemeChangeLis
         float[] smoothed = new float[numberOfBands];
 
         for (int i = 0; i < numberOfBands; i++) {
-            // Center-weighted average of neighboring bars
             float sum = 0;
             float weight = 0;
 
@@ -315,7 +287,6 @@ public class EnhancedSpectrumVisualizer extends JPanel implements ThemeChangeLis
             smoothed[i] = sum / weight;
         }
 
-        // Copy smoothed values back to demoData
         System.arraycopy(smoothed, 0, demoData, 0, numberOfBands);
     }
 
@@ -436,12 +407,10 @@ public class EnhancedSpectrumVisualizer extends JPanel implements ThemeChangeLis
         }
 
         this.numberOfBands = newNumberOfBands;
-        // Update arrays
         this.bands = new float[newNumberOfBands];
         this.demoData = new float[newNumberOfBands];
         this.barHistory = new float[historySize][newNumberOfBands];
 
-        // Update CAVA configuration and restart
         boolean wasRunning = running;
         stop();
         setupCavaConfig();
@@ -481,6 +450,7 @@ public class EnhancedSpectrumVisualizer extends JPanel implements ThemeChangeLis
     public void dispose() {
         if (animationTimer != null && animationTimer.isRunning()) {
             animationTimer.stop();
+            animationTimer = null;
         }
 
         stop();
@@ -489,16 +459,6 @@ public class EnhancedSpectrumVisualizer extends JPanel implements ThemeChangeLis
     }
 
 
-    /**
-     * Set audio position (for compatibility)
-     */
-    public void setAudioPosition(int position) {
-        // CAVA handles audio synchronization automatically
-    }
-
-    /**
-     * Check if CAVA is currently running
-     */
     public boolean isRunning() {
         return running && !demoMode;
     }

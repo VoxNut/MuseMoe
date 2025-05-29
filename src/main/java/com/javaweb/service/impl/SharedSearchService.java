@@ -56,14 +56,11 @@ public class SharedSearchService {
             return Collections.emptyList();
         }
 
-        // Normalize the query and create variants for better matching
         String normalizedQuery = normalizeText(query);
         Set<String> queryVariants = generateQueryVariants(normalizedQuery);
 
-        // Combine results from all query variants with deduplication
         Set<SongEntity> results = new LinkedHashSet<>();
 
-        // Search by exact title match first (higher priority)
         for (String variant : queryVariants) {
             List<SongEntity> exactMatches = songRepository.findByTitleContainingIgnoreCase(variant);
             results.addAll(exactMatches);
@@ -73,13 +70,11 @@ public class SharedSearchService {
             }
         }
 
-        // If we don't have enough results, perform a more comprehensive search
         if (results.size() < limit) {
             List<SongEntity> fullTextResults = performFullTextSongSearch(queryVariants, limit - results.size());
             results.addAll(fullTextResults);
         }
 
-        // Convert to DTOs and apply final limit
         return results.stream()
                 .limit(limit)
                 .map(songConverter::toDTO)
@@ -97,11 +92,9 @@ public class SharedSearchService {
         String normalizedQuery = query.toLowerCase().trim();
         Set<AlbumEntity> results = new LinkedHashSet<>();
 
-        // 1. Direct title matches (highest priority)
         List<AlbumEntity> directMatches = albumRepository.findByTitleContainingIgnoreCase(normalizedQuery);
         results.addAll(directMatches);
 
-        // 2. Search for albums with songs matching the query
         if (results.size() < limit) {
             List<SongDTO> matchingSongs = findSongsByQuery(normalizedQuery, 50);
             if (!matchingSongs.isEmpty()) {
@@ -117,7 +110,6 @@ public class SharedSearchService {
             }
         }
 
-        // 3. Search for albums by artist name, but without using ArtistService
         if (results.size() < limit) {
             List<ArtistEntity> matchingArtists = artistRepository
                     .findByStageNameContainingIgnoreCaseOrderByFollowersCountDesc(normalizedQuery);
@@ -134,7 +126,6 @@ public class SharedSearchService {
             }
         }
 
-        // Convert to DTOs and apply limit
         return results.stream()
                 .limit(limit)
                 .map(albumConverter::toDTO)
@@ -152,12 +143,10 @@ public class SharedSearchService {
         String normalizedQuery = query.toLowerCase().trim();
         Set<ArtistEntity> results = new LinkedHashSet<>();
 
-        // 1. Direct name matches (highest priority)
         List<ArtistEntity> directMatches = artistRepository
                 .findByStageNameContainingIgnoreCaseOrderByFollowersCountDesc(normalizedQuery);
         results.addAll(directMatches);
 
-        // 2. Find artists with songs matching the query
         if (results.size() < limit) {
             List<SongDTO> matchingSongs = findSongsByQuery(normalizedQuery, 50);
             if (!matchingSongs.isEmpty()) {
@@ -170,7 +159,6 @@ public class SharedSearchService {
             }
         }
 
-        // 3. Find artists with albums matching the query, but without using AlbumService
         if (results.size() < limit) {
             List<AlbumEntity> matchingAlbums = albumRepository.findByTitleContainingIgnoreCase(normalizedQuery);
             if (!matchingAlbums.isEmpty()) {
@@ -182,7 +170,6 @@ public class SharedSearchService {
             }
         }
 
-        // Convert to DTOs and apply limit
         Long userId = SecurityUtils.getPrincipal().getId();
         UserEntity userEntity = userRepository.findById(userId).orElse(null);
         return results.stream()
@@ -198,12 +185,14 @@ public class SharedSearchService {
     private String normalizeText(String text) {
         if (text == null) return "";
 
-        // Remove diacritical marks and convert to lowercase
+        if (containsJapanese(text)) {
+            return text.toLowerCase().trim();
+        }
+
         String normalized = Normalizer.normalize(text, Normalizer.Form.NFD)
                 .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
                 .toLowerCase();
 
-        // Remove special characters except spaces and alphanumeric
         return normalized.replaceAll("[^a-z0-9\\s]", " ")
                 .replaceAll("\\s+", " ")
                 .trim();
@@ -216,17 +205,14 @@ public class SharedSearchService {
         Set<String> variants = new HashSet<>();
         variants.add(query);
 
-        // Add romaji/kana variants if Japanese characters are detected
         if (containsJapanese(query)) {
             variants.add(kanaToLatin.transliterate(query));
         } else {
             variants.add(latinToKana.transliterate(query));
         }
 
-        // Add variants with different word separators
         variants.add(query.replace(" ", ""));  // No spaces
 
-        // Add word-by-word variants for partial matching
         String[] words = query.split("\\s+");
         if (words.length > 1) {
             for (String word : words) {

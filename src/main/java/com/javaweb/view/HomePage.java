@@ -1396,10 +1396,15 @@ public class HomePage extends JFrame implements PlayerEventListener, ThemeChange
         playlistPanel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                log.info("Playlist clicked: {}", playlist.getName());
-                if (!playlist.getSongs().isEmpty()) {
-                    playerFacade.loadSongWithContext(playlist.getSongs().getFirst(), playlist, PlaylistSourceType.USER_PLAYLIST);
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    log.info("Playlist clicked: {}", playlist.getName());
+                    if (!playlist.getSongs().isEmpty()) {
+                        playerFacade.loadSongWithContext(playlist.getSongs().getFirst(), playlist, PlaylistSourceType.USER_PLAYLIST);
+                    }
+                } else if (SwingUtilities.isRightMouseButton(e)) {
+
                 }
+
             }
         });
 

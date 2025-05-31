@@ -3,7 +3,6 @@ package com.javaweb.api;
 import com.javaweb.model.dto.SongDTO;
 import com.javaweb.model.request.SongRequestDTO;
 import com.javaweb.service.SongService;
-import com.javaweb.service.impl.GoogleDriveService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.repository.query.Param;
@@ -22,7 +21,6 @@ import java.util.Map;
 public class SongAPI {
 
     private final SongService songService;
-    private final GoogleDriveService googleDriveService;
 
     @GetMapping("/title/{title}")
     public ResponseEntity<SongDTO> findByTitle(@PathVariable String title) {

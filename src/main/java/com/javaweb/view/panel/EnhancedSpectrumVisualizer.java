@@ -309,7 +309,7 @@ public class EnhancedSpectrumVisualizer extends JPanel implements ThemeChangeLis
         int maxBarWidth = 50;       // Chiều rộng tối đa cho mỗi thanh
         int minBarWidth = 3;        // Chiều rộng tối thiểu cho mỗi thanh
         int minBarSpacing = 1;      // Khoảng cách tối thiểu giữa các thanh
-        int maxTotalWidth = width - 20;  // Để lại lề trái phải 10px
+        int maxTotalWidth = width;  // Để lại lề trái phải 10px
 
         // Tính toán barWidth và barSpacing để lấp đầy chiều ngang
         int optimalBarWidth = Math.max(minBarWidth,
@@ -327,7 +327,7 @@ public class EnhancedSpectrumVisualizer extends JPanel implements ThemeChangeLis
         // Tính lại tổng chiều rộng thực tế
         int totalBarWidth = optimalBarWidth * numberOfBands + optimalBarSpacing * (numberOfBands - 1);
         int startX = (width - totalBarWidth) / 2;
-        int startY = height - 10; // Padding từ dưới lên
+        int startY = height;
 
         // Vẽ mỗi thanh
         g2d.setColor(foregroundColor);

@@ -94,7 +94,6 @@ public class SongConverter implements EntityConverter<SongEntity, SongRequestDTO
         try {
             SongEntity entity = new SongEntity();
 
-            // Handle the audio file
             if (request.getGoogleDriveFileId() != null) {
 
                 File driveFile = googleDriveService.getFileMetadata(request.getGoogleDriveFileId());
@@ -134,7 +133,6 @@ public class SongConverter implements EntityConverter<SongEntity, SongRequestDTO
                 }
             }
 
-            // Initialize fields
             entity.setPlayCount(0);
             entity.setExplicitContent(0);
 

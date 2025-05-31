@@ -909,7 +909,7 @@ public class ArtistUploadPanel extends JPanel implements ThemeChangeListener {
                         if (createdAlbum == null || createdAlbum.getId() == null) {
                             return false;
                         }
-
+                        selectedAlbum = createdAlbum;
                         albumId = createdAlbum.getId();
                         publish(30);
                     } else {
